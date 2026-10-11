@@ -1,0 +1,55 @@
+"""Fills archive/ with every finished season that isn't there yet.
+
+Runs slowly on purpose: one request every 7.5 seconds keeps it under the API's
+500 requests an hour, even counting the occasional retry. It commits every few
+seasons, so if a run is cut short the next one just carries on.
+
+    python pipeline/backfill.py              every missing season up to last year
+    python pipeline/backfill.py 2020 2025    only that range
+"""
+import os
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+os.environ.setdefault("PF_PAUSE", "7.5")
+
+import api  # noqa: E402
+import season  # noqa: E402
+import store  # noqa: E402
+
+BUDGET = float(os.environ.get("PF_BUDGET_MIN", "320")) * 60   # stop well before the 6 hour job limit
+EVERY = 5
+
+
+def main():
+    this_year = datetime.now(timezone.utc).year
+    first = int(sys.argv[1]) if len(sys.argv) > 1 else 1950
+    last = int(sys.argv[2]) if len(sys.argv) > 2 else this_year - 1
+    have = set(store.archived_years())
+    todo = [y for y in range(first, last + 1) if y not in have]
+    print(f"{len(todo)} seasons to fetch, pausing {api.PAUSE}s between requests")
+
+    started, done = time.time(), []
+    for year in todo:
+        if time.time() - started > BUDGET:
+            print("time budget used up, the next run will continue")
+            break
+        data = season.fetch(year)
+        if not data["complete"]:
+            print(f"{year}: not finished yet, skipped")
+            continue
+        store.save_season(data, finished=True)
+        done.append(year)
+        print(f"{year}: {len(data['rounds'])} rounds, {len(data['drivers'])} drivers")
+        if len(done) % EVERY == 0:
+            store.commit(f"Archive {done[-EVERY]}-{done[-1]}")
+    if done:
+        store.commit(f"Archive up to {done[-1]}")
+    print(f"archived {len(done)} seasons")
+
+
+if __name__ == "__main__":
+    main()
