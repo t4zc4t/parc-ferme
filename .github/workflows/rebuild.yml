@@ -1,0 +1,20 @@
+name: Daily rebuild
+
+# Asks Cloudflare Pages to rebuild the site once a day, so new results,
+# standings and the next race show up without any commit.
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the Cloudflare Pages build
+        env:
+          HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "CF_DEPLOY_HOOK secret is missing"; exit 1; fi
+          curl -fsS -X POST "$HOOK" > /dev/null
+          echo "Rebuild requested"
