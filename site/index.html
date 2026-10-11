@@ -6,11 +6,11 @@
 <title>Parc Fermé</title>
 <meta name="description" content="Standings, driver records, race data and studies on Grand Prix racing. An independent fan project.">
 <meta name="theme-color" content="#07070D">
-<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 <div class="rain" aria-hidden="true"></div>
@@ -22,12 +22,12 @@
       <span class="brand-jp" lang="ja">パルク・フェルメ</span>
     </a>
     <nav aria-label="Main">
-      <a href="#standings">Standings</a>
-      <a href="#explore">Drivers</a>
-      <a href="#explore">Compare</a>
-      <a href="#explore">Races</a>
-      <a href="#explore">Studies</a>
-      <a href="#explore">Questions</a>
+      <a href="/#standings">Standings</a>
+      <a href="/drivers">Drivers</a>
+      <a href="/#explore">Compare</a>
+      <a href="/#explore">Races</a>
+      <a href="/#explore">Studies</a>
+      <a href="/#explore">Questions</a>
     </nav>
   </div>
 </header>
@@ -42,7 +42,7 @@
         <p class="lede">Standings, driver records, race data and studies that answer the questions fans argue about. It updates itself after every Grand Prix.</p>
         <div class="cta">
           <a class="btn btn-solid" href="#standings">See the standings</a>
-          <a class="btn btn-line" href="#explore">What's coming</a>
+          <a class="btn btn-line" href="/drivers">Browse the drivers</a>
         </div>
       </div>
     </div>
@@ -67,6 +67,22 @@
     </aside>
   </section>
 
+  <section id="last" class="wrap block" hidden>
+    <div class="block-head">
+      <h2>Last race <span class="jp-h" lang="ja">前戦</span></h2>
+      <span class="note mono" id="last-note"></span>
+    </div>
+    <div class="podium" id="podium"></div>
+    <div class="table-box">
+      <table>
+        <thead>
+          <tr><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col">TEAM</th><th scope="col">GRID</th><th scope="col">GAP</th><th scope="col" class="num">PTS</th></tr>
+        </thead>
+        <tbody id="last-body"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section id="standings" class="wrap block">
     <div class="block-head">
       <h2>Driver standings <span class="jp-h" lang="ja">順位表</span></h2>
@@ -86,31 +102,31 @@
 
   <section id="explore" class="wrap block">
     <div class="block-head">
-      <h2>On the way <span class="jp-h" lang="ja">近日公開</span></h2>
+      <h2>Explore <span class="jp-h" lang="ja">探索</span></h2>
     </div>
     <div class="cards">
+      <a class="card card-live" href="/drivers">
+        <span class="card-jp pink" lang="ja">選手</span>
+        <span class="card-title">Drivers</span>
+        <span class="card-text">Every driver on this year's grid, with career numbers, season-by-season finishes and the battle with their teammate.</span>
+        <span class="soon live">OPEN</span>
+      </a>
       <div class="card">
-        <span class="card-jp pink" lang="ja">比較</span>
+        <span class="card-jp cyan" lang="ja">比較</span>
         <span class="card-title">Head to head</span>
         <span class="card-text">Pick any two drivers and line up qualifying, races, points and wet weather results.</span>
         <span class="soon">SOON</span>
       </div>
       <div class="card">
-        <span class="card-jp cyan" lang="ja">決勝</span>
+        <span class="card-jp amber" lang="ja">決勝</span>
         <span class="card-title">Race explorer</span>
         <span class="card-text">Lap charts, tyre stints and pit stops for every race since 2018.</span>
         <span class="soon">SOON</span>
       </div>
       <div class="card">
-        <span class="card-jp amber" lang="ja">研究</span>
-        <span class="card-title">Studies</span>
-        <span class="card-text">Longer research, like whether the budget cap really closed the gap.</span>
-        <span class="soon">SOON</span>
-      </div>
-      <div class="card">
-        <span class="card-jp" lang="ja">質問</span>
-        <span class="card-title">Questions, answered</span>
-        <span class="card-text">How much does pole matter at Monaco? Who is quickest in the rain? Short answers backed by data.</span>
+        <span class="card-jp" lang="ja">研究</span>
+        <span class="card-title">Studies and questions</span>
+        <span class="card-text">Longer research, like whether the budget cap closed the gap, and short data answers to the questions fans argue about.</span>
         <span class="soon">SOON</span>
       </div>
     </div>
@@ -120,10 +136,11 @@
 <footer>
   <div class="wrap foot-row">
     <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
-    <span class="mono">Data: Jolpica · FastF1</span>
+    <span class="mono" id="updated">Data: Jolpica · FastF1</span>
   </div>
 </footer>
 
-<script src="assets/app.js"></script>
+<script src="/assets/common.js"></script>
+<script src="/assets/app.js"></script>
 </body>
 </html>
