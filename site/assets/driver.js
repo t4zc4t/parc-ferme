@@ -15,7 +15,7 @@
   }
 
   document.title = d.name + ' · Parc Fermé';
-  PF.stamp(d.updated);
+  PF.stamp();
   hero(d);
   season(d);
   career(d);

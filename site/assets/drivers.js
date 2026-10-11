@@ -9,7 +9,7 @@
     grid.textContent = 'The drivers could not be loaded right now.';
     return;
   }
-  PF.stamp(data.updated);
+  PF.stamp();
   $('grid-lede').textContent = 'All ' + data.drivers.length + ' drivers to start a race in ' + data.season + '. Pick one for their career, season by season, and how they stack up against their teammate.';
 
   const sorts = {

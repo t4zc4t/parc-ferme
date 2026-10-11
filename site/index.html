@@ -23,6 +23,7 @@
     </a>
     <nav aria-label="Main">
       <a href="/#standings">Standings</a>
+      <a href="/schedule">Schedule</a>
       <a href="/drivers">Drivers</a>
       <a href="/#explore">Compare</a>
       <a href="/#explore">Races</a>
@@ -42,7 +43,7 @@
         <p class="lede">Standings, driver records, race data and studies that answer the questions fans argue about. It updates itself after every Grand Prix.</p>
         <div class="cta">
           <a class="btn btn-solid" href="#standings">See the standings</a>
-          <a class="btn btn-line" href="/drivers">Browse the drivers</a>
+          <a class="btn btn-line" href="/schedule">Race weekend schedule</a>
         </div>
       </div>
     </div>
@@ -54,6 +55,10 @@
       </div>
       <div class="next-name" id="next-name">Next race</div>
       <div class="next-meta" id="next-meta">Loading the race calendar.</div>
+      <a class="next-up" id="next-up" href="/schedule" hidden>
+        <span class="next-up-label mono" id="next-up-label">NEXT SESSION</span>
+        <span class="next-up-name" id="next-up-name"></span>
+      </a>
       <svg class="track" viewBox="0 0 300 120" aria-hidden="true">
         <path d="M20 90 L60 30 L140 22 L170 48 L240 30 L282 60 L250 98 L150 104 L110 80 L60 104 Z"></path>
         <circle cx="20" cy="90" r="5"></circle>
@@ -85,13 +90,17 @@
 
   <section id="standings" class="wrap block">
     <div class="block-head">
-      <h2>Driver standings <span class="jp-h" lang="ja">順位表</span></h2>
+      <h2>Standings <span class="jp-h" lang="ja">順位表</span></h2>
       <span class="note mono" id="standings-note"></span>
+    </div>
+    <div class="sort" role="group" aria-label="Which standings">
+      <button type="button" class="chip on" aria-pressed="true" data-table="drivers">Drivers</button>
+      <button type="button" class="chip" aria-pressed="false" data-table="teams">Teams</button>
     </div>
     <div class="table-box">
       <table>
         <thead>
-          <tr><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col">TEAM</th><th scope="col">WINS</th><th scope="col" class="num">POINTS</th></tr>
+          <tr id="standings-head"><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col">TEAM</th><th scope="col">WINS</th><th scope="col" class="num">POINTS</th></tr>
         </thead>
         <tbody id="standings-body">
           <tr class="empty"><td colspan="5">Loading standings.</td></tr>
