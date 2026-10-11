@@ -58,6 +58,6 @@ site/_redirects sends /drivers/<name> to the driver page
 
 ## How some numbers are counted
 
-Titles only count finished seasons, so a driver leading the current season isn't a champion yet. Poles are first place in qualifying, which isn't always the grid slot after penalties. The teammate battle only counts rounds where both cars were in the race, and the team's finishing order decides it, so a retirement counts as a loss.
+Titles only count finished seasons, so a driver leading the current season isn't a champion yet. Poles are counted as being fastest in qualifying, so they can differ by a few from the official record, which takes away poles after exclusions and gave them to the sprint winner on the 2021 sprint weekends. Hamilton, for example, shows 107 here against an official 104. The teammate battle only counts rounds where both cars were in the race, and the team's finishing order decides it, so a retirement counts as a loss.
 
 This is an independent, non-commercial fan project. It isn't associated with Formula 1 companies or any team.
