@@ -1,0 +1,50 @@
+name: Update data
+
+# Wakes every 10 minutes, but pipeline/update.py only calls the API around
+# sessions and once a day, and only commits and builds when something changed.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Refresh even if nothing is due
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: data
+          path: store
+      - name: Check for new data
+        env:
+          PF_STORE: store
+          PF_FORCE: ${{ inputs.force && '1' || '' }}
+          CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          git -C store config user.name t4zc4t
+          git -C store config user.email t4zc4t@users.noreply.github.com
+          python3 pipeline/update.py
+      - name: Keep the schedule switched on
+        # GitHub turns off scheduled workflows after 60 quiet days; re-enabling once a day prevents that
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%H)" = "03" ]; then
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/update.yml/enable" && echo "schedule kept alive"
+          fi
