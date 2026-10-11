@@ -142,7 +142,7 @@
       for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
       return n;
     };
-    const step = 64, padL = 44, padR = 28, padT = 26, padB = 40, h = 280;
+    const step = 32, padL = 44, padR = 28, padT = 26, padB = 40, h = 280;
     // fill the panel, but scroll sideways rather than squash a long career on a phone
     const w = Math.max(box.clientWidth || 560, padL + padR + step * (pts.length - 1));
     const worst = Math.max(10, ...pts.map(s => +s.pos));
