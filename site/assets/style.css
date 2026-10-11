@@ -319,3 +319,7 @@ tr.champ td.pos { color: var(--amber); }
   .srow-out:empty { display: none; }
   .calendar { grid-template-columns: 1fr; }
 }
+
+/* long numbers like 3665.5 points must fit the narrow career tiles */
+.tile { min-width: 0; }
+.tiles-6 .tile-value { font-size: clamp(26px, 2.5vw, 36px); white-space: nowrap; }
