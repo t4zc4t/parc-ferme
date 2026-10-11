@@ -50,6 +50,26 @@
       tile('PODIUMS', podiums, podiums ? 'in ' + s.rounds.length + ' races' : 'none yet')
     );
 
+    // championship: can they still win it, and how likely is it
+    if (s.title) {
+      const t = s.title;
+      const label = PF.chance(t);
+      const state = label === 'CHAMPION' ? 'champ' : !t.alive ? 'out' : t.pos === '1' ? 'lead' : 'alive';
+      const word = { champ: 'CHAMPION', out: 'OUT OF THE FIGHT', lead: 'LEADING', alive: 'STILL IN IT' }[state];
+      $('title-panel').hidden = false;
+      $('title-panel').append(
+        el('div', { class: 'tp-head' },
+          el('span', { class: 'pill tp-' + state }, word),
+          el('span', { class: 'tp-pct' }, state === 'out' ? '' : label),
+          state === 'out' || state === 'champ' ? null : el('span', { class: 'tp-cap mono' }, 'TITLE CHANCE')),
+        el('p', { class: 'tp-note' }, t.note + '.'),
+        el('p', { class: 'fine' }, state === 'out'
+          ? 'Even winning every remaining race wouldn\'t be enough, the maximum is ' + t.maxPoints + ' points.'
+          : 'The most they can finish on is ' + t.maxPoints + ' points. The chance comes from replaying the rest of the season ' +
+            (t.sims || 0).toLocaleString() + ' times using this season\'s results, a guide rather than a prediction.')
+      );
+    }
+
     // teammate battle
     const box = $('duels');
     if (!s.teammates.length) {

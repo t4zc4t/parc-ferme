@@ -13,7 +13,18 @@
   showNext();
   showLast(home.lastRace);
   showStandings('drivers');
+  showTitle('drivers');
   PF.stamp();
+
+  document.querySelectorAll('[data-title]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-title]').forEach(b => {
+        b.classList.toggle('on', b === btn);
+        b.setAttribute('aria-pressed', b === btn);
+      });
+      showTitle(btn.dataset.title);
+    });
+  });
 
   document.querySelectorAll('[data-table]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -106,6 +117,46 @@
         el('td', { class: 'num mono pts' }, r.points)
       ));
     });
+  }
+
+  function showTitle(which) {
+    const t = home.title;
+    if (!t) return;
+    $('title').hidden = false;
+    const left = t.racesLeft + (t.racesLeft === 1 ? ' RACE' : ' RACES') +
+      (t.sprintsLeft ? ' + ' + t.sprintsLeft + (t.sprintsLeft === 1 ? ' SPRINT' : ' SPRINTS') : '');
+    $('title-note').textContent = t.finished ? t.season + ' · SEASON OVER'
+      : left + ' LEFT · ' + (which === 'teams' ? t.maxTeam : t.maxDriver) + ' PTS STILL ON OFFER';
+
+    const rows = which === 'teams' ? t.teams : t.drivers;
+    const alive = rows.filter(r => r.alive || r.clinched || (r.note || '').startsWith('Champion'));
+    const out = rows.filter(r => !alive.includes(r));
+    const box = $('fight');
+    box.textContent = '';
+    alive.forEach((r, i) => {
+      const label = PF.chance(r);
+      const width = label === 'CHAMPION' ? 100 : Math.max(r.prob * 100, r.alive ? 1.5 : 0);
+      const who = which === 'teams'
+        ? el('span', { class: 'f-name' }, r.name)
+        : PF.driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.name));
+      box.append(el('div', { class: 'f-row' + (i === 0 ? ' f-lead' : '') },
+        el('span', { class: 'f-pos mono' }, PF.pad2(r.pos)),
+        el('span', { class: 'f-who' }, who,
+          el('span', { class: 'f-pts mono' }, r.points + ' PTS' + (r.gap > 0 ? ' · −' + r.gap : ''))),
+        el('span', { class: 'f-bar', role: 'img', 'aria-label': 'title chance ' + label },
+          el('span', { class: 'f-fill', style: 'width:' + width.toFixed(1) + '%' })),
+        el('span', { class: 'f-pct mono' }, label),
+        el('span', { class: 'f-note' }, r.note)
+      ));
+    });
+    $('out-line').textContent = out.length
+      ? 'Mathematically out: ' + out.map(r => which === 'teams' ? r.name : r.code).join(', ') + '.'
+      : '';
+    $('title-fine').textContent = t.sims
+      ? 'Chances come from replaying the rest of the season ' + t.sims.toLocaleString() +
+        ' times, using each ' + (which === 'teams' ? 'team\'s drivers\'' : 'driver\'s') +
+        ' results this season, with recent races counting a bit more. It\'s a guide to the maths, not a prediction.'
+      : '';
   }
 
   function showStandings(which) {

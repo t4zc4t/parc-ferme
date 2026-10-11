@@ -58,6 +58,8 @@ site/_redirects sends /drivers/<name> to the driver page
 
 ## How some numbers are counted
 
+The title fight works in two layers. The maths is exact: it adds up the points still on offer in the races and sprints left, using the season's own scoring read from the results, and anyone who can't reach the leader's current total is out. The chances come from replaying the rest of the season 10,000 times, where each driver's finishing spot in every race is drawn from their own results this season, recent ones weighted a little more, with a retirement chance based on their record. The seed comes from the data, so the same results always give the same numbers. It's a guide to the maths, not a prediction, so nobody shows 0% while they can still mathematically win and nobody shows 100% until it's settled.
+
 Titles only count finished seasons, so a driver leading the current season isn't a champion yet. Poles are counted as being fastest in qualifying, so they can differ by a few from the official record, which takes away poles after exclusions and gave them to the sprint winner on the 2021 sprint weekends. Hamilton, for example, shows 107 here against an official 104. The teammate battle only counts rounds where both cars were in the race, and the team's finishing order decides it, so a retirement counts as a loss.
 
 This is an independent, non-commercial fan project. It isn't associated with Formula 1 companies or any team.

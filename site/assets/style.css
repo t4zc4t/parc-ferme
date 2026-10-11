@@ -356,3 +356,35 @@ tr.champ td.pos { color: var(--amber); }
   .fn { display: none; }
   td.driver { white-space: nowrap; }
 }
+
+/* title fight */
+.fight { display: flex; flex-direction: column; border: 1px solid var(--line-2); background: var(--panel); }
+.f-row { display: grid; grid-template-columns: 44px minmax(180px, 1.2fr) minmax(120px, 2fr) 84px; grid-template-areas: "pos who bar pct" ". note note note"; align-items: center; gap: 4px 16px; padding: 16px 18px; border-top: 1px solid var(--line); }
+.f-row:first-child { border-top: 0; }
+.f-pos { grid-area: pos; color: var(--dim); font-weight: 600; }
+.f-lead .f-pos { color: var(--pink); }
+.f-who { grid-area: who; display: flex; flex-direction: column; gap: 2px; font-weight: 700; min-width: 0; }
+.f-pts { font-size: 12px; font-weight: 400; color: var(--soft); }
+.f-bar { grid-area: bar; height: 10px; background: rgba(54,227,240,.12); position: relative; }
+.f-fill { position: absolute; inset: 0 auto 0 0; background: var(--cyan); }
+.f-lead .f-fill { background: var(--pink); box-shadow: 0 0 12px rgba(255,61,139,.5); }
+.f-pct { grid-area: pct; text-align: right; font-weight: 600; font-size: 15px; }
+.f-lead .f-pct { color: var(--pink); }
+.f-note { grid-area: note; font-size: 13px; color: var(--dim); }
+.out-line { margin: 14px 0 0; font-size: 14px; color: var(--soft); }
+.fine { margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: var(--dim); max-width: 760px; }
+.title-panel { margin-bottom: 16px; }
+.tp-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; margin: 6px 0 8px; }
+.tp-pct { font-family: var(--display); font-size: 40px; line-height: 1; }
+.tp-cap { font-size: 11px; letter-spacing: .16em; color: var(--dim); }
+.tp-note { margin: 0; color: var(--soft); }
+.tp-lead, .tp-champ { color: var(--ink); background: var(--pink); border-color: var(--pink); }
+.tp-alive { color: var(--ink); background: var(--cyan); border-color: var(--cyan); }
+.tp-out { color: var(--dim); }
+@media (max-width: 640px) {
+  .f-row { grid-template-columns: 34px 1fr 64px; grid-template-areas: "pos who pct" ". bar bar" ". note note"; gap: 6px 10px; padding: 14px 12px; }
+}
+
+/* career tiles: the number sizes itself to the tile, so 3665.5 fits at any window width */
+.tiles .tile { container-type: inline-size; }
+.tiles-6 .tile-value { font-size: clamp(20px, 19cqi, 40px); }

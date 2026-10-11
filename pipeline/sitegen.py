@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 
 import store
+import title
 
 LABELS = {
     "FP1": "Practice 1", "FP2": "Practice 2", "FP3": "Practice 3",
@@ -252,11 +253,16 @@ def build(now=None):
 
     out = store.ROOT / "site"
     h = home(current, names)
+    h["title"] = title.build(current, names)
     sched = schedule(current, names)
     index, files = drivers(seasons, current, names, now.date())
+    chances = {d["id"]: d for d in (h["title"] or {}).get("drivers", [])}
     for did, f in files.items():
         for t in f["season"]["teammates"]:
             t["name"] = names.driver(t["id"])
+        if did in chances:
+            f["season"]["title"] = {**chances[did], "racesLeft": h["title"]["racesLeft"],
+                                    "sprintsLeft": h["title"]["sprintsLeft"], "sims": h["title"]["sims"]}
 
     changed = False
     changed |= store.write_json(out / "home.json", h)

@@ -34,6 +34,15 @@ const PF = {
       : [last];
   },
 
+  // title chance as words people trust: never 0% while it's still possible, never 100% until it's done
+  chance(t) {
+    if (t.clinched || (t.note || '').startsWith('Champion')) return 'CHAMPION';
+    if (!t.alive) return 'OUT';
+    if (t.prob >= 0.995) return '>99%';
+    if (t.prob < 0.005) return '<1%';
+    return Math.round(t.prob * 100) + '%';
+  },
+
   driverLink(id, ...kids) {
     return PF.el('a', { href: '/drivers/' + id, class: 'dlink' }, ...kids);
   },
