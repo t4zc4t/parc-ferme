@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driver · Parc Fermé</title>
+<meta name="description" content="Career numbers, season-by-season finishes and the teammate battle for a driver on this year's grid.">
+<meta name="theme-color" content="#07070D">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="rain" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <span class="brand-name">PARC FERMÉ</span>
+      <span class="brand-jp" lang="ja">パルク・フェルメ</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="/#standings">Standings</a>
+      <a href="/drivers" aria-current="page">Drivers</a>
+      <a href="/#explore">Compare</a>
+      <a href="/#explore">Races</a>
+      <a href="/#explore">Studies</a>
+      <a href="/#explore">Questions</a>
+    </nav>
+  </div>
+</header>
+
+<main id="driver-page">
+  <section class="wrap dhero">
+    <a class="back mono" href="/drivers">← ALL DRIVERS</a>
+    <div class="dhero-row">
+      <span class="dhero-num" id="d-num" aria-hidden="true"></span>
+      <div class="dhero-copy">
+        <p class="kicker" id="d-kicker">DRIVER <span lang="ja">選手</span></p>
+        <h1 class="dname"><span class="dname-first" id="d-first"></span><span class="dname-last" id="d-last">Loading</span></h1>
+        <p class="lede" id="d-meta"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap block" id="season-block" hidden>
+    <div class="block-head">
+      <h2 id="season-title">This season <span class="jp-h" lang="ja">今季</span></h2>
+      <span class="note mono" id="season-note"></span>
+    </div>
+    <div class="tiles tiles-3" id="season-tiles"></div>
+
+    <div class="split">
+      <div class="panel" id="duel-panel">
+        <h3 class="panel-title">Teammate battle</h3>
+        <div id="duels"></div>
+      </div>
+      <div class="panel">
+        <h3 class="panel-title">Round by round</h3>
+        <p class="panel-note">Finishing position each round. Hover or tap a square for the details.</p>
+        <div class="strip" id="strip"></div>
+        <div class="legend mono">
+          <span><i class="sq sq-win"></i>WIN</span>
+          <span><i class="sq sq-pod"></i>PODIUM</span>
+          <span><i class="sq sq-pts"></i>POINTS</span>
+          <span><i class="sq sq-out"></i>NO POINTS</span>
+          <span><i class="sq sq-dnf"></i>DID NOT FINISH</span>
+        </div>
+        <p class="strip-detail mono" id="strip-detail" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap block" id="career-block" hidden>
+    <div class="block-head">
+      <h2>Career <span class="jp-h" lang="ja">経歴</span></h2>
+      <span class="note mono" id="career-note"></span>
+    </div>
+    <div class="tiles tiles-6" id="career-tiles"></div>
+
+    <div class="panel chart-panel">
+      <h3 class="panel-title">Championship finish by season</h3>
+      <p class="panel-note">Higher on the chart is better. The current season shows the position right now.</p>
+      <div class="chart" id="chart"></div>
+    </div>
+
+    <div class="table-box">
+      <table>
+        <thead>
+          <tr><th scope="col">SEASON</th><th scope="col">TEAM</th><th scope="col">RACES</th><th scope="col">WINS</th><th scope="col">POS</th><th scope="col" class="num">POINTS</th></tr>
+        </thead>
+        <tbody id="season-rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
+    <span class="mono" id="updated">Data: Jolpica</span>
+  </div>
+</footer>
+
+<script src="/assets/common.js"></script>
+<script src="/assets/driver.js"></script>
+</body>
+</html>
