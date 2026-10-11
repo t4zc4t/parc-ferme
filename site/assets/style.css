@@ -309,7 +309,7 @@ tr.champ td.pos { color: var(--amber); }
 
 /* long numbers like 3665.5 points must fit the narrow career tiles */
 .tile { min-width: 0; }
-.tiles-6 .tile-value { font-size: clamp(26px, 2.5vw, 36px); white-space: nowrap; }
+.tile-value { white-space: nowrap; }
 
 /* next race card: the weekend's sessions instead of a drawing */
 .next-sessions { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
@@ -387,4 +387,4 @@ tr.champ td.pos { color: var(--amber); }
 
 /* career tiles: the number sizes itself to the tile, so 3665.5 fits at any window width */
 .tiles .tile { container-type: inline-size; }
-.tiles-6 .tile-value { font-size: clamp(20px, 19cqi, 40px); }
+.tiles .tile-value.long { font-size: clamp(20px, 19cqi, 40px); }

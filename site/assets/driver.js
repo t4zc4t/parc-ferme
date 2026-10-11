@@ -33,7 +33,7 @@
   function tile(label, value, sub, cls) {
     return el('div', { class: 'tile' + (cls ? ' ' + cls : '') },
       el('span', { class: 'tile-label mono' }, label),
-      el('span', { class: 'tile-value' }, value),
+      el('span', { class: 'tile-value' + (String(value).length >= 4 ? ' long' : '') }, value),
       sub ? el('span', { class: 'tile-sub' }, sub) : null
     );
   }
