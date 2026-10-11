@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule · Parc Fermé</title>
+<meta name="description" content="Every session of every Grand Prix weekend this season, in your own time zone.">
+<meta name="theme-color" content="#07070D">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="rain" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <span class="brand-name">PARC FERMÉ</span>
+      <span class="brand-jp" lang="ja">パルク・フェルメ</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="/#standings">Standings</a>
+      <a href="/schedule" aria-current="page">Schedule</a>
+      <a href="/drivers">Drivers</a>
+      <a href="/#explore">Compare</a>
+      <a href="/#explore">Races</a>
+      <a href="/#explore">Studies</a>
+      <a href="/#explore">Questions</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap page-head">
+    <p class="kicker">RACE WEEKENDS <span lang="ja">日程</span></p>
+    <h1 class="page-title">Schedule</h1>
+    <p class="lede" id="tz-note">Every session of the season, shown in your own time zone.</p>
+  </section>
+
+  <section class="wrap block" id="focus-block" hidden>
+    <div class="block-head">
+      <h2 id="focus-title">This weekend</h2>
+      <span class="note mono" id="focus-note"></span>
+    </div>
+    <div class="panel weekend" id="weekend"></div>
+  </section>
+
+  <section class="wrap block">
+    <div class="block-head">
+      <h2>Season calendar <span class="jp-h" lang="ja">カレンダー</span></h2>
+      <span class="note mono" id="cal-note"></span>
+    </div>
+    <div class="calendar" id="calendar"><p class="dim">Loading the calendar.</p></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
+    <span class="mono" id="updated">Data: Jolpica</span>
+  </div>
+</footer>
+
+<script src="/assets/common.js"></script>
+<script src="/assets/schedule.js"></script>
+</body>
+</html>

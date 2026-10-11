@@ -29,13 +29,40 @@ const PF = {
     return PF.el('a', { href: '/drivers/' + id, class: 'dlink' }, ...kids);
   },
 
-  stamp(updated) {
+  // footer line: when the data last actually changed
+  async stamp() {
     const node = PF.$('updated');
-    if (!node || !updated) return;
-    const d = new Date(updated);
-    node.textContent = 'Data: Jolpica · updated ' + d.toLocaleString(undefined, {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+    if (!node) return;
+    try {
+      const meta = await PF.json('/data/meta.json');
+      node.textContent = 'Data: Jolpica · updated ' + PF.dayTime(meta.updated);
+    } catch (e) { /* keep the plain credit */ }
+  },
+
+  // "Sat 11 Oct, 17:30" in the viewer's own time zone
+  dayTime(iso) {
+    return new Date(iso).toLocaleString(undefined, {
+      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
     });
+  },
+
+  time(iso) {
+    return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  },
+
+  // done, live or upcoming, worked out here so the data files never change just because time passed
+  status(session, now) {
+    const start = Date.parse(session.start), end = Date.parse(session.end);
+    return now >= end ? 'done' : now >= start ? 'live' : 'upcoming';
+  },
+
+  nextSession(schedule, now) {
+    for (const r of schedule.rounds) {
+      for (const s of r.sessions) {
+        if (Date.parse(s.end) > now) return { round: r, session: s };
+      }
+    }
+    return null;
   },
 
   fail(target, colspan, text) {
