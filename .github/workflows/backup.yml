@@ -1,0 +1,34 @@
+name: Monthly backup
+
+# Saves Jolpica's full database dump (every table, back to 1950) as a release
+# asset once a month, so there's a complete copy even if the API ever goes away.
+# The free dump is published with a 14 day delay, which is fine for a backup.
+on:
+  schedule:
+    - cron: "17 4 2 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the dump and attach it to the backup release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          name="jolpica-dump-$(date -u +%Y-%m).zip"
+          curl -sSLf -o "$name" "https://api.jolpi.ca/data/dumps/download/delayed/?dump_type=csv"
+          unzip -tq "$name"
+          gh release view data-backup -R "$REPO" >/dev/null 2>&1 || \
+            gh release create data-backup -R "$REPO" --title "Data backup" \
+              --notes "Monthly copy of the full Jolpica database dump (CSV, all seasons since 1950). Only the latest three months are kept." --latest=false
+          gh release upload data-backup "$name" -R "$REPO" --clobber
+          # keep the three newest
+          gh release view data-backup -R "$REPO" --json assets -q '.assets[].name' | sort -r | tail -n +4 | \
+            while read old; do gh release delete-asset data-backup "$old" -R "$REPO" -y; done
+          echo "saved $name ($(du -h "$name" | cut -f1))"
