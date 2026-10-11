@@ -1,0 +1,38 @@
+name: Backfill archive
+
+# Fills archive/ on the data branch with every finished season that's missing.
+# Run it by hand once; after that the updater archives each season as it ends.
+on:
+  workflow_dispatch:
+    inputs:
+      first:
+        description: First season
+        default: "1950"
+      last:
+        description: Last season (blank for last year)
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: data
+          path: store
+      - name: Fetch missing seasons
+        env:
+          PF_STORE: store
+        run: |
+          git -C store config user.name t4zc4t
+          git -C store config user.email t4zc4t@users.noreply.github.com
+          python3 pipeline/backfill.py ${{ inputs.first }} ${{ inputs.last }}

@@ -1,12 +1,13 @@
 """Small client for the Jolpica API (the continuation of Ergast)."""
 import json
+import os
 import time
 import urllib.error
 import urllib.request
 
 API = "https://api.jolpi.ca/ergast/f1"
 PAGE = 100          # the API caps every page at 100 rows
-PAUSE = 0.3         # stays well under the API's burst limit
+PAUSE = float(os.environ.get("PF_PAUSE", "0.3"))   # seconds between requests, the API allows 4 a second
 
 _last_call = 0.0
 
