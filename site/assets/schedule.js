@@ -36,7 +36,8 @@
     } else if (status === 'done' && s.results) {
       outcome = el('span', { class: 'dim small' }, 'Result usually lands a few hours after the session.');
     } else if (status === 'done') {
-      outcome = el('span', { class: 'dim small' }, 'Practice times arrive with the race explorer.');
+      const what = s.type === 'SQ' ? 'Sprint qualifying times' : 'Practice times';
+      outcome = el('span', { class: 'dim small' }, what + ' arrive with the race explorer.');
     }
     return el('li', { class: 'srow srow-' + status + (isNext ? ' srow-next' : '') },
       el('span', { class: 'srow-when mono' }, PF.dayTime(s.start)),
