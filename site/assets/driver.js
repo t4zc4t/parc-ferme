@@ -123,7 +123,7 @@
         el('td', { class: 'team' }, s.teams.join(', ')),
         el('td', { class: 'mono' }, s.races),
         el('td', { class: 'mono' }, s.wins),
-        el('td', { class: 'mono pos' }, s.pos ? 'P' + s.pos : '–', champ ? el('span', { class: 'crown' }, ' CHAMPION') : null),
+        el('td', { class: 'mono pos' }, /^\d+$/.test(s.pos || '') ? 'P' + s.pos : 'NC', champ ? el('span', { class: 'crown' }, ' CHAMPION') : null),
         el('td', { class: 'num mono pts' }, s.points ?? '–')
       ));
     });
