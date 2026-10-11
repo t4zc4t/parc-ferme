@@ -1,46 +1,48 @@
-"""Builds every data file the site reads, into site/data/.
+"""Cloudflare Pages runs this on every build.
 
-Cloudflare Pages runs this on every build, so each deploy carries fresh data.
-If the API can't be reached the script exits with an error, the build fails,
-and Cloudflare keeps serving the last good version of the site.
+It doesn't call the F1 API at all. It downloads the site files the updater keeps
+on the repo's `data` branch and drops them into site/data/. So a build can't fail
+because the API is down, and every build shows exactly what the store holds.
 """
-import json
+import io
 import sys
-from datetime import datetime, timezone
+import tarfile
+import time
+import urllib.request
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-import drivers  # noqa: E402
-import home  # noqa: E402
-from api import get  # noqa: E402
-
-DATA = Path(__file__).resolve().parent.parent / "site" / "data"
+REPO = "t4zc4t/parc-ferme"
+URL = f"https://codeload.github.com/{REPO}/tar.gz/refs/heads/data"
+OUT = Path(__file__).resolve().parent.parent / "site" / "data"
 
 
-def write(path, obj):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+def download():
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(URL, timeout=60) as res:
+                return res.read()
+        except Exception as err:
+            if attempt == 3:
+                sys.exit(f"could not download the data branch: {err}")
+            time.sleep(5 * (attempt + 1))
 
 
 def main():
-    now = datetime.now(timezone.utc)
-    stamp = now.isoformat(timespec="minutes").replace("+00:00", "Z")
-
-    schedule = get("current.json")["RaceTable"]
-    standings = get("current/driverstandings.json")["StandingsTable"]
-
-    page = home.build(schedule, standings, now)
-    page["updated"] = stamp
-    write(DATA / "home.json", page)
-    print(f"home: {len(page['standings'])} drivers, {page['standingsNote'].lower()}")
-
-    index, files = drivers.build(page["standings"], page["season"], now.date())
-    write(DATA / "drivers.json", {"season": page["season"], "updated": stamp, "drivers": index})
-    for did, data in files.items():
-        data["updated"] = stamp
-        write(DATA / "drivers" / f"{did}.json", data)
-    print(f"drivers: {len(files)} pages")
+    blob = download()
+    count = 0
+    with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tar:
+        for member in tar.getmembers():
+            parts = Path(member.name).parts
+            # the archive's top folder is <repo>-data/, we want what's under site/
+            if len(parts) < 3 or parts[1] != "site" or not member.isfile():
+                continue
+            target = OUT.joinpath(*parts[2:])
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(tar.extractfile(member).read())
+            count += 1
+    if not (OUT / "home.json").exists():
+        sys.exit("the data branch has no site files yet")
+    print(f"copied {count} data files")
 
 
 if __name__ == "__main__":
