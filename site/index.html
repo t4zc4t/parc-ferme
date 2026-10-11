@@ -49,11 +49,11 @@
 
     <aside class="next" aria-labelledby="next-title">
       <div class="next-head">
-        <span class="tag amber" id="next-title">NEXT RACE</span>
-        <span class="jp-small" lang="ja">次のレース</span>
+        <span class="tag amber" id="next-title">NEXT RACE <span lang="ja">次のレース</span></span>
+        <span class="jp-small mono" id="next-round"></span>
       </div>
-      <div class="next-name" id="next-name">Calendar loading</div>
-      <div class="next-meta" id="next-meta">The race calendar is added in the next update.</div>
+      <div class="next-name" id="next-name">Next race</div>
+      <div class="next-meta" id="next-meta">Loading the race calendar.</div>
       <svg class="track" viewBox="0 0 300 120" aria-hidden="true">
         <path d="M20 90 L60 30 L140 22 L170 48 L240 30 L282 60 L250 98 L150 104 L110 80 L60 104 Z"></path>
         <circle cx="20" cy="90" r="5"></circle>
@@ -70,6 +70,7 @@
   <section id="standings" class="wrap block">
     <div class="block-head">
       <h2>Driver standings <span class="jp-h" lang="ja">順位表</span></h2>
+      <span class="note mono" id="standings-note"></span>
     </div>
     <div class="table-box">
       <table>
@@ -77,7 +78,7 @@
           <tr><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col">TEAM</th><th scope="col">WINS</th><th scope="col" class="num">POINTS</th></tr>
         </thead>
         <tbody id="standings-body">
-          <tr class="empty"><td colspan="5">Live standings arrive with the next update.</td></tr>
+          <tr class="empty"><td colspan="5">Loading standings.</td></tr>
         </tbody>
       </table>
     </div>
