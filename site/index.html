@@ -50,25 +50,22 @@
 
     <aside class="next" aria-labelledby="next-title">
       <div class="next-head">
-        <span class="tag amber" id="next-title">NEXT RACE <span lang="ja">次のレース</span></span>
+        <span class="tag amber" id="next-title">NEXT RACE</span>
         <span class="jp-small mono" id="next-round"></span>
       </div>
       <div class="next-name" id="next-name">Next race</div>
       <div class="next-meta" id="next-meta">Loading the race calendar.</div>
-      <a class="next-up" id="next-up" href="/schedule" hidden>
-        <span class="next-up-label mono" id="next-up-label">NEXT SESSION</span>
-        <span class="next-up-name" id="next-up-name"></span>
-      </a>
-      <svg class="track" viewBox="0 0 300 120" aria-hidden="true">
-        <path d="M20 90 L60 30 L140 22 L170 48 L240 30 L282 60 L250 98 L150 104 L110 80 L60 104 Z"></path>
-        <circle cx="20" cy="90" r="5"></circle>
-      </svg>
-      <div class="clock" id="clock">
-        <div><b data-unit="d">--</b><small>DAYS</small></div>
-        <div><b data-unit="h">--</b><small>HRS</small></div>
-        <div><b data-unit="m">--</b><small>MIN</small></div>
-        <div><b data-unit="s">--</b><small>SEC</small></div>
+      <ul class="next-sessions" id="next-sessions" aria-label="Sessions this weekend, in your time zone"></ul>
+      <div class="clock-wrap">
+        <div class="clock" id="clock">
+          <div><b data-unit="d">--</b><small>DAYS</small></div>
+          <div><b data-unit="h">--</b><small>HRS</small></div>
+          <div><b data-unit="m">--</b><small>MIN</small></div>
+          <div><b data-unit="s">--</b><small>SEC</small></div>
+        </div>
+        <p class="clock-for mono" id="clock-for"></p>
       </div>
+      <a class="next-link mono" href="/schedule">FULL WEEKEND SCHEDULE →</a>
     </aside>
   </section>
 
@@ -81,7 +78,7 @@
     <div class="table-box">
       <table>
         <thead>
-          <tr><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col">TEAM</th><th scope="col">GRID</th><th scope="col">GAP</th><th scope="col" class="num">PTS</th></tr>
+          <tr><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col" class="opt">TEAM</th><th scope="col">GRID</th><th scope="col" class="opt">GAP</th><th scope="col" class="num">PTS</th></tr>
         </thead>
         <tbody id="last-body"></tbody>
       </table>

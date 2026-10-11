@@ -37,19 +37,32 @@
     const c = race.circuit;
     $('next-round').textContent = 'ROUND ' + race.round + ' / ' + schedule.rounds.length;
     $('next-name').textContent = race.name;
-    $('next-meta').textContent = c.name + ', ' + c.locality + ', ' + c.country + ' · ' + PF.dayTime(race.race);
+    $('next-meta').textContent = c.name + ', ' + c.locality + ', ' + c.country;
 
-    // count down to the next session of the weekend, not only the race
+    // every session of the weekend, in the viewer's own time, with the next one marked
     const nxt = PF.nextSession(schedule, now);
-    if (nxt && nxt.round.round === race.round) {
-      $('next-up').hidden = false;
-      const live = PF.status(nxt.session, now) === 'live';
-      $('next-up-label').textContent = live ? 'ON TRACK NOW' : 'NEXT SESSION';
-      $('next-up-name').textContent = nxt.session.label + ' · ' + PF.dayTime(nxt.session.start);
-      if (live) $('next-up').classList.add('is-live');
-    }
-    const target = nxt && nxt.round.round === race.round && PF.status(nxt.session, now) === 'upcoming'
-      ? Date.parse(nxt.session.start) : Date.parse(race.race);
+    const list = $('next-sessions');
+    race.sessions.forEach(s => {
+      const status = PF.status(s, now);
+      const isNext = nxt && nxt.session === s && status === 'upcoming';
+      const flag = status === 'live' ? el('span', { class: 'ns-flag flag-live' }, 'LIVE')
+        : status === 'done' ? el('span', { class: 'ns-flag' }, 'DONE')
+        : isNext ? el('span', { class: 'ns-flag flag-next' }, 'NEXT') : el('span', { class: 'ns-flag' });
+      const when = new Date(s.start).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+      list.append(el('li', { class: 'ns is-' + status + (isNext ? ' is-next' : '') },
+        el('span', { class: 'ns-label' }, s.label),
+        el('span', { class: 'ns-time mono' }, when),
+        flag
+      ));
+    });
+
+    // the clock counts to whatever comes next: a session start, or the end of one that's live
+    const live = race.sessions.find(s => PF.status(s, now) === 'live');
+    const upcoming = race.sessions.find(s => PF.status(s, now) === 'upcoming');
+    const target = live ? Date.parse(live.end) : upcoming ? Date.parse(upcoming.start) : Date.parse(race.race);
+    $('clock-for').textContent = live ? live.label.toUpperCase() + ' ON NOW · ENDS IN ABOUT'
+      : upcoming ? 'UNTIL ' + (upcoming.type === 'R' ? 'LIGHTS OUT' : upcoming.label.toUpperCase())
+      : 'UNTIL LIGHTS OUT';
 
     const cells = {};
     document.querySelectorAll('#clock b').forEach(b => { cells[b.dataset.unit] = b; });
@@ -86,10 +99,10 @@
         : el('span', { class: 'delta ' + (moved > 0 ? 'up' : 'down') }, (moved > 0 ? '+' : '') + moved);
       body.append(el('tr', null,
         el('td', { class: 'pos mono' }, pad2(r.pos)),
-        el('td', { class: 'driver' }, driverLink(r.id, el('span', { class: 'code mono' }, r.code), r.driver)),
-        el('td', { class: 'team' }, r.team),
-        el('td', { class: 'mono' }, r.grid === 0 ? 'PIT' : r.grid, delta ? ' ' : null, delta),
-        el('td', { class: 'mono dim' }, r.gap),
+        el('td', { class: 'driver' }, driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.driver))),
+        el('td', { class: 'team opt' }, r.team),
+        el('td', { class: 'mono nowrap' }, r.grid === 0 ? 'PIT' : r.grid, delta ? ' ' : null, delta),
+        el('td', { class: 'mono dim opt' }, r.gap),
         el('td', { class: 'num mono pts' }, r.points)
       ));
     });
@@ -106,14 +119,17 @@
     $('standings-note').textContent = home.season + ' · ' + home.standingsNote;
     head.textContent = '';
     const cols = which === 'teams' ? ['POS', 'TEAM', 'WINS', 'POINTS'] : ['POS', 'DRIVER', 'TEAM', 'WINS', 'POINTS'];
-    cols.forEach((c, i) => head.append(el('th', { scope: 'col', class: i === cols.length - 1 ? 'num' : null }, c)));
+    cols.forEach((c, i) => head.append(el('th', {
+      scope: 'col',
+      class: i === cols.length - 1 ? 'num' : (which === 'drivers' && c === 'TEAM' ? 'opt' : null)
+    }, c)));
 
     body.textContent = '';
     rows.forEach((r, i) => {
       const cells = which === 'teams'
         ? [el('td', { class: 'driver' }, r.team)]
-        : [el('td', { class: 'driver' }, driverLink(r.id, el('span', { class: 'code mono' }, r.code), r.driver)),
-           el('td', { class: 'team' }, r.team)];
+        : [el('td', { class: 'driver' }, driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.driver))),
+           el('td', { class: 'team opt' }, r.team)];
       body.append(el('tr', { class: i < 3 ? 'top3' : null },
         el('td', { class: 'pos mono' }, pad2(r.pos)),
         ...cells,

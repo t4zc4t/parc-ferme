@@ -30,8 +30,8 @@
     const isNext = nxt && nxt.session === s;
     let outcome = null;
     if (s.top3.length) {
-      outcome = el('span', { class: 'top3' },
-        ...s.top3.map((t, i) => el('a', { href: '/drivers/' + t.id, class: 'top3-item', title: t.driver + ', ' + t.team },
+      outcome = el('span', { class: 'podium3' },
+        ...s.top3.map((t, i) => el('a', { href: '/drivers/' + t.id, class: 'podium3-item', title: t.driver + ', ' + t.team },
           el('span', { class: 'mono dim' }, 'P' + (i + 1) + ' '), t.code)));
     } else if (status === 'done' && s.results) {
       outcome = el('span', { class: 'dim small' }, 'Result usually lands a few hours after the session.');

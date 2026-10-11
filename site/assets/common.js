@@ -25,6 +25,15 @@ const PF = {
 
   pad2: n => String(n).padStart(2, '0'),
 
+  // "Andrea Kimi Antonelli" -> first names that can hide on phones, surname that always shows
+  name(full) {
+    const parts = String(full).split(' ');
+    const last = parts.pop();
+    return parts.length
+      ? [PF.el('span', { class: 'fn' }, parts.join(' ') + ' '), last]
+      : [last];
+  },
+
   driverLink(id, ...kids) {
     return PF.el('a', { href: '/drivers/' + id, class: 'dlink' }, ...kids);
   },
