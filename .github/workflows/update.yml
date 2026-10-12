@@ -1,11 +1,12 @@
 name: Update data
 
-# Wakes every 10 minutes, but pipeline/update.py only calls the API around
-# sessions and when the daily check is due, and only commits and builds when
-# something changed.
+# A Cloudflare Worker (worker/timer.js) starts this every 10 minutes, with GitHub's
+# own schedule as an hourly backup since it's best effort. pipeline/update.py only
+# calls the API around sessions and when the daily check is due, and only commits
+# and builds when something changed.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "23 * * * *"
   workflow_dispatch:
     inputs:
       force:

@@ -8,7 +8,7 @@ I'm building it one feature at a time. Right now the homepage has the driver and
 
 I didn't want the site to depend on someone else's API being up, so it keeps its own copy of the data on the repo's `data` branch. `archive/` has every finished season back to 1950, one file each, written once and never touched again. `current/` has the season in progress. `site/` holds the files the pages actually read, generated from the other two.
 
-The updater is a GitHub Action that wakes every 10 minutes, but almost every run ends straight away without touching the API. It knows the time of every session from the calendar, so it only starts checking once a qualifying, sprint or race is over, with one tiny request to see if the result is out. For the first 6 hours after a session it checks every run, then once an hour for two days. There's also one full check a day to catch penalties and calendar changes. When something new shows up it fetches the season, rebuilds the site files, commits them to the `data` branch and asks Cloudflare for a single build. If nothing changed, nothing gets committed or built.
+The updater is a GitHub Action. GitHub's own schedule is best effort and can skip hours at a time, so a tiny Cloudflare Worker (`worker/timer.js`) starts it every 10 minutes instead, with GitHub's schedule kept as an hourly backup. Almost every run ends straight away without touching the API. It knows the time of every session from the calendar, so it only starts checking once a qualifying, sprint or race is over, with one tiny request to see if the result is out. For the first 6 hours after a session it checks every run, then once an hour for two days. There's also one full check a day to catch penalties and calendar changes. When something new shows up it fetches the season, rebuilds the site files, commits them to the `data` branch and asks Cloudflare for a single build. If nothing changed, nothing gets committed or built.
 
 Cloudflare's build (`pipeline/build.py`) never calls the API either, it just copies the site files from the `data` branch. So an API outage can't break a deploy, the site keeps showing the last good data.
 
@@ -16,13 +16,13 @@ Once a month another Action saves Jolpica's full database dump as a release asse
 
 ## Limits I'm working within
 
-The Jolpica API allows 4 requests a second and 500 an hour, shared by everyone on the same IP. A normal update is about 15 requests, and the one-time backfill of all 76 finished seasons was spread out at one request every 7.5 seconds to stay under the hourly cap. GitHub only promises scheduled runs every 5 minutes at best and they often run late, which is fine since results take hours to appear anyway. Cloudflare's free plan allows 500 builds a month, and this uses a handful per race weekend.
+The Jolpica API allows 4 requests a second and 500 an hour, shared by everyone on the same IP. A normal update is about 15 requests, and the one-time backfill of all 76 finished seasons was spread out at one request every 7.5 seconds to stay under the hourly cap. GitHub's scheduled runs often come late or not at all, which is why the Worker does the waking; Cloudflare's free plan gives it 100,000 runs a day and it uses 144. Cloudflare's free plan allows 500 builds a month, and this uses a handful per race weekend.
 
 Live timing during sessions isn't free anywhere I've found, so for now the site updates after each session rather than during it.
 
 ## Security
 
-Every GitHub Action is pinned to the exact commit of its latest release, not a tag that could be moved, and Dependabot opens a pull request when a new release comes out. Each workflow starts with no permissions and each job only gets what it needs, the code checkout doesn't keep the GitHub token on disk, and form inputs reach scripts through environment variables and get checked, never pasted into the shell. The only secret is the Cloudflare deploy hook, and only the update step sees it.
+Every GitHub Action is pinned to the exact commit of its latest release, not a tag that could be moved, and Dependabot opens a pull request when a new release comes out. Each workflow starts with no permissions and each job only gets what it needs, the code checkout doesn't keep the GitHub token on disk, and form inputs reach scripts through environment variables and get checked, never pasted into the shell. The only secret in the repo is the Cloudflare deploy hook, and only the update step sees it. The Worker holds one GitHub token, limited to this repo and to starting workflows, and it has no public URL.
 
 The Cloudflare build checks every path in the archive it downloads, so nothing outside `site/data/` and nothing but JSON can be written. The updater refuses an API answer that has less data than the store already holds, so an outage or a half-broken response can't wipe anything. The site itself sends a strict content security policy (only its own scripts, plus Google Fonts), can't be framed, and is HTTPS only. All data goes into the page as text, never as HTML.
 
@@ -57,7 +57,9 @@ site/           the pages Cloudflare Pages serves
 site/assets/    styles, scripts and icon
 site/_redirects sends /drivers/<name> to the driver page
 .github/workflows/
-  update.yml    every 10 minutes, does nothing unless a session just ended or the daily check is due
+  update.yml    started every 10 minutes, does nothing unless a session just ended or the daily check is due
+worker/
+  timer.js      Cloudflare Worker cron that starts update.yml
   backfill.yml  run by hand to fill the archive
   backup.yml    monthly copy of the full database dump
 ```

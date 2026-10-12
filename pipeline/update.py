@@ -1,4 +1,4 @@
-"""The updater. GitHub runs it every 10 minutes, but most runs end straight away.
+"""The updater. A Cloudflare Worker starts it every 10 minutes, but most runs end straight away.
 
 It only calls the API when there is a reason to:
   - a qualifying, sprint or race ended in the last 48 hours and its result isn't in yet.
