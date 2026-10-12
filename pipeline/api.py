@@ -1,4 +1,4 @@
-"""Small client for the Jolpica API (the continuation of Ergast)."""
+"""Jolpica (Ergast) API client."""
 import json
 import os
 import time
@@ -13,7 +13,7 @@ _last_call = 0.0
 
 
 def get(path, tries=5):
-    """One request, returns the MRData block. Waits and retries when rate limited."""
+    """returns MRData, backs off on 429"""
     global _last_call
     url = f"{API}/{path}"
     for attempt in range(tries):
@@ -38,10 +38,7 @@ def get(path, tries=5):
 
 
 def races(path, key):
-    """Every page of a race list, with races that were split across pages joined back up.
-
-    key is the list inside each race that holds the rows, like "Results" or "QualifyingResults".
-    """
+    """all pages of a race list, rejoining races split across pages"""
     joiner = "&" if "?" in path else "?"
     offset, total, merged = 0, None, {}
     while total is None or offset < total:
@@ -58,11 +55,10 @@ def races(path, key):
 
 
 def count(path):
-    """Just the number of rows a query would return."""
     joiner = "&" if "?" in path else "?"
     return int(get(f"{path}{joiner}limit=1")["total"])
 
 
 def team_name(name):
-    # the API writes some teams as "Alpine F1 Team", the rest just as "Ferrari"
+    # some teams come back as "Alpine F1 Team"
     return name.replace(" F1 Team", "").strip()

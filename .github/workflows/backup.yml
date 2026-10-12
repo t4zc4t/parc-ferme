@@ -1,8 +1,6 @@
 name: Monthly backup
 
-# Saves Jolpica's full database dump (every table, back to 1950) as a release
-# asset once a month, so there's a complete copy even if the API ever goes away.
-# The free dump is published with a 14 day delay, which is fine for a backup.
+# monthly copy of the jolpica db dump (published 14 days late, fine for a backup)
 on:
   schedule:
     - cron: "17 4 2 * *"

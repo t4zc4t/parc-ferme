@@ -1,11 +1,6 @@
-"""Fills archive/ with every finished season that isn't there yet.
+"""Fill archive/ with missing finished seasons. Slow on purpose (500 req/hour limit).
 
-Runs slowly on purpose: one request every 7.5 seconds keeps it under the API's
-500 requests an hour, even counting the occasional retry. It commits every few
-seasons, so if a run is cut short the next one just carries on.
-
-    python pipeline/backfill.py              every missing season up to last year
-    python pipeline/backfill.py 2020 2025    only that range
+    python pipeline/backfill.py [first] [last]
 """
 import os
 import sys
@@ -25,7 +20,7 @@ EVERY = 5
 
 
 def year_arg(i, default, this_year):
-    """Arguments come from a form on GitHub, so only plain years in a sane range get through."""
+    """comes from a github form, so only plain years get through"""
     raw = sys.argv[i].strip() if len(sys.argv) > i else ""
     if not raw:
         return default

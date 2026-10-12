@@ -1,7 +1,6 @@
 name: Backfill archive
 
-# Fills archive/ on the data branch with every finished season that's missing.
-# Run it by hand once; after that the updater archives each season as it ends.
+# run by hand to fill archive/, the updater archives new seasons itself
 on:
   workflow_dispatch:
     inputs:
@@ -38,7 +37,7 @@ jobs:
       - name: Fetch missing seasons
         env:
           PF_STORE: store
-          # inputs go in through the environment, never pasted into the script itself
+          # via env, not inlined
           FIRST: ${{ inputs.first }}
           LAST: ${{ inputs.last }}
         run: |

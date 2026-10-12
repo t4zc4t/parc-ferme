@@ -1,4 +1,4 @@
-// Small helpers shared by every page.
+// shared helpers
 const PF = {
   $: id => document.getElementById(id),
 
@@ -8,8 +8,7 @@ const PF = {
     for (const [k, v] of Object.entries(attrs || {})) {
       if (v === null || v === undefined || v === false) continue;
       if (k === 'class') node.className = v;
-      // styles go through the style object, which the site's security policy allows,
-      // rather than a style attribute, which it blocks
+      // cssText, the CSP blocks style attributes
       else if (k === 'style') node.style.cssText = v;
       else node.setAttribute(k, v);
     }
@@ -28,7 +27,7 @@ const PF = {
 
   pad2: n => String(n).padStart(2, '0'),
 
-  // "Andrea Kimi Antonelli" -> first names that can hide on phones, surname that always shows
+  // first names hide on phones
   name(full) {
     const parts = String(full).split(' ');
     const last = parts.pop();
@@ -37,7 +36,7 @@ const PF = {
       : [last];
   },
 
-  // title chance as words people trust: never 0% while it's still possible, never 100% until it's done
+  // no 0% or 100% until it's actually settled
   chance(t) {
     if (t.clinched || (t.note || '').startsWith('Champion')) return 'CHAMPION';
     if (!t.alive) return 'OUT';
@@ -50,7 +49,7 @@ const PF = {
     return PF.el('a', { href: '/drivers/' + id, class: 'dlink' }, ...kids);
   },
 
-  // footer line: when the data last actually changed
+  // footer: last data change
   async stamp() {
     const node = PF.$('updated');
     if (!node) return;
@@ -60,7 +59,6 @@ const PF = {
     } catch (e) { /* keep the plain credit */ }
   },
 
-  // "Sat 11 Oct, 17:30" in the viewer's own time zone
   dayTime(iso) {
     return new Date(iso).toLocaleString(undefined, {
       weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
@@ -71,7 +69,7 @@ const PF = {
     return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   },
 
-  // done, live or upcoming, worked out here so the data files never change just because time passed
+  // done/live/upcoming, done here so the data doesn't change with time
   status(session, now) {
     const start = Date.parse(session.start), end = Date.parse(session.end);
     return now >= end ? 'done' : now >= start ? 'live' : 'upcoming';

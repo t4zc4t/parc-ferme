@@ -1,8 +1,4 @@
-"""Turns the store (archive/ + current/) into the files the website reads.
-
-No API calls happen here, so the site can always be rebuilt from our own copy.
-Writes store/site/: home.json, schedule.json, drivers.json, drivers/<id>.json
-"""
+"""Store -> site/*.json for the pages. No API calls."""
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 
@@ -13,7 +9,7 @@ LABELS = {
     "FP1": "Practice 1", "FP2": "Practice 2", "FP3": "Practice 3",
     "SQ": "Sprint qualifying", "SR": "Sprint", "Q": "Qualifying", "R": "Grand Prix",
 }
-# rough session lengths, used to tell when a session is over
+# rough session lengths
 MINUTES = {"FP1": 60, "FP2": 60, "FP3": 60, "SQ": 45, "SR": 60, "Q": 60, "R": 120}
 ORDER = ["FP1", "FP2", "FP3", "SQ", "SR", "Q", "R"]
 
@@ -111,8 +107,7 @@ def home(season, names):
 
 
 def schedule(season, names):
-    """Every round with every session. Which one is next or live is worked out in the browser,
-    so this file only changes when real data changes."""
+    """next/live is worked out in the browser, so this only changes with real data"""
     rounds_out = []
     for r in season["rounds"]:
         sessions = []
@@ -143,7 +138,6 @@ def age_on(dob, today):
 
 
 def drivers(seasons, current, names, today):
-    """One file per driver in the current standings, careers built from every stored season."""
     grid = current["standings"]["drivers"]
     wanted = {s["d"] for s in grid}
     career = defaultdict(lambda: {"rows": [], "poles": 0, "seasons": {}})
@@ -270,7 +264,7 @@ def build(now=None):
     changed |= store.write_json(out / "drivers.json", {"season": current["year"], "drivers": index})
     for did, f in files.items():
         changed |= store.write_json(out / "drivers" / f"{did}.json", f)
-    # the stamp only moves when something real changed, so it never causes a commit by itself
+    # only bumps when something changed
     if changed or not (out / "meta.json").exists():
         store.write_json(out / "meta.json", {"updated": stamp, "season": current["year"]})
     return changed

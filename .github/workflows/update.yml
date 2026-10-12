@@ -1,9 +1,6 @@
 name: Update data
 
-# A Cloudflare Worker (worker/timer.js) starts this every 10 minutes, with GitHub's
-# own schedule as an hourly backup since it's best effort. pipeline/update.py only
-# calls the API around sessions and when the daily check is due, and only commits
-# and builds when something changed.
+# worker/timer.js starts this every 10 min, the cron here is just a backup
 on:
   schedule:
     - cron: "23 * * * *"
@@ -48,7 +45,7 @@ jobs:
           git -C store config user.email t4zc4t@users.noreply.github.com
           python pipeline/update.py
       - name: Keep the schedule switched on
-        # GitHub turns off scheduled workflows after 60 quiet days; re-enabling now and then prevents that
+        # github disables crons after 60 quiet days
         if: github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ github.token }}

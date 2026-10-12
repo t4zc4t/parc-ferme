@@ -1,15 +1,6 @@
-"""Who can still win the championship, and how likely it is.
+"""Title fight: who's mathematically out, plus odds from 10k simulated seasons.
 
-Two parts:
-  - the maths: points still on offer in the races and sprints left, so anyone who
-    can't reach the leader's current total even if the leader scores nothing is out.
-  - a simulation: the rest of the season is replayed 10,000 times. In each race every
-    driver's finishing spot is drawn from their own results this season (recent races
-    count a bit more), with a chance of retiring that matches their record. Points use
-    the season's own scoring, worked out from the results so far.
-
-The random seed comes from the data itself, so the same data always gives the same
-numbers and the file only changes when real results change.
+Seeded from the data, so the same results always give the same numbers.
 """
 import random
 import zlib
@@ -19,7 +10,7 @@ SIMS = 10000
 
 
 def scoring(season, key):
-    """Points for each finishing place, read off this season's results."""
+    """points per place, read from this season's results"""
     by_pos = defaultdict(Counter)
     for r in season["rounds"]:
         for row in r[key]:
@@ -42,7 +33,7 @@ def remaining(season):
 
 
 def form(season, active):
-    """Each driver's finishing places this season, newest last, plus how often they retired."""
+    """finishing places this season (oldest first) and DNF rate"""
     out = {}
     for did in active:
         places, dnf, starts = [], 0, 0
@@ -58,7 +49,7 @@ def form(season, active):
                     dnf += 1
         if not places:
             places = [18]
-        # a little prior so one lucky or unlucky weekend doesn't decide everything
+        # small prior so one weekend doesn't decide it
         out[did] = {"places": places, "dnf": (dnf + 1) / (starts + 10)}
     return out
 
@@ -99,7 +90,7 @@ def simulate(season, active, team_of, race_pts, sprint_pts, n_races, n_sprints):
             one_event(race_pts, totals, team_totals, wins_now)
         for _ in range(n_sprints):
             one_event(sprint_pts, totals, team_totals, None)
-        # a tie on points goes to whoever has more wins
+        # ties go to more wins
         champ = max(active, key=lambda d: (totals[d], wins_now[d]))
         titles[champ] += 1
         team_titles[max(teams, key=lambda t: team_totals[t])] += 1
@@ -115,7 +106,7 @@ def build(season, names):
     max_driver = len(races) * (race_pts[0] if race_pts else 0) + len(sprints) * (sprint_pts[0] if sprint_pts else 0)
     max_team = len(races) * sum(race_pts[:2]) + len(sprints) * sum(sprint_pts[:2])
 
-    # drivers still racing: anyone with a result in the last three rounds
+    # still racing = has a result in the last 3 rounds
     done = [r for r in season["rounds"] if r["results"]]
     recent = {row["d"] for r in done[-3:] for row in r["results"]}
     team_of = {}
@@ -156,7 +147,7 @@ def build(season, names):
                     item["note"] = "Champion, it can't be caught any more"
                     item["clinched"] = True
                 else:
-                    # after the next event, the most anyone else can still score drops by that event's maximum
+                    # rivals' max drops by this event's points
                     need = max_left - next_max - lead + 1
                     item["note"] = (f"Leads by {lead}. Clinches at the {next_round['name']} by finishing "
                                     f"{max(need, 1)} or more points clear of every rival there"

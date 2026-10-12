@@ -1,14 +1,9 @@
-"""Fetches one whole season from the API into our own compact format.
-
-The same format is used for finished seasons in archive/ and for the season in
-progress in current/, so the rest of the pipeline never needs to know which
-one it is reading.
-"""
+"""Fetch one season into the store format."""
 from datetime import datetime, timezone
 
 from api import get, races, team_name
 
-# schedule keys the API uses for sessions, mapped to our short names
+# api session keys -> ours
 SESSION_KEYS = {
     "FirstPractice": "FP1",
     "SecondPractice": "FP2",
@@ -51,7 +46,6 @@ def result_row(r):
 
 
 def fetch(year):
-    """Everything about one season. Roughly 8 to 15 requests depending on its size."""
     schedule = get(f"{year}.json?limit=100")["RaceTable"]["Races"]
     results = races(f"{year}/results.json", "Results")
     quali = races(f"{year}/qualifying.json", "QualifyingResults")
@@ -147,7 +141,7 @@ def fetch(year):
         "drivers": drivers,
         "teams": teams,
         "standings": standings,
-        # a season is finished once its last round has a race result and the standings caught up
+        # done = last round has a result and standings caught up
         "complete": bool(rounds) and bool(rounds[-1]["results"]) and standings["round"] == last_round,
         "fetched": datetime.now(timezone.utc).isoformat(timespec="minutes").replace("+00:00", "Z"),
     }

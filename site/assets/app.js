@@ -1,4 +1,4 @@
-// Homepage: countdown to the next race and session, last race result, standings.
+// homepage
 (async function () {
   const { $, el, pad2, driverLink } = PF;
   let home, schedule;
@@ -50,7 +50,6 @@
     $('next-name').textContent = race.name;
     $('next-meta').textContent = c.name + ', ' + c.locality + ', ' + c.country;
 
-    // every session of the weekend, in the viewer's own time, with the next one marked
     const nxt = PF.nextSession(schedule, now);
     const list = $('next-sessions');
     race.sessions.forEach(s => {
@@ -67,7 +66,7 @@
       ));
     });
 
-    // the clock counts to whatever comes next: a session start, or the end of one that's live
+    // next start, or the end of a live session
     const live = race.sessions.find(s => PF.status(s, now) === 'live');
     const upcoming = race.sessions.find(s => PF.status(s, now) === 'upcoming');
     const target = live ? Date.parse(live.end) : upcoming ? Date.parse(upcoming.start) : Date.parse(race.race);

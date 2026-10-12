@@ -1,4 +1,4 @@
-// Driver profile: reads /data/drivers/<id>.json, where <id> comes from the address /drivers/<id>.
+// driver page, id from /drivers/<id>
 (async function () {
   const { $, el, pad2 } = PF;
   const id = (location.pathname.match(/\/drivers\/([a-z0-9_-]+)/i) || [])[1]
@@ -50,7 +50,7 @@
       tile('PODIUMS', podiums, podiums ? 'in ' + s.rounds.length + ' races' : 'none yet')
     );
 
-    // championship: can they still win it, and how likely is it
+    // title fight
     if (s.title) {
       const t = s.title;
       const label = PF.chance(t);
@@ -84,7 +84,7 @@
       ));
     });
 
-    // round by round strip
+    // round by round
     const strip = $('strip');
     const detail = $('strip-detail');
     s.rounds.forEach(r => {
@@ -163,7 +163,7 @@
       return n;
     };
     const step = 32, padL = 44, padR = 28, padT = 26, padB = 40, h = 280;
-    // fill the panel, but scroll sideways rather than squash a long career on a phone
+    // scroll sideways on phones instead of squashing
     const w = Math.max(box.clientWidth || 560, padL + padR + step * (pts.length - 1));
     const worst = Math.max(10, ...pts.map(s => +s.pos));
     const x = i => padL + (pts.length === 1 ? 0 : i * (w - padL - padR) / (pts.length - 1));

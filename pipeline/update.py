@@ -1,16 +1,5 @@
-"""The updater. A Cloudflare Worker starts it every 10 minutes, but most runs end straight away.
-
-It only calls the API when there is a reason to:
-  - a qualifying, sprint or race ended in the last 48 hours and its result isn't in yet.
-    Each run makes one tiny request per waiting session until the result shows up.
-  - the daily check, once 20 hours have passed since the last full fetch, to catch
-    penalties, corrections and calendar changes. The time of the last one is kept in
-    the store, so it can't be missed when GitHub runs late or skips a run.
-  - a manual run with PF_FORCE=1.
-
-When a check finds something new it fetches the whole season (about 15 requests),
-rebuilds the site files from the store, commits to the data branch and asks
-Cloudflare for one build. If nothing changed, nothing is committed or built.
+"""Updater. Only hits the API when a session just ended without results,
+the daily check is due, or PF_FORCE=1. Commits and builds only on change.
 """
 import os
 import sys
@@ -38,7 +27,7 @@ def current_year(now):
 
 
 def waiting_sessions(data, now):
-    """Sessions that are over, should have results, and don't yet."""
+    """ended recently, no results yet"""
     out = []
     for rnd in data["rounds"]:
         for kind, start in rnd["sessions"].items():
@@ -51,13 +40,11 @@ def waiting_sessions(data, now):
 
 
 def probe(year, rnd, kind):
-    """One small request: has this session's result been published yet?"""
     return int(api.get(f"{year}/{rnd}/{ENDPOINT[kind]}.json?limit=1")["total"]) > 0
 
 
 def last_full_check():
-    """When the last full fetch ran. Kept in the store so a late or skipped GitHub run
-    can't make the daily check go missing: it simply runs on the next wake-up."""
+    """kept on the data branch so a skipped run can't skip the daily check"""
     try:
         return sitegen.when(store.read_json(CHECKED)["full"])
     except (FileNotFoundError, KeyError, ValueError):
@@ -65,7 +52,7 @@ def last_full_check():
 
 
 def looks_sane(new, old):
-    """A broken or half-empty API answer must never replace good data with less data."""
+    """never replace good data with less"""
     if old is None:
         return bool(new["rounds"])
     if new["year"] != old["year"] or not new["rounds"]:
@@ -101,7 +88,7 @@ def refresh(now):
         raise SystemExit(f"the API answer for {year} has less data than the store, keeping what we have")
     if store.save_season(data, finished=data["complete"]):
         labels.append(f"{year} {'archived' if data['complete'] else 'updated'}")
-    # once a season is over, start the next one as soon as its calendar is out
+    # start next season once its calendar is out
     if data["complete"] and now.year >= year:
         nxt = season.fetch(year + 1)
         if nxt["rounds"] and store.save_season(nxt, finished=False):
@@ -131,7 +118,7 @@ def main():
     site_changed = sitegen.build(now)
     store.write_json(CHECKED, {"full": sitegen.iso(now.replace(second=0, microsecond=0))})
     if not labels and not site_changed:
-        # only the check time moved: record it, but there's nothing to rebuild
+        # only the check time moved
         store.commit("Daily check, nothing new")
         print("no changes")
         return

@@ -1,5 +1,4 @@
-# Security headers for every page. The site only loads its own files plus Google Fonts,
-# so the content security policy allows exactly that and nothing else.
+# only our own files + google fonts
 /*
   Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains

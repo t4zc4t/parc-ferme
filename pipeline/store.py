@@ -1,9 +1,4 @@
-"""Our own copy of the data, kept on the repo's `data` branch.
-
-    archive/<year>.json   finished seasons, written once
-    current/<year>.json   the season in progress, refreshed by the updater
-    site/...              the files the website reads, generated from the two above
-"""
+"""The data branch: archive/ (finished seasons), current/, site/."""
 import json
 import os
 import subprocess
@@ -22,7 +17,7 @@ def read_json(path):
 
 
 def write_json(path, obj):
-    """Writes compact JSON. Returns True only if the content actually changed."""
+    """True if the content changed"""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(obj, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
@@ -55,7 +50,7 @@ def all_seasons():
 
 
 def save_season(season, finished):
-    """Saves a season, ignoring the fetch time when deciding if anything changed."""
+    """ignores the fetch time when comparing"""
     p = path_for(season["year"], finished)
     if p.exists():
         old = read_json(p)
@@ -65,7 +60,7 @@ def save_season(season, finished):
             return False
     changed = write_json(p, season)
     if finished:
-        # a season that moved from current to archive leaves its old copy behind
+        # drop the current/ copy once archived
         stale = path_for(season["year"], False)
         if stale.exists():
             stale.unlink()
@@ -73,7 +68,7 @@ def save_season(season, finished):
 
 
 def commit(message):
-    """Commits and pushes the store if anything changed. Returns True if it pushed."""
+    """True if it pushed"""
     run = lambda *a: subprocess.run(["git", "-C", str(ROOT), *a], check=True, capture_output=True, text=True)
     run("add", "-A")
     if not run("status", "--porcelain").stdout.strip():

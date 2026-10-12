@@ -1,9 +1,4 @@
-"""Cloudflare Pages runs this on every build.
-
-It doesn't call the F1 API at all. It downloads the site files the updater keeps
-on the repo's `data` branch and drops them into site/data/. So a build can't fail
-because the API is down, and every build shows exactly what the store holds.
-"""
+"""Cloudflare build step: copy site files from the data branch. No API calls."""
 import io
 import sys
 import tarfile
@@ -32,13 +27,9 @@ ALLOWED = {".json"}
 
 
 def safe_target(name):
-    """Where a file from the archive may go, or None if it doesn't belong in site/data/.
-
-    The archive comes over the network, so its paths are checked rather than trusted:
-    nothing outside site/, no "..", no absolute paths, only JSON.
-    """
+    """None unless it's a json file under site/"""
     parts = Path(name).parts
-    # the archive's top folder is <repo>-data/, we want what's under site/
+    # skip the <repo>-data/ top folder
     if len(parts) < 3 or parts[1] != "site":
         return None
     rel = parts[2:]
@@ -55,7 +46,7 @@ def main():
     count = 0
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tar:
         for member in tar.getmembers():
-            # regular files only: no links, devices or folders that could point elsewhere
+            # plain files only, no links
             if not member.isfile() or member.size > MAX_FILE:
                 continue
             target = safe_target(member.name)

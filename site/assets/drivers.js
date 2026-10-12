@@ -1,4 +1,4 @@
-// Drivers index: a card for each driver on this season's grid.
+// drivers grid
 (async function () {
   const { $, el } = PF;
   const grid = $('grid');

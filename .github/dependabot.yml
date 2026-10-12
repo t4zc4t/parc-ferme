@@ -1,4 +1,4 @@
-# Keeps the pinned GitHub Actions on their latest releases.
+# keep pinned actions up to date
 version: 2
 updates:
   - package-ecosystem: github-actions

@@ -1,4 +1,4 @@
-// Schedule: the weekend in focus with every session, then the whole season.
+// schedule
 (async function () {
   const { $, el } = PF;
   let sched;
