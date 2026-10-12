@@ -12,5 +12,6 @@
 /data/*
   Cache-Control: public, max-age=300, must-revalidate
 
+# revalidate so a deploy never mixes new pages with old scripts
 /assets/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, no-cache
