@@ -20,6 +20,12 @@ The Jolpica API allows 4 requests a second and 500 an hour, shared by everyone o
 
 Live timing during sessions isn't free anywhere I've found, so for now the site updates after each session rather than during it.
 
+## Security
+
+Every GitHub Action is pinned to the exact commit of its latest release, not a tag that could be moved, and Dependabot opens a pull request when a new release comes out. Each workflow starts with no permissions and each job only gets what it needs, the code checkout doesn't keep the GitHub token on disk, and form inputs reach scripts through environment variables and get checked, never pasted into the shell. The only secret is the Cloudflare deploy hook, and only the update step sees it.
+
+The Cloudflare build checks every path in the archive it downloads, so nothing outside `site/data/` and nothing but JSON can be written. The updater refuses an API answer that has less data than the store already holds, so an outage or a half-broken response can't wipe anything. The site itself sends a strict content security policy (only its own scripts, plus Google Fonts), can't be framed, and is HTTPS only. All data goes into the page as text, never as HTML.
+
 ## Data
 
 Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results only go back to 1994 there, so poles are counted from 1994 onwards, which covers every driver on the current grid. Practice results aren't in Jolpica at all, so those, plus lap times, tyre stints and pit stops, will come from the FastF1 library with the race explorer.

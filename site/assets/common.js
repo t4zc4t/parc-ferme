@@ -8,6 +8,9 @@ const PF = {
     for (const [k, v] of Object.entries(attrs || {})) {
       if (v === null || v === undefined || v === false) continue;
       if (k === 'class') node.className = v;
+      // styles go through the style object, which the site's security policy allows,
+      // rather than a style attribute, which it blocks
+      else if (k === 'style') node.style.cssText = v;
       else node.setAttribute(k, v);
     }
     for (const kid of kids) {
