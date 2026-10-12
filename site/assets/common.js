@@ -45,6 +45,14 @@ const PF = {
     return Math.round(t.prob * 100) + '%';
   },
 
+  top3(t) {
+    if (t.top3Locked) return 'LOCKED';
+    if (!t.top3Alive) return 'OUT';
+    if (t.top3 >= 0.995) return '>99%';
+    if (t.top3 < 0.005) return '<1%';
+    return Math.round(t.top3 * 100) + '%';
+  },
+
   driverLink(id, ...kids) {
     return PF.el('a', { href: '/drivers/' + id, class: 'dlink' }, ...kids);
   },

@@ -358,6 +358,7 @@ tr.champ td.pos { color: var(--amber); }
 }
 
 /* title fight */
+.sort-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
 .fight { display: flex; flex-direction: column; border: 1px solid var(--line-2); background: var(--panel); }
 .f-row { display: grid; grid-template-columns: 44px minmax(180px, 1.2fr) minmax(120px, 2fr) 84px; grid-template-areas: "pos who bar pct" ". note note note"; align-items: center; gap: 4px 16px; padding: 16px 18px; border-top: 1px solid var(--line); }
 .f-row:first-child { border-top: 0; }
@@ -378,6 +379,7 @@ tr.champ td.pos { color: var(--amber); }
 .tp-pct { font-family: var(--display); font-size: 40px; line-height: 1; }
 .tp-cap { font-size: 11px; letter-spacing: .16em; color: var(--dim); }
 .tp-note { margin: 0; color: var(--soft); }
+.tp-sub { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .tp-lead, .tp-champ { color: var(--ink); background: var(--pink); border-color: var(--pink); }
 .tp-alive { color: var(--ink); background: var(--cyan); border-color: var(--cyan); }
 .tp-out { color: var(--dim); }

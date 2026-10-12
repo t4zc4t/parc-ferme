@@ -13,16 +13,20 @@
   showNext();
   showLast(home.lastRace);
   showStandings('drivers');
-  showTitle('drivers');
+  let which = 'drivers', stake = 'title';
+  showTitle();
   PF.stamp();
 
-  document.querySelectorAll('[data-title]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-title]').forEach(b => {
-        b.classList.toggle('on', b === btn);
-        b.setAttribute('aria-pressed', b === btn);
+  ['title', 'stake'].forEach(attr => {
+    document.querySelectorAll('[data-' + attr + ']').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-' + attr + ']').forEach(b => {
+          b.classList.toggle('on', b === btn);
+          b.setAttribute('aria-pressed', b === btn);
+        });
+        if (attr === 'title') which = btn.dataset.title; else stake = btn.dataset.stake;
+        showTitle();
       });
-      showTitle(btn.dataset.title);
     });
   });
 
@@ -118,43 +122,55 @@
     });
   }
 
-  function showTitle(which) {
+  function showTitle() {
     const t = home.title;
     if (!t) return;
     $('title').hidden = false;
+    const top3 = stake === 'top3';
+    $('fight-name').textContent = top3 ? 'Top 3 fight' : 'Title fight';
+    $('fight-jp').textContent = top3 ? '表彰台争い' : '王座争い';
     const left = t.racesLeft + (t.racesLeft === 1 ? ' RACE' : ' RACES') +
       (t.sprintsLeft ? ' + ' + t.sprintsLeft + (t.sprintsLeft === 1 ? ' SPRINT' : ' SPRINTS') : '');
     $('title-note').textContent = t.finished ? t.season + ' · SEASON OVER'
       : left + ' LEFT · ' + (which === 'teams' ? t.maxTeam : t.maxDriver) + ' PTS STILL ON OFFER';
 
     const rows = which === 'teams' ? t.teams : t.drivers;
-    const alive = rows.filter(r => r.alive || r.clinched || (r.note || '').startsWith('Champion'));
-    const out = rows.filter(r => !alive.includes(r));
+    const label = r => top3 ? PF.top3(r) : PF.chance(r);
+    const inIt = top3
+      ? rows.filter(r => r.top3Alive || r.top3Locked)
+      : rows.filter(r => r.alive || r.clinched || (r.note || '').startsWith('Champion'));
+    const out = rows.filter(r => !inIt.includes(r));
     const box = $('fight');
     box.textContent = '';
-    alive.forEach((r, i) => {
-      const label = PF.chance(r);
-      const width = label === 'CHAMPION' ? 100 : Math.max(r.prob * 100, r.alive ? 1.5 : 0);
+    inIt.forEach((r, i) => {
+      const text = label(r);
+      const sure = text === 'CHAMPION' || text === 'LOCKED';
+      const p = top3 ? r.top3 : r.prob;
+      const width = sure ? 100 : Math.max(p * 100, 1.5);
       const who = which === 'teams'
         ? el('span', { class: 'f-name' }, r.name)
         : PF.driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.name));
-      box.append(el('div', { class: 'f-row' + (i === 0 ? ' f-lead' : '') },
+      const gapTo = top3 && i >= 3 ? +inIt[2].points - r.points : r.gap;
+      box.append(el('div', { class: 'f-row' + (i === 0 || (top3 && i < 3) ? ' f-lead' : '') },
         el('span', { class: 'f-pos mono' }, PF.pad2(r.pos)),
         el('span', { class: 'f-who' }, who,
-          el('span', { class: 'f-pts mono' }, r.points + ' PTS' + (r.gap > 0 ? ' · −' + r.gap : ''))),
-        el('span', { class: 'f-bar', role: 'img', 'aria-label': 'title chance ' + label },
+          el('span', { class: 'f-pts mono' }, r.points + ' PTS' + (gapTo > 0 && (!top3 || i >= 3) ? ' · −' + gapTo : ''))),
+        el('span', { class: 'f-bar', role: 'img', 'aria-label': (top3 ? 'top 3 chance ' : 'title chance ') + text },
           el('span', { class: 'f-fill', style: 'width:' + width.toFixed(1) + '%' })),
-        el('span', { class: 'f-pct mono' }, label),
-        el('span', { class: 'f-note' }, r.note)
+        el('span', { class: 'f-pct mono' }, text),
+        el('span', { class: 'f-note' }, top3 ? r.top3Note : r.note)
       ));
     });
     $('out-line').textContent = out.length
-      ? 'Mathematically out: ' + out.map(r => which === 'teams' ? r.name : r.code).join(', ') + '.'
+      ? (top3 ? 'Can\'t reach the top 3: ' : 'Mathematically out: ') +
+        out.map(r => which === 'teams' ? r.name : r.code).join(', ') + '.'
       : '';
     $('title-fine').textContent = t.sims
       ? 'Chances come from replaying the rest of the season ' + t.sims.toLocaleString() +
         ' times, using each ' + (which === 'teams' ? 'team\'s drivers\'' : 'driver\'s') +
-        ' results this season, with recent races counting a bit more. It\'s a guide to the maths, not a prediction.'
+        ' results this season, with recent races counting a bit more. ' +
+        (top3 ? '"Guaranteed" numbers are exact maths, the rivals sharing the points they could score. ' : '') +
+        'It\'s a guide to the maths, not a prediction.'
       : '';
   }
 

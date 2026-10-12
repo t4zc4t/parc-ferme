@@ -87,12 +87,18 @@
 
   <section id="title" class="wrap block" hidden>
     <div class="block-head">
-      <h2>Title fight <span class="jp-h" lang="ja">王座争い</span></h2>
+      <h2><span id="fight-name">Title fight</span> <span class="jp-h" lang="ja" id="fight-jp">王座争い</span></h2>
       <span class="note mono" id="title-note"></span>
     </div>
-    <div class="sort" role="group" aria-label="Which championship">
-      <button type="button" class="chip on" aria-pressed="true" data-title="drivers">Drivers</button>
-      <button type="button" class="chip" aria-pressed="false" data-title="teams">Teams</button>
+    <div class="sort-row">
+      <div class="sort" role="group" aria-label="Which championship">
+        <button type="button" class="chip on" aria-pressed="true" data-title="drivers">Drivers</button>
+        <button type="button" class="chip" aria-pressed="false" data-title="teams">Teams</button>
+      </div>
+      <div class="sort" role="group" aria-label="What's at stake">
+        <button type="button" class="chip on" aria-pressed="true" data-stake="title">Title</button>
+        <button type="button" class="chip" aria-pressed="false" data-stake="top3">Top 3</button>
+      </div>
     </div>
     <div class="fight" id="fight"></div>
     <p class="out-line" id="out-line"></p>

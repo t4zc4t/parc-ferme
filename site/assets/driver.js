@@ -56,6 +56,8 @@
       const label = PF.chance(t);
       const state = label === 'CHAMPION' ? 'champ' : !t.alive ? 'out' : t.pos === '1' ? 'lead' : 'alive';
       const word = { champ: 'CHAMPION', out: 'OUT OF THE FIGHT', lead: 'LEADING', alive: 'STILL IN IT' }[state];
+      const top3State = t.top3Locked ? 'champ' : !t.top3Alive ? 'out' : +t.pos <= 3 ? 'lead' : 'alive';
+      const top3Word = { champ: 'TOP 3 LOCKED', out: 'TOP 3 OUT OF REACH', lead: 'IN THE TOP 3', alive: 'CHASING THE TOP 3' }[top3State];
       $('title-panel').hidden = false;
       $('title-panel').append(
         el('div', { class: 'tp-head' },
@@ -63,9 +65,14 @@
           el('span', { class: 'tp-pct' }, state === 'out' ? '' : label),
           state === 'out' || state === 'champ' ? null : el('span', { class: 'tp-cap mono' }, 'TITLE CHANCE')),
         el('p', { class: 'tp-note' }, t.note + '.'),
+        el('div', { class: 'tp-head tp-sub' },
+          el('span', { class: 'pill tp-' + top3State }, top3Word),
+          el('span', { class: 'tp-pct' }, top3State === 'out' || top3State === 'champ' ? '' : PF.top3(t)),
+          top3State === 'out' || top3State === 'champ' ? null : el('span', { class: 'tp-cap mono' }, 'TOP 3 CHANCE')),
+        el('p', { class: 'tp-note' }, t.top3Note + '.'),
         el('p', { class: 'fine' }, state === 'out'
-          ? 'Even winning every remaining race wouldn\'t be enough, the maximum is ' + t.maxPoints + ' points.'
-          : 'The most they can finish on is ' + t.maxPoints + ' points. The chance comes from replaying the rest of the season ' +
+          ? 'Even winning every remaining race wouldn\'t win the title, the maximum is ' + t.maxPoints + ' points.'
+          : 'The most they can finish on is ' + t.maxPoints + ' points. Chances come from replaying the rest of the season ' +
             (t.sims || 0).toLocaleString() + ' times using this season\'s results, a guide rather than a prediction.')
       );
     }
