@@ -24,10 +24,20 @@ BUDGET = float(os.environ.get("PF_BUDGET_MIN", "320")) * 60   # stop well before
 EVERY = 5
 
 
+def year_arg(i, default, this_year):
+    """Arguments come from a form on GitHub, so only plain years in a sane range get through."""
+    raw = sys.argv[i].strip() if len(sys.argv) > i else ""
+    if not raw:
+        return default
+    if not raw.isdigit() or not 1950 <= int(raw) <= this_year:
+        sys.exit(f"not a season year: {raw!r}")
+    return int(raw)
+
+
 def main():
     this_year = datetime.now(timezone.utc).year
-    first = int(sys.argv[1]) if len(sys.argv) > 1 else 1950
-    last = int(sys.argv[2]) if len(sys.argv) > 2 else this_year - 1
+    first = year_arg(1, 1950, this_year)
+    last = year_arg(2, this_year - 1, this_year)
     have = set(store.archived_years())
     todo = [y for y in range(first, last + 1) if y not in have]
     print(f"{len(todo)} seasons to fetch, pausing {api.PAUSE}s between requests")

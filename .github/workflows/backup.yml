@@ -8,12 +8,14 @@ on:
     - cron: "17 4 2 * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write   # attach the file to the backup release
     steps:
       - name: Download the dump and attach it to the backup release
         env:

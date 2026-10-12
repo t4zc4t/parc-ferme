@@ -12,8 +12,7 @@ on:
         description: Last season (blank for last year)
         default: ""
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: data-branch
@@ -23,16 +22,26 @@ jobs:
   backfill:
     runs-on: ubuntu-latest
     timeout-minutes: 350
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: data
           path: store
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
       - name: Fetch missing seasons
         env:
           PF_STORE: store
+          # inputs go in through the environment, never pasted into the script itself
+          FIRST: ${{ inputs.first }}
+          LAST: ${{ inputs.last }}
         run: |
           git -C store config user.name t4zc4t
           git -C store config user.email t4zc4t@users.noreply.github.com
-          python3 pipeline/backfill.py ${{ inputs.first }} ${{ inputs.last }}
+          python pipeline/backfill.py "$FIRST" "$LAST"
