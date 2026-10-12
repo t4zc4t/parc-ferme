@@ -2,10 +2,10 @@
 
 It only calls the API when there is a reason to:
   - a qualifying, sprint or race ended in the last 48 hours and its result isn't in yet.
-    For the first 6 hours after the session it checks every run (one tiny request),
-    after that once an hour, until the result shows up.
-  - the daily check, around 03:00 UTC (08:30 in India), to catch penalties, corrections
-    and calendar changes.
+    Each run makes one tiny request per waiting session until the result shows up.
+  - the daily check, once 20 hours have passed since the last full fetch, to catch
+    penalties, corrections and calendar changes. The time of the last one is kept in
+    the store, so it can't be missed when GitHub runs late or skips a run.
   - a manual run with PF_FORCE=1.
 
 When a check finds something new it fetches the whole season (about 15 requests),
@@ -27,7 +27,8 @@ import store  # noqa: E402
 
 ENDPOINT = {"Q": "qualifying", "SR": "sprint", "R": "results"}
 WATCH = timedelta(hours=48)
-EAGER = timedelta(hours=6)
+DAILY = timedelta(hours=20)
+CHECKED = store.ROOT / "meta" / "checked.json"
 
 
 def current_year(now):
@@ -54,6 +55,26 @@ def probe(year, rnd, kind):
     return int(api.get(f"{year}/{rnd}/{ENDPOINT[kind]}.json?limit=1")["total"]) > 0
 
 
+def last_full_check():
+    """When the last full fetch ran. Kept in the store so a late or skipped GitHub run
+    can't make the daily check go missing: it simply runs on the next wake-up."""
+    try:
+        return sitegen.when(store.read_json(CHECKED)["full"])
+    except (FileNotFoundError, KeyError, ValueError):
+        return datetime(2000, 1, 1, tzinfo=timezone.utc)
+
+
+def looks_sane(new, old):
+    """A broken or half-empty API answer must never replace good data with less data."""
+    if old is None:
+        return bool(new["rounds"])
+    if new["year"] != old["year"] or not new["rounds"]:
+        return False
+    had = sum(1 for r in old["rounds"] if r["results"])
+    has = sum(1 for r in new["rounds"] if r["results"])
+    return has >= had and len(new["standings"]["drivers"]) >= min(len(old["standings"]["drivers"]), 10)
+
+
 def reason_to_refresh(now):
     if os.environ.get("PF_FORCE") in ("1", "true"):
         return "manual run"
@@ -61,13 +82,11 @@ def reason_to_refresh(now):
     data = store.load(year)
     if data is None:
         return f"no data for {year} yet"
-    if now.hour == 3 and now.minute < 20:   # wide enough to survive GitHub running late
+    if now - last_full_check() >= DAILY:
         return "daily check"
     if data["complete"] and now.year > year:
         return f"looking for the {now.year} calendar"
     for rnd, kind, end in waiting_sessions(data, now):
-        if now - end > EAGER and now.minute >= 10:
-            continue  # past the first 6 hours, only check once an hour
         if probe(year, rnd, kind):
             return f"round {rnd} {sitegen.LABELS[kind].lower()} result is out"
         print(f"round {rnd} {kind}: not published yet")
@@ -78,6 +97,8 @@ def refresh(now):
     year = current_year(now)
     labels = []
     data = season.fetch(year)
+    if not looks_sane(data, store.load(year)):
+        raise SystemExit(f"the API answer for {year} has less data than the store, keeping what we have")
     if store.save_season(data, finished=data["complete"]):
         labels.append(f"{year} {'archived' if data['complete'] else 'updated'}")
     # once a season is over, start the next one as soon as its calendar is out
@@ -108,7 +129,10 @@ def main():
     print(f"refreshing: {reason}")
     labels = refresh(now)
     site_changed = sitegen.build(now)
+    store.write_json(CHECKED, {"full": sitegen.iso(now.replace(second=0, microsecond=0))})
     if not labels and not site_changed:
+        # only the check time moved: record it, but there's nothing to rebuild
+        store.commit("Daily check, nothing new")
         print("no changes")
         return
     message = ", ".join(labels) if labels else "Site data rebuilt"

@@ -27,16 +27,40 @@ def download():
             time.sleep(5 * (attempt + 1))
 
 
+MAX_FILE = 5 * 1024 * 1024      # no single data file is anywhere near this
+ALLOWED = {".json"}
+
+
+def safe_target(name):
+    """Where a file from the archive may go, or None if it doesn't belong in site/data/.
+
+    The archive comes over the network, so its paths are checked rather than trusted:
+    nothing outside site/, no "..", no absolute paths, only JSON.
+    """
+    parts = Path(name).parts
+    # the archive's top folder is <repo>-data/, we want what's under site/
+    if len(parts) < 3 or parts[1] != "site":
+        return None
+    rel = parts[2:]
+    if any(p in ("", ".", "..") or "\\" in p or ":" in p for p in rel):
+        return None
+    target = OUT.joinpath(*rel).resolve()
+    if OUT.resolve() not in target.parents or target.suffix not in ALLOWED:
+        return None
+    return target
+
+
 def main():
     blob = download()
     count = 0
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tar:
         for member in tar.getmembers():
-            parts = Path(member.name).parts
-            # the archive's top folder is <repo>-data/, we want what's under site/
-            if len(parts) < 3 or parts[1] != "site" or not member.isfile():
+            # regular files only: no links, devices or folders that could point elsewhere
+            if not member.isfile() or member.size > MAX_FILE:
                 continue
-            target = OUT.joinpath(*parts[2:])
+            target = safe_target(member.name)
+            if target is None:
+                continue
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(tar.extractfile(member).read())
             count += 1
