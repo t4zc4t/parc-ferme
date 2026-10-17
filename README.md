@@ -2,7 +2,7 @@
 
 A one-stop site for Grand Prix racing data. Standings, driver records, race data and studies on the questions fans keep arguing about, all in one place.
 
-I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. A head to head tool comes next, then a race explorer and the studies.
+I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. A race explorer and the studies come next.
 
 ## How the data stays up to date
 
@@ -28,7 +28,7 @@ The Cloudflare build checks every path in the archive it downloads, so nothing o
 
 ## Data
 
-Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results only go back to 1994 there, so poles are counted from 1994 onwards, which covers every driver on the current grid. Practice results aren't in Jolpica at all, so those, plus lap times, tyre stints and pit stops, will come from the FastF1 library with the race explorer.
+Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results are missing before 1994 and patchy from 1996 to 2002, so a pole is the fastest qualifier where those results exist and the driver starting from pole where they don't. Practice results aren't in Jolpica at all, so those, plus lap times, tyre stints and pit stops, will come from the FastF1 library with the race explorer.
 
 ## Running it locally
 
@@ -50,6 +50,7 @@ pipeline/
   season.py     fetches one season into the format the store uses
   store.py      reads and writes the data branch
   sitegen.py    turns the store into the files the pages read, no API calls
+  compare.py    the search list and a results file for every driver, for the compare page
   update.py     the schedule-aware updater
   backfill.py   one-time fill of the archive
   build.py      what Cloudflare runs

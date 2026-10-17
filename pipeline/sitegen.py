@@ -2,6 +2,8 @@
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 
+import compare
+from compare import is_pole
 import store
 import title
 
@@ -145,18 +147,17 @@ def drivers(seasons, current, names, today):
     for s in seasons:
         final = {x["d"]: x for x in s["standings"]["drivers"]}
         for r in s["rounds"]:
+            quali = {q["d"]: q["pos"] for q in r["quali"]}
             for row in r["results"]:
                 if row["d"] in wanted:
                     c = career[row["d"]]
+                    c["poles"] += is_pole(r, quali, row)
                     c["rows"].append((s["year"], r, row))
                     yrs = c["seasons"].setdefault(s["year"], {"teams": [], "races": 0})
                     yrs["races"] += 1
                     team = names.team(row["c"])
                     if team not in yrs["teams"]:
                         yrs["teams"].append(team)
-            for q in r["quali"]:
-                if q["d"] in wanted and q["pos"] == 1:
-                    career[q["d"]]["poles"] += 1
         for did in wanted:
             if did in career and s["year"] in career[did]["seasons"]:
                 st = final.get(did, {})
@@ -264,6 +265,10 @@ def build(now=None):
     changed |= store.write_json(out / "drivers.json", {"season": current["year"], "drivers": index})
     for did, f in files.items():
         changed |= store.write_json(out / "drivers" / f"{did}.json", f)
+    people, results = compare.build(seasons, names, current)
+    changed |= store.write_json(out / "people.json", people)
+    for did, f in results.items():
+        changed |= store.write_json(out / "results" / f"{did}.json", f)
     # only bumps when something changed
     if changed or not (out / "meta.json").exists():
         store.write_json(out / "meta.json", {"updated": stamp, "season": current["year"]})

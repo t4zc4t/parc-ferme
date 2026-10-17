@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compare · Parc Fermé</title>
+<meta name="description" content="Put any two Grand Prix drivers since 1950 side by side: careers, rates, championship finishes and head to head.">
+<meta name="theme-color" content="#07070D">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="rain" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <span class="brand-name">PARC FERMÉ</span>
+      <span class="brand-jp" lang="ja">パルク・フェルメ</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="/#standings">Standings</a>
+      <a href="/schedule">Schedule</a>
+      <a href="/drivers">Drivers</a>
+      <a href="/compare" aria-current="page">Compare</a>
+      <a href="/#explore">Races</a>
+      <a href="/#explore">Studies</a>
+      <a href="/#explore">Questions</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap page-head">
+    <p class="kicker">HEAD TO HEAD <span lang="ja">比較</span></p>
+    <h1 class="page-title">Compare</h1>
+    <p class="lede">Any two drivers who started a Grand Prix since 1950, side by side.</p>
+    <form class="pickers" id="pickers" autocomplete="off">
+      <label class="picker picker-a">
+        <span class="picker-tag mono">DRIVER A</span>
+        <input type="search" id="pick-a" list="people" placeholder="Search a driver" spellcheck="false">
+      </label>
+      <button type="button" class="swap" id="swap" aria-label="Swap drivers">⇄</button>
+      <label class="picker picker-b">
+        <span class="picker-tag mono">DRIVER B</span>
+        <input type="search" id="pick-b" list="people" placeholder="Search a driver" spellcheck="false">
+      </label>
+      <datalist id="people"></datalist>
+    </form>
+  </section>
+
+  <section class="wrap block" id="result" hidden>
+    <div class="vs-head" id="vs-head"></div>
+
+    <div class="panel">
+      <h2 class="panel-title">Career</h2>
+      <p class="panel-note">Totals, then rates per race, which are fairer when careers were different lengths.</p>
+      <div class="cmp" id="career"></div>
+    </div>
+
+    <div class="panel chart-panel">
+      <h2 class="panel-title">Championship finish by season</h2>
+      <p class="panel-note" id="chart-note"></p>
+      <div class="chart" id="seasons-chart"></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <h2 class="panel-title">Racing each other</h2>
+        <p class="panel-note" id="h2h-note"></p>
+        <div class="cmp" id="h2h"></div>
+      </div>
+      <div class="panel">
+        <h2 class="panel-title">As teammates</h2>
+        <p class="panel-note" id="mates-note"></p>
+        <div class="cmp" id="mates"></div>
+      </div>
+    </div>
+
+    <p class="fine">Points systems changed a lot over the years (a win was worth 8 points in 1950 and 25 now), so points only compare fairly between drivers of the same era. Poles count the fastest qualifier where qualifying results exist and the pole sitter on the grid where they don't, before 1994 and in some races up to 2002.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
+    <span class="mono" id="updated">Data: Jolpica</span>
+  </div>
+</footer>
+
+<script src="/assets/common.js"></script>
+<script src="/assets/compare.js"></script>
+</body>
+</html>
