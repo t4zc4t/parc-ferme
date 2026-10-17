@@ -39,16 +39,15 @@
     <h1 class="page-title">Compare</h1>
     <p class="lede">Any two drivers who started a Grand Prix since 1950, side by side.</p>
     <form class="pickers" id="pickers" autocomplete="off">
-      <label class="picker picker-a">
-        <span class="picker-tag mono">DRIVER A</span>
-        <input type="search" id="pick-a" list="people" placeholder="Search a driver" spellcheck="false">
-      </label>
+      <div class="picker picker-a">
+        <label class="picker-tag mono" for="pick-a">DRIVER A</label>
+        <input type="text" id="pick-a" placeholder="Type a name" spellcheck="false" autocomplete="off">
+      </div>
       <button type="button" class="swap" id="swap" aria-label="Swap drivers">⇄</button>
-      <label class="picker picker-b">
-        <span class="picker-tag mono">DRIVER B</span>
-        <input type="search" id="pick-b" list="people" placeholder="Search a driver" spellcheck="false">
-      </label>
-      <datalist id="people"></datalist>
+      <div class="picker picker-b">
+        <label class="picker-tag mono" for="pick-b">DRIVER B</label>
+        <input type="text" id="pick-b" placeholder="Type a name" spellcheck="false" autocomplete="off">
+      </div>
     </form>
   </section>
 

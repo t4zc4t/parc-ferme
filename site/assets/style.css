@@ -400,6 +400,27 @@ tr.champ td.pos { color: var(--amber); }
 .picker input { font: inherit; font-size: 16px; color: var(--text); background: var(--panel); border: 1px solid var(--line-2); min-height: 48px; padding: 0 14px; width: 100%; }
 .picker-a input { border-left: 3px solid var(--pink); }
 .picker-b input { border-left: 3px solid var(--cyan); }
+.picker { position: relative; }
+.picker-a input::selection { background: rgba(255,61,139,.35); color: var(--text); }
+.picker-b input::selection { background: rgba(54,227,240,.3); color: var(--text); }
+.picker input { cursor: pointer; font-weight: 600; }
+.picker input:focus { cursor: text; }
+.combo { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; margin: 6px 0 0; padding: 6px 0; list-style: none; max-height: 360px; overflow-y: auto; background: var(--panel-2); border: 1px solid var(--line-2); box-shadow: 0 18px 40px rgba(0,0,0,.6); scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+.combo-a { border-top: 2px solid var(--pink); }
+.combo-b { border-top: 2px solid var(--cyan); }
+.combo-head { padding: 12px 16px 6px; font-size: 10px; letter-spacing: .22em; color: var(--amber); }
+.combo-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 16px; cursor: pointer; border-left: 3px solid transparent; }
+.combo-code { flex: none; width: 42px; font-size: 12px; font-weight: 600; letter-spacing: .1em; color: var(--dim); }
+.combo-name { flex: 1; min-width: 0; font-size: 15px; font-weight: 500; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.combo-name mark { background: none; color: var(--amber); font-weight: 700; }
+.combo-crown { flex: none; font-size: 10px; letter-spacing: 1px; color: var(--amber); opacity: .8; }
+.combo-a .combo-item.active { background: rgba(255,61,139,.12); border-left-color: var(--pink); }
+.combo-b .combo-item.active { background: rgba(54,227,240,.1); border-left-color: var(--cyan); }
+.combo-item.active .combo-name { color: var(--text); }
+.combo-a .combo-item.active .combo-code { color: var(--pink); }
+.combo-b .combo-item.active .combo-code { color: var(--cyan); }
+.combo-item.current .combo-name { color: var(--text); font-weight: 700; }
+.combo-none { padding: 14px 16px; color: var(--dim); font-size: 14px; }
 .picker-a input:focus { outline: 2px solid var(--pink); outline-offset: -1px; }
 .picker-b input:focus { outline: 2px solid var(--cyan); outline-offset: -1px; }
 .swap { font: 600 20px var(--mono); color: var(--soft); background: var(--panel); border: 1px solid var(--line-2); width: 48px; height: 48px; cursor: pointer; transition: color .15s, border-color .15s, transform .2s; }

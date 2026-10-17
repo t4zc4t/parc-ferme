@@ -10,16 +10,15 @@
   }
   PF.stamp();
 
-  // search label -> id, with years so two people with one name stay apart
-  const byLabel = new Map();
+  // accents off so "raikkonen" finds Räikkönen
+  const plain = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const byId = new Map();
-  const list = $('people');
-  people.drivers.forEach(([id, name, code, first, last]) => {
-    const label = name + ' (' + (first === last ? first : first + '–' + last) + ')';
-    byLabel.set(label.toLowerCase(), id);
-    byId.set(id, { id, label });
-    list.append(el('option', { value: label }));
-  });
+  people.drivers.forEach(([id, name, code, first, last, races, wins, titles]) =>
+    byId.set(id, { id, name, code, titles, key: plain(name) }));
+  let grid = [];
+  try {
+    grid = (await PF.json('/data/drivers.json')).drivers.map(d => d.id).filter(id => byId.has(id));
+  } catch (e) { /* the search still works without it */ }
 
   const cache = new Map();
   const load = id => {
@@ -40,32 +39,105 @@
     afrom: num('af'), ato: num('at'), bfrom: num('bf'), bto: num('bt'),
     sfrom: num('sf'), sto: num('st'),
   };
-  if (!st.a || !st.b) {
-    // default to this season's top two
-    try {
-      const grid = (await PF.json('/data/drivers.json')).drivers;
-      st.a = st.a || grid[0].id;
-      st.b = st.b || grid.find(d => d.id !== st.a).id;
-    } catch (e) { /* the pickers still work */ }
-  }
+  // default to this season's top two
+  if (!st.a && grid.length) st.a = grid[0];
+  if (!st.b && grid.length) st.b = grid.find(id => id !== st.a);
 
   const inputs = { a: $('pick-a'), b: $('pick-b') };
-  const pick = (side, value) => {
-    const id = byLabel.get(value.trim().toLowerCase());
-    if (!id || id === st[side]) return;
+  const choose = (side, id) => {
+    if (!id || id === st[side]) { inputs[side].value = byId.get(st[side]).name; return; }
     st[side] = id;
     // a new driver means new years, so start from their whole careers again
     Object.assign(st, { from: null, to: null, afrom: null, ato: null, bfrom: null, bto: null, sfrom: null, sto: null });
     show();
   };
-  ['a', 'b'].forEach(side => {
-    inputs[side].addEventListener('change', e => pick(side, e.target.value));
-    inputs[side].addEventListener('input', e => {
-      // datalist picks fire input, not always change
-      if (byLabel.has(e.target.value.trim().toLowerCase())) pick(side, e.target.value);
+  ['a', 'b'].forEach(side => combo(side, inputs[side]));
+
+  // a search box with our own dropdown, the browser's datalist can't be styled
+  function combo(side, input) {
+    const box = el('ul', { class: 'combo combo-' + side, id: 'combo-' + side, role: 'listbox', hidden: '' });
+    input.parentNode.append(box);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-controls', box.id);
+    input.setAttribute('aria-expanded', 'false');
+    let items = [], at = -1;
+
+    const matches = text => {
+      const t = plain(text.trim());
+      if (!t) return { groups: [['ON THE GRID', grid], ['MOST RACES', people.drivers.slice(0, 40).map(p => p[0]).filter(id => !grid.includes(id))]] };
+      const starts = [], inside = [];
+      for (const p of people.drivers) {
+        const d = byId.get(p[0]);
+        if (d.key.startsWith(t) || d.key.includes(' ' + t) || d.code.toLowerCase() === t) starts.push(d.id);
+        else if (d.key.includes(t)) inside.push(d.id);
+        if (starts.length >= 40) break;
+      }
+      return { groups: [[null, [...starts, ...inside].slice(0, 40)]], t };
+    };
+
+    const mark = (name, t) => {
+      if (!t) return [name];
+      const i = plain(name).indexOf(t);
+      return i < 0 ? [name] : [name.slice(0, i), el('mark', null, name.slice(i, i + t.length)), name.slice(i + t.length)];
+    };
+
+    const render = () => {
+      const { groups, t } = matches(input.value === (byId.get(st[side]) || {}).name ? '' : input.value);
+      items = [];
+      box.replaceChildren();
+      groups.forEach(([title, ids]) => {
+        if (!ids.length) return;
+        if (title) box.append(el('li', { class: 'combo-head mono', role: 'presentation' }, title));
+        ids.forEach(id => {
+          const d = byId.get(id);
+          const li = el('li', { class: 'combo-item' + (id === st[side] ? ' current' : ''), role: 'option',
+            id: 'opt-' + side + '-' + items.length, 'aria-selected': 'false' },
+            el('span', { class: 'combo-code mono' }, d.code),
+            el('span', { class: 'combo-name' }, ...mark(d.name, t)),
+            d.titles ? el('span', { class: 'combo-crown', title: d.titles + (d.titles === 1 ? ' title' : ' titles') }, '★'.repeat(Math.min(d.titles, 7))) : null);
+          li.addEventListener('mousedown', e => { e.preventDefault(); close(); choose(side, id); input.blur(); });
+          li.addEventListener('mousemove', () => move(items.indexOf(id)));
+          items.push(id);
+          box.append(li);
+        });
+      });
+      if (!items.length) box.append(el('li', { class: 'combo-none', role: 'presentation' }, 'No driver by that name'));
+      move(t && items.length ? 0 : items.indexOf(st[side]));
+    };
+
+    const move = i => {
+      at = i;
+      box.querySelectorAll('.combo-item').forEach((li, j) => {
+        li.classList.toggle('active', j === at);
+        li.setAttribute('aria-selected', j === at);
+        if (j === at) li.scrollIntoView({ block: 'nearest' });
+      });
+      if (at >= 0) input.setAttribute('aria-activedescendant', 'opt-' + side + '-' + at);
+      else input.removeAttribute('aria-activedescendant');
+    };
+    const open = () => { render(); box.hidden = false; input.setAttribute('aria-expanded', 'true'); };
+    const close = () => { box.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+
+    input.addEventListener('focus', () => { input.select(); open(); });
+    input.addEventListener('click', () => { if (box.hidden) open(); });
+    input.addEventListener('input', open);
+    input.addEventListener('blur', () => { close(); input.value = byId.get(st[side]) ? byId.get(st[side]).name : ''; });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (box.hidden) open();
+        const n = items.length;
+        if (n) move(e.key === 'ArrowDown' ? (at + 1) % n : (at - 1 + n) % n);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!box.hidden && at >= 0) { const id = items[at]; close(); input.blur(); choose(side, id); }
+      } else if (e.key === 'Escape') {
+        close(); input.blur();
+      }
     });
-    inputs[side].addEventListener('focus', e => e.target.select());
-  });
+  }
+
   $('pickers').addEventListener('submit', e => e.preventDefault());
   $('swap').addEventListener('click', () => {
     [st.a, st.b] = [st.b, st.a];
@@ -85,8 +157,8 @@
   show();
 
   async function show() {
-    if (st.a) inputs.a.value = byId.get(st.a).label;
-    if (st.b) inputs.b.value = byId.get(st.b).label;
+    if (st.a && document.activeElement !== inputs.a) inputs.a.value = byId.get(st.a).name;
+    if (st.b && document.activeElement !== inputs.b) inputs.b.value = byId.get(st.b).name;
     if (!st.a || !st.b) return;
     const want = [st.a, st.b];
     try {
