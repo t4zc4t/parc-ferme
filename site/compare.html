@@ -53,12 +53,42 @@
   </section>
 
   <section class="wrap block" id="result" hidden>
-    <div class="vs-head" id="vs-head"></div>
+    <div class="deck" id="deck">
+      <div class="deck-row">
+        <span class="deck-tag mono">PERIOD</span>
+        <div class="seg" role="group" aria-label="Period">
+          <button type="button" class="seg-btn on" aria-pressed="true" data-mode="same">Same years</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-mode="own">Each their own</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-mode="stage">Career stage</button>
+        </div>
+        <div class="deck-range" id="range"></div>
+      </div>
+      <div class="deck-row">
+        <span class="deck-tag mono">RACES</span>
+        <div class="seg" role="group" aria-label="Which races">
+          <button type="button" class="seg-btn on" aria-pressed="true" data-races="all">All races</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-races="shared">Only shared races</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-races="mates">As teammates</button>
+        </div>
+      </div>
+      <div class="deck-row">
+        <span class="deck-tag mono">POINTS</span>
+        <div class="seg" role="group" aria-label="Points system">
+          <button type="button" class="seg-btn on" aria-pressed="true" data-pts="real">As scored</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-pts="now">Today's system</button>
+        </div>
+      </div>
+      <p class="deck-sum mono" id="deck-sum"></p>
+    </div>
 
-    <div class="panel">
-      <h2 class="panel-title">Career</h2>
-      <p class="panel-note">Totals, then rates per race, which are fairer when careers were different lengths.</p>
-      <div class="cmp" id="career"></div>
+    <div class="vs-head" id="vs-head"></div>
+    <div class="tally" id="tally"></div>
+
+    <div class="board-wrap">
+      <h2 class="board-title"><span>Totals</span></h2>
+      <div class="board" id="totals"></div>
+      <h2 class="board-title"><span>Per race</span></h2>
+      <div class="board" id="rates"></div>
     </div>
 
     <div class="panel chart-panel">
@@ -71,16 +101,16 @@
       <div class="panel">
         <h2 class="panel-title">Racing each other</h2>
         <p class="panel-note" id="h2h-note"></p>
-        <div class="cmp" id="h2h"></div>
+        <div class="board board-sm" id="h2h"></div>
       </div>
       <div class="panel">
         <h2 class="panel-title">As teammates</h2>
         <p class="panel-note" id="mates-note"></p>
-        <div class="cmp" id="mates"></div>
+        <div class="board board-sm" id="mates"></div>
       </div>
     </div>
 
-    <p class="fine">Points systems changed a lot over the years (a win was worth 8 points in 1950 and 25 now), so points only compare fairly between drivers of the same era. Poles count the fastest qualifier where qualifying results exist and the pole sitter on the grid where they don't, before 1994 and in some races up to 2002.</p>
+    <p class="fine">"As scored" points are each season's championship points, or the race points when only some races are counted (no sprints, no dropped scores). "Today's system" re-scores every Grand Prix finish as 25, 18, 15, 12, 10, 8, 6, 4, 2, 1, so eras compare fairly. Poles count the fastest qualifier where qualifying results exist and the pole sitter on the grid where they don't, before 1994 and in some races up to 2002.</p>
   </section>
 </main>
 
