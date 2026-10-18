@@ -94,6 +94,28 @@ def periods(messages):
     return sorted(out, key=lambda p: p[1])
 
 
+def reconcile(stints, pit_laps):
+    """openf1 sometimes misses a stop or adds a one-lap stint at the start, so the
+    official pit stops decide where stints break; a stint openf1 merged gets split
+    and the part after the missed stop is marked UNKNOWN rather than guessed"""
+    out = []
+    for a, b, comp, age in sorted(stints, key=lambda x: (x[0], x[1])):
+        if out and a <= out[-1][1] + 1 and out[-1][1] <= 1 and not any(p <= 2 for p in pit_laps):
+            # a one-lap opening stint with no stop behind it is a timing glitch
+            a = min(a, out[-1][0])
+            out.pop()
+        if out and a <= out[-1][1]:
+            a = out[-1][1] + 1
+        if a > b:
+            continue
+        for p in sorted(pit_laps):
+            if a + 1 < p < b - 1:
+                out.append([a, p, comp, age])
+                a, comp, age = p + 1, "UNKNOWN", None
+        out.append([a, b, comp, age])
+    return out
+
+
 def weather(rows):
     if not rows:
         return None

@@ -38,7 +38,12 @@ def build(seasons, names, out):
             if has_laps:
                 page.update(store.read_json(lap_file))
             if has_tyres:
-                page.update(store.read_json(tyre_file))
+                extra = store.read_json(tyre_file)
+                stops = {}
+                for d, lap, _, _ in page.get("pits", []):
+                    stops.setdefault(d, set()).add(lap)
+                extra["stints"] = {d: openf1.reconcile(v, stops.get(d, set())) for d, v in extra["stints"].items()}
+                page.update(extra)
             changed |= store.write_json(out / "races" / str(year) / f"{r['round']}.json", page)
         changed |= store.write_json(out / "races" / f"{year}.json", {"year": year, "rounds": rounds})
         years.append({"year": year, "races": sum(1 for x in rounds if x["done"]),

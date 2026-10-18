@@ -319,8 +319,9 @@
       }));
       return el('div', { class: 'tyre-row' }, el('span', { class: 'tyre-who mono' }, r.code), bar);
     }));
-    $('tyre-key').replaceChildren(...['SOFT', 'MEDIUM', 'HARD', 'INTERMEDIATE', 'WET'].filter(k => used.has(k)).map(k =>
-      el('span', { class: 'key-item' }, el('span', { class: 'stint-key tyre-' + k.toLowerCase() }, TYRE[k]), k.charAt(0) + k.slice(1).toLowerCase())));
+    const KEY = { SOFT: 'Soft', MEDIUM: 'Medium', HARD: 'Hard', INTERMEDIATE: 'Intermediate', WET: 'Wet', UNKNOWN: 'Not recorded' };
+    $('tyre-key').replaceChildren(...Object.keys(KEY).filter(k => used.has(k)).map(k =>
+      el('span', { class: 'key-item' }, el('span', { class: 'stint-key tyre-' + k.toLowerCase() }, TYRE[k] || '?'), KEY[k])));
   }
 
   // ---- pit stops ----
