@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 
 import compare
+import races
 from compare import is_pole
 import store
 import title
@@ -269,6 +270,7 @@ def build(now=None):
     changed |= store.write_json(out / "people.json", people)
     for did, f in results.items():
         changed |= store.write_json(out / "results" / f"{did}.json", f)
+    changed |= races.build(seasons, names, out)
     # only bumps when something changed
     if changed or not (out / "meta.json").exists():
         store.write_json(out / "meta.json", {"updated": stamp, "season": current["year"]})

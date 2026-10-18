@@ -1,0 +1,50 @@
+name: Race data
+
+# laps and pit stops from the latest saved dump, tyres and safety cars from openf1.
+# runs after each monthly backup, or by hand
+on:
+  workflow_run:
+    workflows: ["Monthly backup"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write   # read the backup release, push to the data branch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: data
+          path: store
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Get the newest dump
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          name=$(gh release view data-backup -R "$REPO" --json assets -q '.assets[].name' | sort -r | head -n 1)
+          gh release download data-backup -R "$REPO" -p "$name" -O "$RUNNER_TEMP/dump.zip"
+          echo "using $name"
+      - name: Rebuild race data
+        env:
+          PF_STORE: store
+          CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          git -C store config user.name t4zc4t
+          git -C store config user.email t4zc4t@users.noreply.github.com
+          python pipeline/racedata.py "$RUNNER_TEMP/dump.zip"

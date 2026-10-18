@@ -2,7 +2,7 @@
 
 A one-stop site for Grand Prix racing data. Standings, driver records, race data and studies on the questions fans keep arguing about, all in one place.
 
-I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. A race explorer and the studies come next.
+I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. The race explorer has every Grand Prix since 1950, with a lap chart, gaps and lap times from 1996 and tyre strategies, safety cars and weather from 2023. The studies come next.
 
 ## How the data stays up to date
 
@@ -12,7 +12,7 @@ The updater is a GitHub Action. GitHub's own schedule is best effort and can ski
 
 Cloudflare's build (`pipeline/build.py`) never calls the API either, it just copies the site files from the `data` branch. So an API outage can't break a deploy, the site keeps showing the last good data.
 
-Once a month another Action saves Jolpica's full database dump as a release asset, as a backup of the backup.
+Once a month another Action saves Jolpica's full database dump as a release asset, as a backup of the backup. That same dump is where the lap-by-lap data comes from, so a second Action rebuilds the lap charts from it afterwards with no API calls at all. Races newer than the dump get their laps from the API a few hours after the flag, one race per run, and tyres, safety cars and weather come from OpenF1's free tier, which allows 30 requests a minute, so those calls are spaced two seconds apart.
 
 ## Limits I'm working within
 
@@ -51,6 +51,10 @@ pipeline/
   store.py      reads and writes the data branch
   sitegen.py    turns the store into the files the pages read, no API calls
   compare.py    the search list and a results file for every driver, for the compare page
+  laps.py       lap positions, lap times and pit stops, from the dump or the API
+  openf1.py     tyre stints, safety cars and weather from OpenF1, 2023 on
+  races.py      the race explorer's files, one per race
+  racedata.py   rebuilds all race data from the latest dump
   update.py     the schedule-aware updater
   backfill.py   one-time fill of the archive
   build.py      what Cloudflare runs
@@ -63,6 +67,7 @@ worker/
   timer.js      Cloudflare Worker cron that starts update.yml
   backfill.yml  run by hand to fill the archive
   backup.yml    monthly copy of the full database dump
+  racedata.yml  after each backup, rebuilds the lap charts and fills in OpenF1 data
 ```
 
 ## How some numbers are counted
