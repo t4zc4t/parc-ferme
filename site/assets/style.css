@@ -533,3 +533,88 @@ tr.champ td.pos { color: var(--amber); }
   .duel-v { font-size: 28px; }
   .board-sm .duel { grid-template-columns: 1fr 1fr; }
 }
+
+/* races list */
+.season-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.season-step { font: 600 16px var(--mono); color: var(--soft); background: var(--panel); border: 1px solid var(--line-2); width: 44px; height: 44px; cursor: pointer; }
+.season-step:hover:not(:disabled) { color: var(--text); border-color: var(--soft); }
+.season-step:disabled { opacity: .35; cursor: default; }
+.season-sel { min-height: 44px; font-size: 16px; padding: 0 14px; }
+.race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.race-card { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 20px; min-height: 196px; background: var(--panel); border: 1px solid var(--line-2); border-top: 3px solid var(--line-2); transition: border-color .15s, transform .15s, box-shadow .15s; }
+a.race-card:hover { border-top-color: var(--amber); transform: translateY(-2px); box-shadow: 0 0 26px rgba(255,181,71,.14); }
+.race-card.is-soon { opacity: .55; }
+.rc-top { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: .12em; color: var(--dim); }
+.rc-name { font-family: var(--display); font-size: 22px; line-height: 1.15; margin-top: 4px; }
+.rc-where { font-size: 14px; color: var(--soft); }
+.rc-win { margin-top: auto; padding-top: 12px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; }
+.rc-team { width: 100%; font-weight: 400; font-size: 13px; color: var(--dim); }
+.rc-tags { display: flex; gap: 6px; }
+.rc-tag { font-size: 10px; letter-spacing: .14em; padding: 3px 6px; border: 1px solid var(--line-2); color: var(--soft); }
+.rc-tag-hot { color: var(--amber); border-color: rgba(255,181,71,.5); }
+.rc-soon { margin-top: auto; font-size: 11px; letter-spacing: .16em; color: var(--dim); }
+
+/* one race */
+.race-nav { display: flex; flex-wrap: wrap; gap: 10px; }
+.race-nav-link { font-size: 14px; color: var(--soft); border: 1px solid var(--line-2); padding: 10px 14px; background: var(--panel); }
+.race-nav-link:hover { color: var(--text); border-color: var(--soft); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.fact { background: var(--panel); border: 1px solid var(--line-2); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.fact-k { font-size: 10px; letter-spacing: .18em; color: var(--dim); }
+.fact-v { font-weight: 700; font-size: 15px; }
+.lap-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.chart-panel { position: relative; }
+.pick-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.pick-chip { --c: var(--line-2); display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--dim); background: var(--panel-2); border: 1px solid var(--line-2); min-height: 32px; padding: 0 10px; cursor: pointer; }
+.pick-chip:hover { color: var(--text); }
+.pick-chip.on { color: var(--text); border-color: var(--c); box-shadow: inset 0 -2px 0 var(--c); }
+.pick-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); }
+.pick-chip.on .pick-dot { background: var(--c); }
+.lap-chart svg { touch-action: pan-y; }
+.chart .lap-line { fill: none; stroke-width: 1.2; }
+.chart .lap-dim { stroke: rgba(185,182,207,.16); }
+.chart .lap-pick { stroke-width: 2.4; stroke-linejoin: round; }
+.chart .pit-dot { fill: var(--panel); stroke-width: 2; }
+.chart .end-label { fill: var(--text); font: 600 11px var(--mono); }
+.chart .band { opacity: .13; }
+.chart .band-sc { fill: var(--amber); }
+.chart .band-vsc { fill: var(--soft); }
+.chart .band-red { fill: #e5484d; opacity: .2; }
+.chart .band-label { fill: var(--soft); font: 600 9px var(--mono); letter-spacing: .1em; }
+.chart .hair { stroke: var(--soft); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .hit { fill: transparent; cursor: crosshair; }
+.lap-tip { position: absolute; z-index: 5; min-width: 150px; padding: 10px 12px; background: var(--ink); border: 1px solid var(--line-2); box-shadow: 0 10px 30px rgba(0,0,0,.5); pointer-events: none; }
+.tip-head { font-size: 11px; letter-spacing: .14em; color: var(--amber); margin-bottom: 6px; }
+.tip-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 2px 0; }
+.tip-dot { width: 10px; height: 3px; flex: none; }
+.tip-v { margin-left: auto; color: var(--soft); }
+.tyres { display: flex; flex-direction: column; gap: 5px; }
+.tyre-row { display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 10px; }
+.tyre-who { font-size: 12px; font-weight: 600; color: var(--soft); }
+.tyre-bar { position: relative; height: 20px; background: var(--panel-2); }
+.stint { position: absolute; top: 0; bottom: 0; border-right: 2px solid var(--panel); display: flex; align-items: center; justify-content: center; font: 700 11px var(--mono); color: var(--ink); }
+.tyre-soft { background: #e5484d; }
+.tyre-medium { background: #f2c94c; }
+.tyre-hard { background: #e8e8ee; }
+.tyre-intermediate { background: #3fbf6f; }
+.tyre-wet { background: #3b82f6; }
+.tyre-unknown { background: var(--dim); }
+.tyre-key { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 13px; color: var(--soft); }
+.key-item { display: inline-flex; align-items: center; gap: 6px; }
+.stint-key { position: static; width: 20px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font: 700 10px var(--mono); color: var(--ink); }
+.pits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pit { display: grid; grid-template-columns: 76px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.pit:first-child { border-top: 0; }
+.pit-time { font-weight: 600; font-size: 18px; color: var(--amber); }
+.pit:first-child .pit-time { color: var(--pink); text-shadow: 0 0 12px rgba(255,61,139,.45); }
+.pit-who { font-weight: 600; }
+.pit-lap { font-size: 11px; letter-spacing: .12em; color: var(--dim); }
+.fl-tag { margin-left: 8px; font-size: 10px; letter-spacing: .1em; padding: 2px 5px; color: #b07cff; border: 1px solid rgba(176,124,255,.5); }
+
+@media (max-width: 640px) {
+  .race-grid { grid-template-columns: 1fr; }
+  .race-card { min-height: 0; }
+  .lap-top .seg { width: 100%; }
+  .lap-top .seg-btn { flex: 1; }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

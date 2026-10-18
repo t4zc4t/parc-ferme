@@ -1,5 +1,6 @@
 """Updater. Only hits the API when a session just ended without results,
 the daily check is due, or PF_FORCE=1. Commits and builds only on change.
+After a race it also picks up the laps, pit stops and OpenF1 data for it.
 """
 import os
 import sys
@@ -10,6 +11,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import api  # noqa: E402
+import laps  # noqa: E402
+import openf1  # noqa: E402
 import season  # noqa: E402
 import sitegen  # noqa: E402
 import store  # noqa: E402
@@ -96,6 +99,40 @@ def refresh(now):
     return labels
 
 
+def race_extras(now):
+    """laps and pit stops for finished races of this season, then tyres and safety cars"""
+    year = current_year(now)
+    data = store.load(year)
+    if data is None:
+        return []
+    labels, finished = [], []
+    for r in data["rounds"]:
+        start = r["sessions"].get("R")
+        if r["results"] and start:
+            finished.append((r, now - sitegen.when(start)))
+    # one race's laps per run keeps us well inside the hourly API limit
+    for r, age in finished:
+        if not laps.have(year, r["round"]) and age > timedelta(hours=3):
+            try:
+                if laps.from_api(year, r["round"]):
+                    labels.append(f"round {r['round']} laps")
+                else:
+                    print(f"round {r['round']}: laps not published yet")
+            except RuntimeError as err:
+                print(f"round {r['round']} laps failed: {err}")
+            break
+    # openf1 usually has a race within hours, older gaps are left to the race data workflow
+    fresh = {r["round"] for r, age in finished
+             if timedelta(hours=3) < age < timedelta(days=7) and not openf1.have(year, r["round"])}
+    if fresh and year >= openf1.FIRST:
+        try:
+            if openf1.fill(year, data, limit=2, only=fresh):
+                labels.append("tyres and safety cars")
+        except RuntimeError as err:
+            print(f"openf1 failed: {err}")
+    return labels
+
+
 def trigger_build():
     hook = os.environ.get("CF_DEPLOY_HOOK")
     if not hook:
@@ -110,13 +147,16 @@ def trigger_build():
 def main():
     now = datetime.now(timezone.utc)
     reason = reason_to_refresh(now)
-    if not reason:
+    labels = []
+    if reason:
+        print(f"refreshing: {reason}")
+        labels = refresh(now)
+        store.write_json(CHECKED, {"full": sitegen.iso(now.replace(second=0, microsecond=0))})
+    labels += race_extras(now)
+    if not reason and not labels:
         print("nothing to do")
         return
-    print(f"refreshing: {reason}")
-    labels = refresh(now)
     site_changed = sitegen.build(now)
-    store.write_json(CHECKED, {"full": sitegen.iso(now.replace(second=0, microsecond=0))})
     if not labels and not site_changed:
         # only the check time moved
         store.commit("Daily check, nothing new")
