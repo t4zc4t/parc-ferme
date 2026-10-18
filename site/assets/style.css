@@ -618,3 +618,61 @@ a.race-card:hover { border-top-color: var(--amber); transform: translateY(-2px);
   .lap-top .seg-btn { flex: 1; }
   .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* questions */
+.q-index { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px 18px; margin-top: 8px; }
+.q-jump { display: flex; gap: 10px; align-items: baseline; font-size: 14px; color: var(--soft); padding: 6px 0; border-bottom: 1px solid var(--line); }
+.q-jump:hover { color: var(--text); }
+.q-jump .mono { font-size: 11px; color: var(--amber); }
+.q-list { display: flex; flex-direction: column; gap: 18px; }
+.q-card { background: var(--panel); border: 1px solid var(--line-2); border-left: 3px solid var(--pink); padding: 28px; scroll-margin-top: 90px; }
+.q-card:nth-child(3n+2) { border-left-color: var(--cyan); }
+.q-card:nth-child(3n+3) { border-left-color: var(--amber); }
+.q-head { display: flex; justify-content: space-between; align-items: center; }
+.q-num { font-size: 12px; letter-spacing: .2em; color: var(--dim); }
+.q-link { color: var(--dim); font-size: 14px; padding: 4px 8px; }
+.q-link:hover { color: var(--text); }
+.q-title { font-size: clamp(24px, 3vw, 32px); line-height: 1.2; margin: 8px 0 14px; }
+.q-answer { font-size: clamp(18px, 2vw, 21px); font-weight: 700; line-height: 1.45; margin: 0 0 20px; color: var(--text); max-width: 60ch; }
+.q-body { font-size: 14px; line-height: 1.6; color: var(--dim); margin: 16px 0 0; max-width: 75ch; }
+.q-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.q-go { font-size: 14px; color: var(--soft); border: 1px solid var(--line-2); padding: 8px 12px; background: var(--panel-2); }
+.q-go:hover { color: var(--text); border-color: var(--soft); }
+.q-chart { background: var(--ink); border: 1px solid var(--line); padding: 18px 20px; }
+.q-chart-title { font-size: 11px; letter-spacing: .18em; color: var(--dim); margin: 0 0 12px; }
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: minmax(140px, 1.1fr) 2fr minmax(90px, auto); gap: 14px; align-items: center; }
+.bar-label { font-size: 14px; color: var(--soft); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-label a:hover { color: var(--text); text-decoration: underline; }
+.bar-row.hot .bar-label { color: var(--text); font-weight: 700; }
+.bar-track { position: relative; height: 12px; background: var(--panel-2); }
+.bar-fill { position: absolute; top: 0; bottom: 0; left: 0; background: rgba(54,227,240,.55); }
+.bar-fill.hot { background: var(--pink); box-shadow: 0 0 12px rgba(255,61,139,.5); }
+.bars-div .bar-track::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--dim); }
+.bars-div .bar-fill { left: auto; }
+.bar-fill.neg { background: rgba(185,182,207,.35); }
+.bar-val { font-size: 13px; font-weight: 600; color: var(--soft); text-align: right; white-space: nowrap; }
+.bar-row.hot .bar-val { color: var(--pink); }
+.pairs { display: grid; grid-template-columns: minmax(130px, 1.3fr) repeat(var(--n), minmax(0, 1fr)); gap: 0; }
+.pairs > span { padding: 10px 8px; border-top: 1px solid var(--line); }
+.pairs-corner, .pairs-col { border-top: 0 !important; }
+.pairs-col { font-size: 11px; letter-spacing: .12em; color: var(--amber); text-align: right; }
+.pairs-label { font-size: 14px; color: var(--soft); }
+.pairs-v { font-family: var(--display); font-size: 22px; text-align: right; color: var(--dim); }
+.pairs-v.on { color: var(--pink); text-shadow: 0 0 12px rgba(255,61,139,.4); }
+.q-flips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.q-flips li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); }
+.flip-race { font-size: 14px; color: var(--soft); }
+a.flip-race:hover { color: var(--text); text-decoration: underline; }
+.flip-who { font-size: 13px; font-weight: 600; color: var(--amber); white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .q-card { padding: 20px 16px; }
+  .q-chart { padding: 14px 12px; }
+  .bar-row { grid-template-columns: 1fr auto; grid-template-areas: "label val" "track track"; gap: 4px 10px; }
+  .bar-label { grid-area: label; white-space: normal; }
+  .bar-val { grid-area: val; }
+  .bar-track { grid-area: track; }
+  .pairs-v { font-size: 18px; }
+  .pairs-col { font-size: 10px; letter-spacing: .06em; }
+}
