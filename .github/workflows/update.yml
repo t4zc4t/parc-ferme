@@ -41,8 +41,8 @@ jobs:
           PF_FORCE: ${{ inputs.force && '1' || '' }}
           CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
         run: |
-          git -C store config user.name t4zc4t
-          git -C store config user.email t4zc4t@users.noreply.github.com
+          git -C store config user.name Foraxsys
+          git -C store config user.email 247897238+t4zc4t@users.noreply.github.com
           python pipeline/update.py
       - name: Keep the schedule switched on
         # github disables crons after 60 quiet days
