@@ -44,7 +44,12 @@
   podium();
   facts();
   results();
-  if (laps) lapChart(); else $('no-laps').hidden = false;
+  if (laps) lapChart();
+  else {
+    $('no-laps').hidden = false;
+    // from 1996 on a missing chart just means the laps haven't come in yet
+    if (year >= 1996) $('no-laps-note').textContent = 'The lap-by-lap data for this race hasn\'t come in yet. It usually lands within a few hours of the chequered flag, so check back soon.';
+  }
   if (race.stints && Object.keys(race.stints).length) tyres();
   if (race.pits && race.pits.length) pits();
 
