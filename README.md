@@ -2,7 +2,7 @@
 
 A one-stop site for Grand Prix racing data. Standings, driver records, race data and studies on the questions fans keep arguing about, all in one place.
 
-I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. The race explorer has every Grand Prix since 1950, with a lap chart, gaps and lap times from 1996 and tyre strategies, safety cars and weather from 2023. The questions page answers eleven things people ask about the current era, like whether Antonelli will be the youngest champion or whether Hamilton's move to Ferrari worked, and the answers update after every race. The pages link into each other, so a result leads to its race, a driver to their rivals, and so on. Longer studies come next.
+I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. The race explorer has every Grand Prix since 1950, with a lap chart, gaps and lap times from 1996 and tyre strategies, safety cars and weather from 2023. The questions page answers eleven things people ask about the current era, like whether Antonelli will be the youngest champion or whether Hamilton's move to Ferrari worked, and the answers update after every race. The studies page has the longer reads, how much the car decides compared with the driver, and how retirements almost vanished from racing. The pages link into each other, so a result leads to its race, a driver to their rivals, and so on.
 
 ## How the data stays up to date
 
@@ -56,6 +56,7 @@ pipeline/
   races.py      the race explorer's files, one per race
   racedata.py   rebuilds all race data from the latest dump
   questions.py  the questions page, worked out from the store after every update
+  studies.py    the studies page, from every season in the store
   update.py     the schedule-aware updater
   backfill.py   one-time fill of the archive
   build.py      what Cloudflare runs

@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import compare
 import questions
+import studies
 import races
 from compare import is_pole
 import store
@@ -273,6 +274,7 @@ def build(now=None):
         changed |= store.write_json(out / "results" / f"{did}.json", f)
     changed |= races.build(seasons, names, out)
     changed |= store.write_json(out / "questions.json", questions.build(seasons, names, h["title"]))
+    changed |= store.write_json(out / "studies.json", studies.build(seasons, names))
     # only bumps when something changed
     if changed or not (out / "meta.json").exists():
         store.write_json(out / "meta.json", {"updated": stamp, "season": current["year"]})
