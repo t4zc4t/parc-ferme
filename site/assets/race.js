@@ -10,6 +10,7 @@
     [race, season] = await Promise.all([
       PF.json('/data/races/' + year + '/' + round + '.json'),
       PF.json('/data/races/' + year + '.json').catch(() => null),
+      PF.loadGrid(),
     ]);
   } catch (e) {
     $('race-name').textContent = 'Race not found';
@@ -61,7 +62,7 @@
 
   function podium() {
     $('race-podium').replaceChildren(...res.filter(r => ['1', '2', '3'].includes(r.pos)).map(r =>
-      el('a', { href: '/drivers/' + r.id, class: 'step step-' + r.pos },
+      el('a', { href: PF.driverHref(r.id), class: 'step step-' + r.pos },
         el('span', { class: 'step-pos mono' }, 'P' + r.pos),
         el('span', { class: 'step-code' }, r.code),
         el('span', { class: 'step-name' }, r.name),
@@ -333,7 +334,7 @@
       const r = byId.get(id) || { code: id, name: id };
       return el('li', { class: 'pit' },
         el('span', { class: 'pit-time mono' }, (ms / 1000).toFixed(2) + 's'),
-        el('span', { class: 'pit-who' }, el('span', { class: 'code mono' }, r.code), r.name),
+        el('span', { class: 'pit-who' }, PF.driverLink(id, el('span', { class: 'code mono' }, r.code), r.name)),
         el('span', { class: 'pit-lap mono' }, 'LAP ' + lap));
     }));
   }

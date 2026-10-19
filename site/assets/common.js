@@ -54,7 +54,18 @@ const PF = {
   },
 
   driverLink(id, ...kids) {
-    return PF.el('a', { href: '/drivers/' + id, class: 'dlink' }, ...kids);
+    return PF.el('a', { href: PF.driverHref(id), class: 'dlink' }, ...kids);
+  },
+
+  // only this season's drivers have a page, everyone else gets their career in compare
+  grid: null,
+  async loadGrid() {
+    try {
+      PF.grid = new Set((await PF.json('/data/drivers.json')).drivers.map(d => d.id));
+    } catch (e) { /* keep plain driver links */ }
+  },
+  driverHref(id) {
+    return !PF.grid || PF.grid.has(id) ? '/drivers/' + id : '/compare?a=' + encodeURIComponent(id);
   },
 
   // footer: last data change

@@ -635,9 +635,11 @@ a.race-card:hover { border-top-color: var(--amber); transform: translateY(-2px);
 .q-title { font-size: clamp(24px, 3vw, 32px); line-height: 1.2; margin: 8px 0 14px; }
 .q-answer { font-size: clamp(18px, 2vw, 21px); font-weight: 700; line-height: 1.45; margin: 0 0 20px; color: var(--text); max-width: 60ch; }
 .q-body { font-size: 14px; line-height: 1.6; color: var(--dim); margin: 16px 0 0; max-width: 75ch; }
-.q-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.q-go { font-size: 14px; color: var(--soft); border: 1px solid var(--line-2); padding: 8px 12px; background: var(--panel-2); }
-.q-go:hover { color: var(--text); border-color: var(--soft); }
+.q-links, .go-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.q-go, .go { font-size: 14px; color: var(--soft); border: 1px solid var(--line-2); padding: 8px 12px; background: var(--panel-2); }
+.q-go:hover, .go:hover { color: var(--text); border-color: var(--soft); }
+.round .go-row { margin: 0 16px 16px; }
+.strip-detail a { color: var(--cyan); }
 .q-chart { background: var(--ink); border: 1px solid var(--line); padding: 18px 20px; }
 .q-chart-title { font-size: 11px; letter-spacing: .18em; color: var(--dim); margin: 0 0 12px; }
 .bars { display: flex; flex-direction: column; gap: 8px; }
