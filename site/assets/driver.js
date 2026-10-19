@@ -28,6 +28,11 @@
     const bits = [d.team, d.nationality, d.age ? d.age + ' years old' : null];
     if (d.career.debut) bits.push('debut ' + d.career.debut.year + ' ' + d.career.debut.race);
     $('d-meta').textContent = bits.filter(Boolean).join(' · ');
+    const mate = d.season.teammates[0];
+    $('d-links').replaceChildren(
+      mate ? el('a', { class: 'go', href: '/compare?' + new URLSearchParams({ a: d.id, b: mate.id, r: 'mates' }) },
+        'Compare with ' + mate.name.split(' ').slice(-1)[0] + ' →') : null,
+      el('a', { class: 'go', href: '/compare?a=' + encodeURIComponent(d.id) }, 'Compare with anyone →'));
   }
 
   function tile(label, value, sub, cls) {
@@ -107,9 +112,11 @@
         (r.grid ? ', started P' + r.grid : ', started from the pit lane') + ', ' + r.points + ' pts';
       const cell = el('button', { type: 'button', class: 'cell ' + cls, title: text, 'aria-label': text },
         r.classified ? r.finish : 'DNF');
-      cell.addEventListener('mouseenter', () => { detail.textContent = text; });
-      cell.addEventListener('focus', () => { detail.textContent = text; });
-      cell.addEventListener('click', () => { detail.textContent = text; });
+      const tell = () => detail.replaceChildren(text + ' · ',
+        el('a', { href: '/races/' + s.year + '/' + r.round }, 'race page →'));
+      cell.addEventListener('mouseenter', tell);
+      cell.addEventListener('focus', tell);
+      cell.addEventListener('click', tell);
       strip.append(cell);
     });
   }

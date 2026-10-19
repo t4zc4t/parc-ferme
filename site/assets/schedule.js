@@ -58,8 +58,13 @@
         el('span', { class: 'weekend-name' }, r.name),
         el('span', { class: 'weekend-place' }, r.circuit.name + ', ' + r.circuit.locality + ', ' + r.circuit.country)
       ),
-      el('ul', { class: 'srows' }, ...r.sessions.map(s => sessionRow(r, s)))
+      el('ul', { class: 'srows' }, ...r.sessions.map(s => sessionRow(r, s))),
+      r.winner ? el('div', { class: 'go-row' }, raceLink(r)) : null
     );
+  }
+
+  function raceLink(r) {
+    return el('a', { class: 'go', href: '/races/' + sched.season + '/' + r.round }, 'Lap chart, tyres and pit stops →');
   }
 
   function dateRange(r) {
@@ -91,7 +96,8 @@
               : isFocus ? el('span', { class: 'pill pill-next' }, 'NEXT') : null
           )
         ),
-        el('ul', { class: 'srows srows-small' }, ...r.sessions.map(s => sessionRow(r, s)))
+        el('ul', { class: 'srows srows-small' }, ...r.sessions.map(s => sessionRow(r, s))),
+        r.winner ? el('div', { class: 'go-row' }, raceLink(r)) : null
       );
       box.append(card);
     });

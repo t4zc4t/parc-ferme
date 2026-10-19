@@ -106,6 +106,10 @@
       ));
     });
 
+    $('last-links').replaceChildren(
+      el('a', { class: 'go', href: '/races/' + schedule.season + '/' + last.round }, 'Lap chart, tyres and pit stops →'),
+      el('a', { class: 'go', href: '/races?y=' + schedule.season }, 'Every race this season →'));
+
     const body = $('last-body');
     last.results.forEach(r => {
       const moved = Number.isFinite(+r.pos) && r.grid > 0 ? r.grid - +r.pos : null;

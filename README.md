@@ -2,7 +2,7 @@
 
 A one-stop site for Grand Prix racing data. Standings, driver records, race data and studies on the questions fans keep arguing about, all in one place.
 
-I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. The race explorer has every Grand Prix since 1950, with a lap chart, gaps and lap times from 1996 and tyre strategies, safety cars and weather from 2023. The studies come next.
+I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. The race explorer has every Grand Prix since 1950, with a lap chart, gaps and lap times from 1996 and tyre strategies, safety cars and weather from 2023. The questions page answers eleven things people ask about the current era, like whether Antonelli will be the youngest champion or whether Hamilton's move to Ferrari worked, and the answers update after every race. The pages link into each other, so a result leads to its race, a driver to their rivals, and so on. Longer studies come next.
 
 ## How the data stays up to date
 
@@ -28,7 +28,7 @@ The Cloudflare build checks every path in the archive it downloads, so nothing o
 
 ## Data
 
-Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results are missing before 1994 and patchy from 1996 to 2002, so a pole is the fastest qualifier where those results exist and the driver starting from pole where they don't. Practice results aren't in Jolpica at all, so those, plus lap times, tyre stints and pit stops, will come from the FastF1 library with the race explorer.
+Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results are missing before 1994 and patchy from 1996 to 2002, so a pole is the fastest qualifier where those results exist and the driver starting from pole where they don't. Lap times and pit stops come from Jolpica too, from 1996 on. Tyre stints, safety cars and weather come from OpenF1, which starts in 2023. OpenF1 sometimes misses a pit stop, so stints are checked against Jolpica's pit stops and a stint with no recorded tyre shows as "not recorded".
 
 ## Running it locally
 
@@ -55,19 +55,20 @@ pipeline/
   openf1.py     tyre stints, safety cars and weather from OpenF1, 2023 on
   races.py      the race explorer's files, one per race
   racedata.py   rebuilds all race data from the latest dump
+  questions.py  the questions page, worked out from the store after every update
   update.py     the schedule-aware updater
   backfill.py   one-time fill of the archive
   build.py      what Cloudflare runs
 site/           the pages Cloudflare Pages serves
 site/assets/    styles, scripts and icon
-site/_redirects sends /drivers/<name> to the driver page
+site/_redirects sends /drivers/<name> and /races/<year>/<round> to their pages
 .github/workflows/
   update.yml    started every 10 minutes, does nothing unless a session just ended or the daily check is due
-worker/
-  timer.js      Cloudflare Worker cron that starts update.yml
   backfill.yml  run by hand to fill the archive
   backup.yml    monthly copy of the full database dump
   racedata.yml  after each backup, rebuilds the lap charts and fills in OpenF1 data
+worker/
+  timer.js      Cloudflare Worker cron that starts update.yml
 ```
 
 ## How some numbers are counted
