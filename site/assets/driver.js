@@ -29,10 +29,10 @@
     if (d.career.debut) bits.push('debut ' + d.career.debut.year + ' ' + d.career.debut.race);
     $('d-meta').textContent = bits.filter(Boolean).join(' · ');
     const mate = d.season.teammates[0];
-    $('d-links').replaceChildren(
+    $('d-links').replaceChildren(...[
       mate ? el('a', { class: 'go', href: '/compare?' + new URLSearchParams({ a: d.id, b: mate.id, r: 'mates' }) },
         'Compare with ' + mate.name.split(' ').slice(-1)[0] + ' →') : null,
-      el('a', { class: 'go', href: '/compare?a=' + encodeURIComponent(d.id) }, 'Compare with anyone →'));
+      el('a', { class: 'go', href: '/compare?a=' + encodeURIComponent(d.id) }, 'Compare with anyone →')].filter(Boolean));
   }
 
   function tile(label, value, sub, cls) {
