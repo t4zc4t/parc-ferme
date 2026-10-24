@@ -58,9 +58,9 @@
         el('span', { class: 'weekend-name' }, r.name),
         el('span', { class: 'weekend-place' }, r.circuit.name + ', ' + r.circuit.locality + ', ' + r.circuit.country)
       ),
-      el('ul', { class: 'srows' }, ...r.sessions.map(s => sessionRow(r, s))),
-      r.winner ? el('div', { class: 'go-row' }, raceLink(r)) : null
+      el('ul', { class: 'srows' }, ...r.sessions.map(s => sessionRow(r, s)))
     );
+    if (r.winner) $('weekend').append(el('div', { class: 'go-row' }, raceLink(r)));
   }
 
   function raceLink(r) {
