@@ -131,21 +131,21 @@ def race(year, rnd, key):
 
     angle = rotation(key)
     cars, track = {}, None
-    winner = rnd["results"][0]["d"] if rnd["results"] else None
-    for no, d in numbers.items():
+    # the track comes from the winner's fastest lap, else anyone's, a fast lap is a clean one
+    finish = [r["d"] for r in rnd["results"]]
+    for no, d in sorted(numbers.items(), key=lambda kv: finish.index(kv[1]) if kv[1] in finish else 99):
         rows = openf1.get(f"location?session_key={key}&driver_number={no}")
         if not rows:
             continue
         x, y = sample(rows, t0, end, angle)
         meta = info.get(no, {})
         cars[d] = {"code": meta.get("name_acronym"), "color": "#" + (meta.get("team_colour") or "888888"), "x": x, "y": y}
-        if d == winner and d in laps:
-            # a lap after the opening scramble and before the first stops
-            mine = sorted(laps[d])
-            for n, t, dur in mine[4:10]:
-                if dur and dur < 1.08 * min(x for _, _, x in mine if x):
-                    track = outline(rows, t, t + dur, angle)
-                    break
+        timed = [(dur, t) for n, t, dur in laps.get(d, []) if dur and n > 1]
+        if track is None and timed:
+            dur, t = min(timed)
+            lap = outline(rows, t, t + dur, angle)
+            if len(lap) > 50:
+                track = lap
     if not cars or not track:
         print(f"{year} round {rnd['round']}: positions incomplete, no replay")
         return False
