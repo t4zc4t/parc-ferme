@@ -1,6 +1,7 @@
 """Site files for the race explorer: a list per season and one file per race."""
 import laps
 import openf1
+import practice
 import store
 
 
@@ -44,6 +45,9 @@ def build(seasons, names, out):
                     stops.setdefault(d, set()).add(lap)
                 extra["stints"] = {d: openf1.reconcile(v, stops.get(d, set())) for d, v in extra["stints"].items()}
                 page.update(extra)
+            times = practice.for_site(year, r["round"], names)
+            if times:
+                page["practice"] = times
             changed |= store.write_json(out / "races" / str(year) / f"{r['round']}.json", page)
         changed |= store.write_json(out / "races" / f"{year}.json", {"year": year, "rounds": rounds})
         years.append({"year": year, "races": sum(1 for x in rounds if x["done"]),

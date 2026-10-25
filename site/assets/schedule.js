@@ -31,13 +31,14 @@
     let outcome = null;
     if (s.top3.length) {
       outcome = el('span', { class: 'podium3' },
-        ...s.top3.map((t, i) => el('a', { href: '/drivers/' + t.id, class: 'podium3-item', title: t.driver + ', ' + t.team },
+        ...s.top3.map((t, i) => el(t.id ? 'a' : 'span', { href: t.id ? '/drivers/' + t.id : null, class: 'podium3-item', title: t.driver + ', ' + t.team },
           el('span', { class: 'mono dim' }, 'P' + (i + 1) + ' '), t.code)));
-    } else if (status === 'done' && s.results) {
-      outcome = el('span', { class: 'dim small' }, 'Result usually lands a few hours after the session.');
     } else if (status === 'done') {
-      const what = s.type === 'SQ' ? 'Sprint qualifying times' : 'Practice times';
-      outcome = el('span', { class: 'dim small' }, what + ' arrive with the race explorer.');
+      const timesheet = ['FP1', 'FP2', 'FP3', 'SQ'].includes(s.type);
+      const old = now - Date.parse(s.end) > 24 * 3600e3;
+      outcome = el('span', { class: 'dim small' }, timesheet
+        ? (old ? 'No times were published for this session.' : 'Times usually land within the hour.')
+        : 'Result usually lands a few hours after the session.');
     }
     return el('li', { class: 'srow srow-' + status + (isNext ? ' srow-next' : '') },
       el('span', { class: 'srow-when mono' }, PF.dayTime(s.start)),

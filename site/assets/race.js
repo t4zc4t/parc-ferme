@@ -53,6 +53,7 @@
   }
   if (race.stints && Object.keys(race.stints).length) tyres();
   if (race.pits && race.pits.length) pits();
+  if (race.practice && Object.keys(race.practice).length) practice();
 
   function fmtLap(ms) {
     if (!ms) return '–';
@@ -323,6 +324,36 @@
     const KEY = { SOFT: 'Soft', MEDIUM: 'Medium', HARD: 'Hard', INTERMEDIATE: 'Intermediate', WET: 'Wet', UNKNOWN: 'Not recorded' };
     $('tyre-key').replaceChildren(...Object.keys(KEY).filter(k => used.has(k)).map(k =>
       el('span', { class: 'key-item' }, el('span', { class: 'stint-key tyre-' + k.toLowerCase() }, TYRE[k] || '?'), KEY[k])));
+  }
+
+  // ---- practice ----
+  function practice() {
+    const NAMES = { FP1: 'Practice 1', FP2: 'Practice 2', FP3: 'Practice 3', SQ: 'Sprint qualifying' };
+    const kinds = Object.keys(NAMES).filter(k => race.practice[k]);
+    $('practice-panel').hidden = false;
+    const gap = v => v === null || v === undefined ? '–' : typeof v === 'number' ? (v ? '+' + v.toFixed(3) : '–') : v;
+    const show = kind => {
+      $('practice-seg').querySelectorAll('button').forEach(b => {
+        b.classList.toggle('on', b.dataset.kind === kind);
+        b.setAttribute('aria-pressed', b.dataset.kind === kind);
+      });
+      $('practice-body').replaceChildren(...race.practice[kind].map((r, i) => {
+        const who = [el('span', { class: 'code mono' }, r.code), ...PF.name(r.name)];
+        return el('tr', { class: i < 3 && r.pos ? 'top3' : null },
+          el('td', { class: 'pos mono' }, r.pos ? PF.pad2(r.pos) : '–'),
+          el('td', { class: 'driver' }, r.id ? PF.driverLink(r.id, ...who) : el('span', null, ...who)),
+          el('td', { class: 'team opt' }, r.team),
+          el('td', { class: 'mono' }, r.best ? fmtLap(Math.round(r.best * 1000)) : 'No time'),
+          el('td', { class: 'mono dim' }, i ? gap(r.gap) : '–'),
+          el('td', { class: 'num mono' }, r.laps ?? '–'));
+      }));
+    };
+    $('practice-seg').replaceChildren(...kinds.map(k => {
+      const b = el('button', { type: 'button', class: 'seg-btn', 'aria-pressed': 'false', 'data-kind': k }, NAMES[k]);
+      b.addEventListener('click', () => show(k));
+      return b;
+    }));
+    show(kinds[0]);
   }
 
   // ---- pit stops ----
