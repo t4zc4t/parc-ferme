@@ -14,9 +14,9 @@
     return;
   }
 
-  document.title = d.name + ' · Parc Fermé';
   PF.stamp();
   hero(d);
+  $('static-summary')?.remove();
   season(d);
   career(d);
 

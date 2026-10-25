@@ -19,7 +19,6 @@
   }
   PF.stamp();
 
-  document.title = year + ' ' + race.name + ' · Parc Fermé';
   $('race-kicker').firstChild.textContent = 'ROUND ' + race.round + ' OF ' + race.rounds + ' · ' + year + ' ';
   $('race-name').textContent = race.name;
   const c = race.circuit;
@@ -37,6 +36,7 @@
     });
   }
   $('race-body').hidden = false;
+  $('static-summary')?.remove();
 
   const res = race.results;
   const byId = new Map(res.map(r => [r.id, r]));
