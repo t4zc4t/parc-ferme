@@ -1,0 +1,8 @@
+User-agent: *
+# the bare page shells, every real race and driver page has its own address
+Disallow: /race$
+Disallow: /race.html$
+Disallow: /driver$
+Disallow: /driver.html$
+
+Sitemap: https://parc-ferme.pages.dev/sitemap.xml

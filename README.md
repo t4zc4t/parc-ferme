@@ -10,7 +10,7 @@ I didn't want the site to depend on someone else's API being up, so it keeps its
 
 The updater is a GitHub Action. GitHub's own schedule is best effort and can skip hours at a time, so a tiny Cloudflare Worker (`worker/timer.js`) starts it every 10 minutes instead, with GitHub's schedule kept as an hourly backup. Almost every run ends straight away without touching the API. It knows the time of every session from the calendar, so it only starts checking once a qualifying, sprint or race is over, with one tiny request to see if the result is out. For the first 6 hours after a session it checks every run, then once an hour for two days. There's also one full check a day to catch penalties and calendar changes. When something new shows up it fetches the season, rebuilds the site files, commits them to the `data` branch and asks Cloudflare for a single build. If nothing changed, nothing gets committed or built.
 
-Cloudflare's build (`pipeline/build.py`) never calls the API either, it just copies the site files from the `data` branch. So an API outage can't break a deploy, the site keeps showing the last good data.
+Cloudflare's build (`pipeline/build.py`) never calls the API either, it just copies the site files from the `data` branch. So an API outage can't break a deploy, the site keeps showing the last good data. It also writes a real page for every race and driver, with its own title, description and a plain result summary, plus the sitemap, so search engines and link previews don't need to run any JavaScript.
 
 Once a month another Action saves Jolpica's full database dump as a release asset, as a backup of the backup. That same dump is where the lap-by-lap data comes from, so a second Action rebuilds the lap charts from it afterwards with no API calls at all. Races newer than the dump get their laps from the API a few hours after the flag, one race per run, and tyres, safety cars and weather come from OpenF1's free tier, which allows 30 requests a minute, so those calls are spaced two seconds apart.
 
@@ -61,9 +61,9 @@ pipeline/
   update.py     the schedule-aware updater
   backfill.py   one-time fill of the archive
   build.py      what Cloudflare runs
+  pages.py      race and driver pages and the sitemap, written during the build
 site/           the pages Cloudflare Pages serves
 site/assets/    styles, scripts and icon
-site/_redirects sends /drivers/<name> and /races/<year>/<round> to their pages
 .github/workflows/
   update.yml    started every 10 minutes, does nothing unless a session just ended or the daily check is due
   backfill.yml  run by hand to fill the archive

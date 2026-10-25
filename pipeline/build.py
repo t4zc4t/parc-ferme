@@ -6,6 +6,8 @@ import time
 import urllib.request
 from pathlib import Path
 
+import pages
+
 REPO = "t4zc4t/parc-ferme"
 URL = f"https://codeload.github.com/{REPO}/tar.gz/refs/heads/data"
 OUT = Path(__file__).resolve().parent.parent / "site" / "data"
@@ -58,6 +60,7 @@ def main():
     if not (OUT / "home.json").exists():
         sys.exit("the data branch has no site files yet")
     print(f"copied {count} data files")
+    pages.build()
 
 
 if __name__ == "__main__":

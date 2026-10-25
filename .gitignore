@@ -4,3 +4,7 @@ __pycache__/
 .DS_Store
 cache/
 site/data/
+# written by the build
+site/races/
+site/drivers/
+site/sitemap.xml
