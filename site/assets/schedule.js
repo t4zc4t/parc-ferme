@@ -14,9 +14,9 @@
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   $('tz-note').textContent = 'Every session of the ' + sched.season + ' season, shown in your own time zone (' + zone + ').';
 
-  const raceDone = r => Date.parse(r.race) + 2 * 3600e3 <= now;
-  // keep the weekend in focus for a few hours after the flag so its result shows
-  const focus = sched.rounds.find(r => Date.parse(r.race) + 6 * 3600e3 > now);
+  const raceDone = r => PF.weekendOver(r, now);
+  // same rule as the homepage, the next weekend that isn't over
+  const focus = sched.rounds.find(r => !PF.weekendOver(r, now));
   const nxt = PF.nextSession(sched, now);
 
   if (focus) weekend(focus);
@@ -96,6 +96,7 @@
           el('span', { class: 'round-side' },
             r.sprint ? el('span', { class: 'tagline mono' }, 'SPRINT') : null,
             r.winner ? el('span', { class: 'round-win' }, el('span', { class: 'mono dim' }, 'WIN '), r.winner.code)
+              : finished ? el('span', { class: 'pill' }, 'RESULT SOON')
               : isFocus ? el('span', { class: 'pill pill-next' }, 'NEXT') : null
           )
         ),
