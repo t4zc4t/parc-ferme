@@ -2,7 +2,7 @@
 
 A one-stop site for Grand Prix racing data. Standings, driver records, race data and studies on the questions fans keep arguing about, all in one place.
 
-I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. The race explorer has every Grand Prix since 1950, with a lap chart, gaps and lap times from 1996 and tyre strategies, safety cars and weather from 2023. The questions page answers eleven things people ask about the current era, like whether Antonelli will be the youngest champion or whether Hamilton's move to Ferrari worked, and the answers update after every race. The studies page has the longer reads, how much the car decides compared with the driver, and how retirements almost vanished from racing. The pages link into each other, so a result leads to its race, a driver to their rivals, and so on.
+I'm building it one feature at a time. Right now the homepage has the driver and team standings, the last race result and a countdown to the next session, the schedule page has every session of every weekend in your own time zone, and every driver on this year's grid has a page with their career numbers, how they finished each season, and the battle with their teammate this year. The compare page puts any two drivers since 1950 side by side, careers, title finishes by season, and every race they had against each other or as teammates. The race explorer has every Grand Prix since 1950, with a lap chart, gaps and lap times from 1996 and tyre strategies, safety cars and weather from 2023. Every race from 2026 also has a replay: each car on the real track, second by second, with a live timing tower, the lap chart as the timeline, and what the data says once the flag drops. The questions page answers eleven things people ask about the current era, like whether Antonelli will be the youngest champion or whether Hamilton's move to Ferrari worked, and the answers update after every race. The studies page has the longer reads, how much the car decides compared with the driver, and how retirements almost vanished from racing. The pages link into each other, so a result leads to its race, a driver to their rivals, and so on.
 
 ## How the data stays up to date
 
@@ -28,7 +28,7 @@ The Cloudflare build checks every path in the archive it downloads, so nothing o
 
 ## Data
 
-Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results are missing before 1994 and patchy from 1996 to 2002, so a pole is the fastest qualifier where those results exist and the driver starting from pole where they don't. Lap times and pit stops come from Jolpica too, from 1996 on. Tyre stints, safety cars and weather come from OpenF1, which starts in 2023. OpenF1 sometimes misses a pit stop, so stints are checked against Jolpica's pit stops and a stint with no recorded tyre shows as "not recorded". Practice and sprint qualifying timesheets also come from OpenF1, one request per session, picked up by the updater about half an hour after each session ends.
+Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results are missing before 1994 and patchy from 1996 to 2002, so a pole is the fastest qualifier where those results exist and the driver starting from pole where they don't. Lap times and pit stops come from Jolpica too, from 1996 on. Tyre stints, safety cars and weather come from OpenF1, which starts in 2023. OpenF1 sometimes misses a pit stop, so stints are checked against Jolpica's pit stops and a stint with no recorded tyre shows as "not recorded". Replays use OpenF1's car positions, about 26 requests a race, fetched once a few hours after the flag and kept on the `data` branch, so a replay never depends on OpenF1 again. OpenF1 closes its free API from 30 minutes before any session until 30 minutes after it ends, so the updater leaves it alone during those windows. Practice and sprint qualifying timesheets also come from OpenF1, one request per session, picked up by the updater about half an hour after each session ends.
 
 ## Running it locally
 
@@ -58,6 +58,8 @@ pipeline/
   questions.py  the questions page, worked out from the store after every update
   studies.py    the studies page, from every season in the store
   practice.py   practice and sprint qualifying times from OpenF1, 2023 on
+  replay.py     race replays from OpenF1 car positions, 2026 on
+  findings.py   the cards a replay shows at the flag
   update.py     the schedule-aware updater
   backfill.py   one-time fill of the archive
   build.py      what Cloudflare runs

@@ -1,7 +1,9 @@
 """Site files for the race explorer: a list per season and one file per race."""
 import laps
+import findings
 import openf1
 import practice
+import replay
 import store
 
 
@@ -45,6 +47,9 @@ def build(seasons, names, out):
                     stops.setdefault(d, set()).add(lap)
                 extra["stints"] = {d: openf1.reconcile(v, stops.get(d, set())) for d, v in extra["stints"].items()}
                 page.update(extra)
+            if replay.have(year, r["round"]):
+                page["replay"] = True
+                page["findings"] = findings.cards(page, names)
             times = practice.for_site(year, r["round"], names)
             if times:
                 page["practice"] = times

@@ -34,6 +34,9 @@ def get(endpoint, tries=4):
         except urllib.error.HTTPError as err:
             if err.code == 404:
                 return []
+            if err.code == 401:
+                # the free api shuts while any session is live, no point retrying
+                raise RuntimeError("openf1 is closed during a live session")
             if attempt == tries - 1:
                 raise RuntimeError(f"could not load {url}: {err}")
             time.sleep(20 if err.code == 429 else 5 * (attempt + 1))
@@ -41,6 +44,21 @@ def get(endpoint, tries=4):
             if attempt == tries - 1:
                 raise RuntimeError(f"could not load {url}: {err}")
             time.sleep(5 * (attempt + 1))
+
+
+LOCK = timedelta(minutes=30)
+
+
+def locked(season, now, minutes):
+    """openf1 closes its free api from 30 minutes before a session to 30 after it ends"""
+    for r in season["rounds"]:
+        for kind, start in r["sessions"].items():
+            if not start or kind not in minutes:
+                continue
+            begin = datetime.fromisoformat(start.replace("Z", "+00:00"))
+            if begin - LOCK <= now <= begin + timedelta(minutes=minutes[kind]) + LOCK:
+                return True
+    return False
 
 
 def path(year, rnd):

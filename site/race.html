@@ -50,6 +50,33 @@
     <div class="podium" id="race-podium"></div>
     <div class="facts" id="race-facts"></div>
 
+    <div class="panel replay-panel" id="replay-panel" hidden>
+      <div class="lap-top">
+        <h2 class="panel-title">Race replay</h2>
+        <span class="replay-flag mono" id="replay-flag" hidden></span>
+      </div>
+      <p class="panel-note">Every car where it really was, from the timing data. Pick a driver in the tower to follow them, or click the lap chart below to jump.</p>
+      <div class="replay-grid">
+        <div class="replay-map">
+          <canvas id="replay-canvas" aria-label="Track map with every car's position"></canvas>
+          <span class="replay-lap mono" id="replay-lap"></span>
+        </div>
+        <ol class="tower" id="tower" aria-label="Running order"></ol>
+      </div>
+      <div class="replay-controls">
+        <button type="button" class="btn-play" id="replay-play" aria-pressed="false">Play</button>
+        <input type="range" class="replay-seek" id="replay-seek" min="0" max="1" step="1" value="0" aria-label="Race time">
+        <span class="replay-time mono" id="replay-time">0:00:00</span>
+        <div class="seg" role="group" aria-label="Speed" id="replay-speed">
+          <button type="button" class="seg-btn" aria-pressed="false" data-speed="10">10x</button>
+          <button type="button" class="seg-btn on" aria-pressed="true" data-speed="30">30x</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-speed="60">60x</button>
+        </div>
+        <button type="button" class="seg-btn replay-end" id="replay-end">Skip to flag</button>
+      </div>
+      <div class="findings" id="findings" hidden></div>
+    </div>
+
     <div class="panel chart-panel" id="lap-panel" hidden>
       <div class="lap-top">
         <h2 class="panel-title">Lap by lap</h2>
@@ -124,6 +151,7 @@
 </footer>
 
 <script src="/assets/common.js"></script>
+<script src="/assets/replay.js"></script>
 <script src="/assets/race.js"></script>
 </body>
 </html>
