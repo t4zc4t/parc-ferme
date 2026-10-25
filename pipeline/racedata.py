@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import laps  # noqa: E402
 import openf1  # noqa: E402
+import practice  # noqa: E402
 import sitegen  # noqa: E402
 import store  # noqa: E402
 import update  # noqa: E402
@@ -27,20 +28,24 @@ def main():
     if n:
         labels.append(f"laps for {n} races")
 
-    got = 0
+    got = sheets = 0
     for year in range(openf1.FIRST, datetime.now(timezone.utc).year + 1):
         season = store.load(year)
         if season is None:
             continue
         try:
             done = openf1.fill(year, season)
+            print(f"openf1 {year}: {done} races")
+            got += done
+            done = practice.fill(year, season)
+            print(f"practice {year}: {done} sessions")
+            sheets += done
         except RuntimeError as err:
             print(f"openf1 {year} stopped: {err}")
-            continue
-        print(f"openf1 {year}: {done} races")
-        got += done
     if got:
         labels.append(f"tyres for {got} races")
+    if sheets:
+        labels.append(f"practice times for {sheets} sessions")
 
     if sitegen.build() or labels:
         if store.commit("Race data: " + (", ".join(labels) or "site files rebuilt")):

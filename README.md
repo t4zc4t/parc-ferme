@@ -28,7 +28,7 @@ The Cloudflare build checks every path in the archive it downloads, so nothing o
 
 ## Data
 
-Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results are missing before 1994 and patchy from 1996 to 2002, so a pole is the fastest qualifier where those results exist and the driver starting from pole where they don't. Lap times and pit stops come from Jolpica too, from 1996 on. Tyre stints, safety cars and weather come from OpenF1, which starts in 2023. OpenF1 sometimes misses a pit stop, so stints are checked against Jolpica's pit stops and a stint with no recorded tyre shows as "not recorded".
+Results, qualifying, sprints, standings and the calendar come from the Jolpica API, which carries on the old Ergast database. Qualifying results are missing before 1994 and patchy from 1996 to 2002, so a pole is the fastest qualifier where those results exist and the driver starting from pole where they don't. Lap times and pit stops come from Jolpica too, from 1996 on. Tyre stints, safety cars and weather come from OpenF1, which starts in 2023. OpenF1 sometimes misses a pit stop, so stints are checked against Jolpica's pit stops and a stint with no recorded tyre shows as "not recorded". Practice and sprint qualifying timesheets also come from OpenF1, one request per session, picked up by the updater about half an hour after each session ends.
 
 ## Running it locally
 
@@ -57,6 +57,7 @@ pipeline/
   racedata.py   rebuilds all race data from the latest dump
   questions.py  the questions page, worked out from the store after every update
   studies.py    the studies page, from every season in the store
+  practice.py   practice and sprint qualifying times from OpenF1, 2023 on
   update.py     the schedule-aware updater
   backfill.py   one-time fill of the archive
   build.py      what Cloudflare runs

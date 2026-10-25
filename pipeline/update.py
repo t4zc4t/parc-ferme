@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import api  # noqa: E402
 import laps  # noqa: E402
 import openf1  # noqa: E402
+import practice  # noqa: E402
 import season  # noqa: E402
 import sitegen  # noqa: E402
 import store  # noqa: E402
@@ -130,6 +131,13 @@ def race_extras(now):
                 labels.append("tyres and safety cars")
         except RuntimeError as err:
             print(f"openf1 failed: {err}")
+    # practice and sprint qualifying times, a few minutes after each session
+    if year >= openf1.FIRST:
+        try:
+            if practice.fill(year, data, now=now, until=practice.GIVE_UP, limit=3):
+                labels.append("practice times")
+        except RuntimeError as err:
+            print(f"practice times failed: {err}")
     return labels
 
 

@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 
 import compare
+import practice
 import questions
 import studies
 import races
@@ -116,6 +117,7 @@ def schedule(season, names):
     rounds_out = []
     for r in season["rounds"]:
         sessions = []
+        times = practice.for_site(season["year"], r["round"], names)
         for kind, start in session_list(r):
             end = start + timedelta(minutes=MINUTES[kind])
             top = []
@@ -123,8 +125,10 @@ def schedule(season, names):
             for row in src[:3]:
                 top.append({"id": row["d"], "code": names.code(row["d"]), "driver": names.driver(row["d"]),
                             "team": names.team(row["c"])})
+            for row in times.get(kind, [])[:3]:
+                top.append({"id": row["id"], "code": row["code"], "driver": row["name"], "team": row["team"]})
             sessions.append({"type": kind, "label": LABELS[kind], "start": iso(start), "end": iso(end),
-                             "results": kind in ("Q", "SR", "R"), "top3": top})
+                             "results": True, "top3": top})
         first, race = sessions[0]["start"] if sessions else None, r["sessions"]["R"]
         winner = r["results"][0] if r["results"] else None
         rounds_out.append({
