@@ -9,11 +9,13 @@
     return;
   }
   PF.stamp();
+  PF.watch();
   const now = Date.now();
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   $('tz-note').textContent = 'Every session of the ' + sched.season + ' season, shown in your own time zone (' + zone + ').';
 
   const raceDone = r => Date.parse(r.race) + 2 * 3600e3 <= now;
+  // keep the weekend in focus for a few hours after the flag so its result shows
   const focus = sched.rounds.find(r => Date.parse(r.race) + 6 * 3600e3 > now);
   const nxt = PF.nextSession(sched, now);
 

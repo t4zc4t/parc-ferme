@@ -20,6 +20,8 @@ import store  # noqa: E402
 
 ENDPOINT = {"Q": "qualifying", "SR": "sprint", "R": "results"}
 WATCH = timedelta(hours=48)
+# shortest these ever run, so we start asking before the scheduled end
+EARLIEST = {"Q": 50, "SR": 35, "R": 85}
 DAILY = timedelta(hours=20)
 CHECKED = store.ROOT / "meta" / "checked.json"
 
@@ -37,8 +39,9 @@ def waiting_sessions(data, now):
         for kind, start in rnd["sessions"].items():
             if kind not in ENDPOINT or not start:
                 continue
-            end = sitegen.when(start) + timedelta(minutes=sitegen.MINUTES[kind])
-            if end <= now < end + WATCH and not sitegen.has_data(rnd, kind):
+            begin = sitegen.when(start)
+            end = begin + timedelta(minutes=sitegen.MINUTES[kind])
+            if begin + timedelta(minutes=EARLIEST[kind]) <= now < end + WATCH and not sitegen.has_data(rnd, kind):
                 out.append((rnd["round"], kind, end))
     return out
 

@@ -1,7 +1,7 @@
 // homepage
 (async function () {
   const { $, el, pad2, driverLink } = PF;
-  let home, schedule;
+  let home, schedule, clockTimer;
   try {
     [home, schedule] = await Promise.all([PF.json('/data/home.json'), PF.json('/data/schedule.json')]);
   } catch (e) {
@@ -16,6 +16,7 @@
   let which = 'drivers', stake = 'title';
   showTitle();
   PF.stamp();
+  PF.watch();
 
   ['title', 'stake'].forEach(attr => {
     document.querySelectorAll('[data-' + attr + ']').forEach(btn => {
@@ -41,12 +42,15 @@
   });
 
   function showNext() {
+    clearInterval(clockTimer);
     const now = Date.now();
-    const race = schedule.rounds.find(r => Date.parse(r.race) + 2 * 3600e3 > now);
+    const race = schedule.rounds.find(r => !PF.weekendOver(r, now));
     if (!race) {
       $('next-name').textContent = 'Season complete';
       $('next-meta').textContent = 'The ' + (schedule.season + 1) + ' calendar shows up here once it is published.';
+      $('next-sessions').replaceChildren();
       $('clock').hidden = true;
+      $('clock-for').textContent = '';
       return;
     }
     const c = race.circuit;
@@ -54,41 +58,54 @@
     $('next-name').textContent = race.name;
     $('next-meta').textContent = c.name + ', ' + c.locality + ', ' + c.country;
 
-    const nxt = PF.nextSession(schedule, now);
-    const list = $('next-sessions');
-    race.sessions.forEach(s => {
+    const upcoming = race.sessions.find(s => PF.status(s, now) === 'upcoming');
+    const live = race.sessions.find(s => PF.status(s, now) === 'live');
+    $('next-sessions').replaceChildren(...race.sessions.map(s => {
       const status = PF.status(s, now);
-      const isNext = nxt && nxt.session === s && status === 'upcoming';
+      const isNext = s === upcoming && !live;
       const flag = status === 'live' ? el('span', { class: 'ns-flag flag-live' }, 'LIVE')
         : status === 'done' ? el('span', { class: 'ns-flag' }, 'DONE')
         : isNext ? el('span', { class: 'ns-flag flag-next' }, 'NEXT') : el('span', { class: 'ns-flag' });
       const when = new Date(s.start).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
-      list.append(el('li', { class: 'ns is-' + status + (isNext ? ' is-next' : '') },
+      return el('li', { class: 'ns is-' + status + (isNext ? ' is-next' : '') },
         el('span', { class: 'ns-label' }, s.label),
         el('span', { class: 'ns-time mono' }, when),
-        flag
-      ));
-    });
+        flag);
+    }));
 
-    // next start, or the end of a live session
-    const live = race.sessions.find(s => PF.status(s, now) === 'live');
-    const upcoming = race.sessions.find(s => PF.status(s, now) === 'upcoming');
-    const target = live ? Date.parse(live.end) : upcoming ? Date.parse(upcoming.start) : Date.parse(race.race);
-    $('clock-for').textContent = live ? live.label.toUpperCase() + ' ON NOW · ENDS IN ABOUT'
-      : upcoming ? 'UNTIL ' + (upcoming.type === 'R' ? 'LIGHTS OUT' : upcoming.label.toUpperCase())
-      : 'UNTIL LIGHTS OUT';
+    // while a session runs we count up from its start, nobody knows exactly when it ends
+    let from, up, label;
+    if (live) {
+      from = Date.parse(live.start); up = true;
+      label = live.label.toUpperCase() + ' ON NOW · RUNNING FOR';
+    } else if (upcoming) {
+      from = Date.parse(upcoming.start); up = false;
+      label = 'UNTIL ' + (upcoming.type === 'R' ? 'LIGHTS OUT' : upcoming.label.toUpperCase());
+    } else {
+      // everything has run, the result is on its way
+      from = null;
+      label = 'RESULT ON THE WAY';
+    }
+    $('clock').hidden = from === null;
+    $('clock-for').textContent = label;
+    // the moment the picture changes: a session starts or ends, or the weekend is over
+    const change = live ? Date.parse(live.end) : upcoming ? Date.parse(upcoming.start)
+      : Date.parse(race.race) + PF.RACE_LIMIT;
 
     const cells = {};
     document.querySelectorAll('#clock b').forEach(b => { cells[b.dataset.unit] = b; });
     function tick() {
-      let left = Math.max(0, Math.floor((target - Date.now()) / 1000));
+      const t = Date.now();
+      if (t >= change) { showNext(); return; }
+      if (from === null) return;
+      let left = Math.max(0, Math.floor((up ? t - from : from - t) / 1000));
       cells.d.textContent = pad2(Math.floor(left / 86400)); left %= 86400;
       cells.h.textContent = pad2(Math.floor(left / 3600)); left %= 3600;
       cells.m.textContent = pad2(Math.floor(left / 60));
       cells.s.textContent = pad2(left % 60);
     }
     tick();
-    setInterval(tick, 1000);
+    clockTimer = setInterval(tick, 1000);
   }
 
   function showLast(last) {
