@@ -14,6 +14,7 @@ import api  # noqa: E402
 import laps  # noqa: E402
 import openf1  # noqa: E402
 import practice  # noqa: E402
+import replay  # noqa: E402
 import season  # noqa: E402
 import sitegen  # noqa: E402
 import store  # noqa: E402
@@ -125,6 +126,10 @@ def race_extras(now):
             except RuntimeError as err:
                 print(f"round {r['round']} laps failed: {err}")
             break
+    # everything below is openf1, which is shut around live sessions
+    if openf1.locked(data, now, sitegen.MINUTES):
+        print("openf1 is closed for a live session, trying later")
+        return labels
     # openf1 usually has a race within hours, older gaps are left to the race data workflow
     fresh = {r["round"] for r, age in finished
              if timedelta(hours=3) < age < timedelta(days=7) and not openf1.have(year, r["round"])}
@@ -134,6 +139,15 @@ def race_extras(now):
                 labels.append("tyres and safety cars")
         except RuntimeError as err:
             print(f"openf1 failed: {err}")
+    # one replay per run, about 26 requests
+    recent = {r["round"] for r, age in finished
+              if timedelta(hours=3) < age < timedelta(days=7) and not replay.have(year, r["round"])}
+    if recent and year >= replay.FIRST:
+        try:
+            if replay.fill(year, data, limit=1, only=recent):
+                labels.append("race replay")
+        except RuntimeError as err:
+            print(f"replay failed: {err}")
     # practice and sprint qualifying times, a few minutes after each session
     if year >= openf1.FIRST:
         try:

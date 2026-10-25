@@ -45,13 +45,15 @@
   podium();
   facts();
   results();
-  if (laps) lapChart();
-  else {
+  const chart = laps ? lapChart() : null;
+  if (!laps) {
     $('no-laps').hidden = false;
     // from 1996 on a missing chart just means the laps haven't come in yet
     if (year >= 1996) $('no-laps-note').textContent = 'The lap-by-lap data for this race hasn\'t come in yet. It usually lands within a few hours of the chequered flag, so check back soon.';
   }
-  if (race.stints && Object.keys(race.stints).length) tyres();
+  // the replay shows tyres live in its timing tower
+  if (race.stints && Object.keys(race.stints).length && !race.replay) tyres();
+  if (race.replay && PF.replay) PF.replay(race, { year, round, byId, chart });
   if (race.pits && race.pits.length) pits();
   if (race.practice && Object.keys(race.practice).length) practice();
 
@@ -116,6 +118,8 @@
     const order = res.map(r => r.id).filter(id => laps[id]);
     const total = Math.max(...order.map(id => laps[id].length));
     let view = 'pos';
+    // set by the replay: where the race is now, what a click on the chart does
+    let cursor = null, seek = null;
     // slot per picked driver, so a colour stays with its driver
     let slots = order.slice(0, 3);
 
@@ -258,6 +262,12 @@
       ends.sort((a, b) => a.y - b.y).forEach((e, i, arr) => { if (i && e.y - arr[i - 1].y < 13) e.y = arr[i - 1].y + 13; });
       ends.forEach(e => root.append(svg('text', { x: e.x + 6, y: e.y + 4, class: 'end-label' }, byId.get(e.id).code)));
 
+      const hl = svg('path', { class: 'lap-line lap-hover', d: '' });
+      root.append(hl);
+      if (cursor != null) {
+        const cx = x(Math.min(total, Math.max(0, cursor)));
+        root.append(svg('line', { x1: cx, x2: cx, y1: padT - 6, y2: h - padB, class: 'playhead' }));
+      }
       const hair = svg('line', { y1: padT, y2: h - padB, class: 'hair', visibility: 'hidden' });
       root.append(hair);
       const hit = svg('rect', { x: padL, y: padT, width: w - padL - padR, height: h - padT - padB, class: 'hit' });
@@ -265,11 +275,27 @@
       box.append(root);
 
       const tip = $('lap-tip');
+      let hovered = null;
       const move = ev => {
         const r = root.getBoundingClientRect();
         const px = (ev.clientX - r.left) * (w / r.width);
         const n = Math.max(view === 'pos' ? 0 : 1, Math.min(total, Math.round((px - padL) / ((w - padL - padR) / total))));
         hair.setAttribute('x1', x(n)); hair.setAttribute('x2', x(n)); hair.setAttribute('visibility', 'visible');
+        // the line under the pointer, positions view only
+        hovered = null;
+        if (view === 'pos') {
+          const py = (ev.clientY - r.top) * (h / r.height);
+          const want = lo + (py - padT) * (hi - lo) / (h - padT - padB);
+          let best = 0.6;
+          order.forEach(id => { const v = value(id, n); if (v != null && Math.abs(v - want) < best) { best = Math.abs(v - want); hovered = id; } });
+        }
+        let d = '';
+        if (hovered && !picked.includes(hovered)) {
+          let pen = false;
+          for (let k = 0; k <= total; k++) { const v = value(hovered, k); if (v == null) { pen = false; continue; } d += (pen ? 'L' : 'M') + x(k).toFixed(1) + ',' + y(v).toFixed(1); pen = true; }
+        }
+        hl.setAttribute('d', d);
+        hit.style.cursor = seek || hovered ? 'pointer' : '';
         const period = (race.periods || []).find(([, a, b]) => n >= a && n <= b);
         const rows = picked.map(id => {
           const v = value(id, n);
@@ -278,7 +304,10 @@
           return el('div', { class: 'tip-row' }, el('span', { class: 'tip-dot', style: 'background:' + COLORS[slots.indexOf(id)] }),
             el('span', { class: 'mono' }, byId.get(id).code), el('span', { class: 'mono tip-v' }, txt + (pit ? ' · pit' : '')));
         });
-        tip.replaceChildren(el('div', { class: 'tip-head mono' }, n === 0 ? 'GRID' : 'LAP ' + n + (period ? ' · ' + period[0] : '')), ...rows);
+        const over = hovered && !picked.includes(hovered) ? el('div', { class: 'tip-row' }, el('span', { class: 'tip-dot tip-dot-hover' }),
+          el('span', { class: 'mono' }, byId.get(hovered).code), el('span', { class: 'mono tip-v' }, 'P' + value(hovered, n))) : null;
+        tip.replaceChildren(el('div', { class: 'tip-head mono' }, n === 0 ? 'GRID' : 'LAP ' + n + (period ? ' · ' + period[0] : '')), over, ...rows,
+          seek ? el('div', { class: 'tip-hint' }, 'Click to jump the replay here') : hovered && !picked.includes(hovered) ? el('div', { class: 'tip-hint' }, 'Click to follow ' + byId.get(hovered).code) : null);
         tip.hidden = false;
         const pr = $('lap-panel').getBoundingClientRect();
         const left = ev.clientX - pr.left + 16;
@@ -287,7 +316,18 @@
       };
       hit.addEventListener('pointermove', move);
       hit.addEventListener('pointerdown', move);
-      hit.addEventListener('pointerleave', () => { tip.hidden = true; hair.setAttribute('visibility', 'hidden'); });
+      hit.addEventListener('pointerleave', () => { tip.hidden = true; hair.setAttribute('visibility', 'hidden'); hl.setAttribute('d', ''); });
+      hit.addEventListener('click', ev => {
+        const r = root.getBoundingClientRect();
+        const n = Math.max(0, Math.min(total, Math.round(((ev.clientX - r.left) * (w / r.width) - padL) / ((w - padL - padR) / total))));
+        if (seek) seek(n);
+        else if (hovered) follow(hovered);
+      });
+    }
+
+    function follow(id) {
+      if (!slots.includes(id)) { slots.unshift(id); slots = slots.filter(Boolean).slice(0, 3); }
+      draw();
     }
 
     function niceTicks(a, b, n) {
@@ -302,6 +342,13 @@
     draw();
     let timer;
     window.addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(draw, 150); });
+    return {
+      total,
+      // laps done as a fraction, the line moves with the replay
+      cursor(v) { if (cursor === null || Math.abs(v - cursor) >= 0.2 || v === 0) { cursor = v; draw(); } },
+      onSeek(fn) { seek = fn; },
+      follow,
+    };
   }
 
   // ---- tyres ----

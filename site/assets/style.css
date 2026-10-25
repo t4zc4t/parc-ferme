@@ -704,3 +704,47 @@ a.flip-race:hover { color: var(--text); text-decoration: underline; }
   .s-card { padding: 22px 16px; }
   .s-text, .s-intro { font-size: 15px; }
 }
+
+/* race replay */
+.replay-grid { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 16px; margin-top: 8px; }
+.replay-map { position: relative; background: var(--ink); border: 1px solid var(--line); }
+.replay-map canvas { display: block; width: 100%; }
+.replay-lap { position: absolute; left: 12px; top: 10px; font-size: 13px; font-weight: 600; letter-spacing: .14em; color: var(--text); background: rgba(7,7,13,.8); padding: 4px 8px; }
+.replay-flag { font-size: 12px; font-weight: 700; letter-spacing: .16em; padding: 6px 10px; color: var(--ink); background: var(--amber); }
+.replay-flag.flag-red { background: #e5484d; color: #fff; }
+.tower { position: relative; list-style: none; margin: 0; padding: 0; }
+.tw-row { position: absolute; left: 0; right: 0; top: 0; height: 28px; display: grid; grid-template-columns: 30px 8px 40px 1fr auto; align-items: center; gap: 8px; padding: 0 8px; background: var(--panel-2); border: 1px solid transparent; cursor: pointer; transition: transform .45s ease; }
+.tw-row:hover, .tw-row:focus-visible { border-color: var(--line-2); outline: none; }
+.tw-row.tw-follow { border-color: var(--text); background: #221f3a; }
+.tw-row.tw-out { opacity: .4; }
+.tw-pos { font-size: 12px; color: var(--dim); }
+.tw-dot { width: 8px; height: 8px; border-radius: 50%; }
+.tw-code { font-size: 13px; font-weight: 600; color: var(--text); }
+.tw-gap { font-size: 12px; color: var(--soft); text-align: right; white-space: nowrap; }
+.tw-gap.tw-pit { color: var(--amber); font-weight: 600; }
+.tw-tyre { display: inline-flex; align-items: center; gap: 4px; min-width: 38px; justify-content: flex-end; }
+.tw-tyre .stint-key { width: 16px; height: 16px; font-size: 10px; }
+.tw-age { font-size: 11px; color: var(--dim); }
+.replay-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
+.btn-play { font: 700 14px var(--body, inherit); min-height: 40px; min-width: 110px; padding: 0 18px; color: var(--ink); background: var(--pink); border: 0; cursor: pointer; }
+.btn-play:hover { box-shadow: 0 0 18px rgba(255,61,139,.5); }
+.replay-seek { flex: 1 1 200px; accent-color: var(--pink); }
+.replay-time { font-size: 13px; color: var(--soft); min-width: 64px; }
+.replay-end { border: 1px solid var(--line-2) !important; }
+.playhead { stroke: var(--pink); stroke-width: 2; }
+.lap-hover { stroke: var(--text); stroke-width: 2.5; opacity: .9; }
+.tip-dot-hover { background: var(--text); }
+.tip-hint { font-size: 11px; color: var(--dim); margin-top: 6px; }
+.findings { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 18px; }
+.find-head { font-size: 18px; margin: 0 0 12px; }
+.find-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.find { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--panel-2); border-left: 2px solid var(--cyan); }
+.find:nth-child(3n+2) { border-left-color: var(--pink); }
+.find:nth-child(3n+3) { border-left-color: var(--amber); }
+.find-k { font-size: 11px; letter-spacing: .16em; color: var(--dim); }
+.find-v { font-size: 17px; font-weight: 700; color: var(--text); }
+.find-t { font-size: 13px; line-height: 1.5; color: var(--soft); }
+@media (max-width: 760px) {
+  .replay-grid { grid-template-columns: 1fr; }
+  .replay-seek { order: 5; flex-basis: 100%; }
+}
