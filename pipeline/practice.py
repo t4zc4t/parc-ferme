@@ -38,10 +38,10 @@ def sessions(year):
 
 
 def find(all_sessions, kind, start):
-    for name, begin, key in all_sessions:
-        if name in KINDS[kind] and abs(begin - start) <= timedelta(hours=3):
-            return key
-    return None
+    """nearest session with that name; the calendar has Las Vegas a day early"""
+    near = [(abs(begin - start), key) for name, begin, key in all_sessions
+            if name in KINDS[kind] and abs(begin - start) <= timedelta(hours=36)]
+    return min(near)[1] if near else None
 
 
 def numbers(season, rnd):
