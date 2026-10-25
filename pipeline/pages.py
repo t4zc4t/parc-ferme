@@ -88,8 +88,7 @@ def driver_page(template, d):
             f"{c['poles']} poles" + (f" and {c['titles']} world titles" if c["titles"] > 1 else
                                      " and a world title" if c["titles"] else "")
             + f". P{s['pos']} in {s['year']} with {s['points']} points so far.")
-    person = {"@context": "https://schema.org", "@type": "Person", "name": d["name"],
-              "nationality": d.get("nationality"), "jobTitle": "Racing driver",
+    person = {"@context": "https://schema.org", "@type": "Person", "name": d["name"], "jobTitle": "Racing driver",
               "memberOf": {"@type": "SportsTeam", "name": d["team"]}}
     static = (f'<section class="wrap block" id="static-summary"><p class="lede">{escape(desc)}</p></section>')
     return fill(template, f"/drivers/{d['id']}", title, desc, "d-last", d["last"],
