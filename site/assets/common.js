@@ -89,9 +89,32 @@ const PF = {
   },
 
   // done/live/upcoming, done here so the data doesn't change with time
+  // a result means it's over, whatever the clock says
   status(session, now) {
+    if (session.top3 && session.top3.length) return 'done';
     const start = Date.parse(session.start), end = Date.parse(session.end);
     return now >= end ? 'done' : now >= start ? 'live' : 'upcoming';
+  },
+
+  // a weekend is over once the race has a winner, or the two hour race limit has passed
+  RACE_LIMIT: 2 * 3600e3,
+  weekendOver(round, now) {
+    return !!round.winner || now > Date.parse(round.race) + PF.RACE_LIMIT;
+  },
+
+  // reload when the site gets new data, checked every few minutes while the tab is open
+  watch() {
+    let seen = null;
+    const check = async () => {
+      if (document.hidden) return;
+      try {
+        const meta = await PF.json('/data/meta.json');
+        if (seen && meta.updated !== seen) location.reload();
+        seen = meta.updated;
+      } catch (e) { /* try again next time */ }
+    };
+    check();
+    setInterval(check, 3 * 60e3);
   },
 
   nextSession(schedule, now) {
