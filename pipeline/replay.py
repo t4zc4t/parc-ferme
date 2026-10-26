@@ -1,14 +1,17 @@
-"""Race replays from OpenF1: where every car was, second by second, from 2026 on.
+"""Race replays from OpenF1: where every car was, twice a second, from 2026 on.
 
 About 26 requests a race (one location call per car plus laps, order, gaps, pits and
 drivers), fetched once a few hours after the flag and never again. Stored straight in
 the site folder as site/replay/<year>/<round>.json since it never changes.
 
-File layout, times are seconds after the start:
+File layout, times are seconds after the start, distances in metres:
+  v        format version
   step     seconds between samples
-  track    [[x, y], ...] the circuit, traced from one clean lap
-  cars     {id: {code, color, x: [...], y: [...]}} first value absolute, then deltas,
-           null where the car has no position (and the value after it absolute again)
+  track    [[x, y], ...] the circuit, traced from one clean lap, starting at the line
+  lap      length of that line
+  cars     {id: {code, color, d: [...]}} distance travelled along the track, laps added
+           up; first value absolute, then deltas, null where the car isn't on track
+           (and the value after it absolute again)
   laps     {id: [start of lap 1, lap 2, ...]}
   order    {id: [[t, position], ...]}
   gaps     {id: [[t, gap], ...]} gap to the leader, a number or "+1 LAP"
@@ -24,7 +27,8 @@ import openf1
 import store
 
 FIRST = 2026
-STEP = 1
+STEP = 0.5
+VERSION = 2         # 2: distance along the track instead of x and y
 SCALE = 10          # openf1 units are a tenth of a metre, a metre is plenty
 
 
@@ -33,7 +37,11 @@ def path(year, rnd):
 
 
 def have(year, rnd):
-    return path(year, rnd).exists()
+    """a replay in the current format"""
+    try:
+        return store.read_json(path(year, rnd)).get("v") == VERSION
+    except (FileNotFoundError, ValueError):
+        return False
 
 
 def ts(iso):
@@ -59,8 +67,8 @@ def rotation(key):
         return 0.0
 
 
-def sample(rows, t0, end, angle=0.0):
-    """positions every STEP seconds, None where there's no reading within 5s"""
+def positions(rows, t0, end, angle=0.0):
+    """raw positions every STEP seconds in metres, None where there's no reading within 5s"""
     pts = sorted((ts(r["date"]), *turn(r["x"], r["y"], angle)) for r in rows
                  if r.get("date") and not (r["x"] == 0 and r["y"] == 0))
     xs, ys, i = [], [], 0
@@ -74,10 +82,67 @@ def sample(rows, t0, end, angle=0.0):
         else:
             (a, ax, ay), (b, bx, by) = pts[i], pts[i + 1]
             f = (t - a) / (b - a) if b > a else 0
-            xs.append(round((ax + (bx - ax) * f) / SCALE))
-            ys.append(round((ay + (by - ay) * f) / SCALE))
+            xs.append((ax + (bx - ax) * f) / SCALE)
+            ys.append((ay + (by - ay) * f) / SCALE)
         t += STEP
-    return pack(xs), pack(ys)
+    return xs, ys
+
+
+class Track:
+    """the traced lap as a line we can measure distance along"""
+
+    def __init__(self, pts):
+        # a point every couple of metres so projections are smooth
+        fine = []
+        for (ax, ay), (bx, by) in zip(pts, pts[1:] + pts[:1]):
+            n = max(1, int(math.hypot(bx - ax, by - ay) // 2))
+            fine.extend((ax + (bx - ax) * k / n, ay + (by - ay) * k / n) for k in range(n))
+        self.pts = fine
+        self.cum = [0.0]
+        for (ax, ay), (bx, by) in zip(fine, fine[1:] + fine[:1]):
+            self.cum.append(self.cum[-1] + math.hypot(bx - ax, by - ay))
+        self.length = self.cum[-1]
+
+    def project(self, x, y, near=None):
+        """distance along the lap of the closest point, looking near the last one first"""
+        n = len(self.pts)
+        idx = range(n) if near is None else (i % n for i in range(near - 15, near + 60))
+        best, bi, bt = None, 0, 0.0
+        for i in idx:
+            ax, ay = self.pts[i]
+            bx, by = self.pts[(i + 1) % n]
+            dx, dy = bx - ax, by - ay
+            seg = dx * dx + dy * dy
+            t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / seg)) if seg else 0.0
+            d = (ax + dx * t - x) ** 2 + (ay + dy * t - y) ** 2
+            if best is None or d < best:
+                best, bi, bt = d, i, t
+        if near is not None and best > 30 ** 2:
+            return self.project(x, y)      # lost it, look everywhere
+        return bi, self.cum[bi] + bt * (self.cum[bi + 1] - self.cum[bi]), best
+
+    def distances(self, xs, ys):
+        """metres travelled along the track at each sample, laps added up"""
+        out, near, last, laps = [], None, None, 0
+        for x, y in zip(xs, ys):
+            if x is None:
+                out.append(None)
+                near = None
+                continue
+            near, s, far = self.project(x, y, near)
+            if far > 80 ** 2:
+                # parked in the garage or somewhere off the circuit
+                out.append(None)
+                near = None
+                continue
+            if last is not None:
+                if s - last < -self.length / 2:
+                    laps += 1
+                elif s - last > self.length / 2:
+                    laps -= 1
+            last = s
+            out.append(round(laps * self.length + s))
+        return out
 
 
 def pack(vals):
@@ -130,25 +195,30 @@ def race(year, rnd, key):
     end = (max(ends) if ends else max(t for v in laps.values() for _, t, _ in v) + 120) + 30
 
     angle = rotation(key)
-    cars, track = {}, None
+    raw, track = {}, None
     # the track comes from the winner's fastest lap, else anyone's, a fast lap is a clean one
     finish = [r["d"] for r in rnd["results"]]
     for no, d in sorted(numbers.items(), key=lambda kv: finish.index(kv[1]) if kv[1] in finish else 99):
         rows = openf1.get(f"location?session_key={key}&driver_number={no}")
         if not rows:
             continue
-        x, y = sample(rows, t0, end, angle)
-        meta = info.get(no, {})
-        cars[d] = {"code": meta.get("name_acronym"), "color": "#" + (meta.get("team_colour") or "888888"), "x": x, "y": y}
+        raw[d] = (no, positions(rows, t0, end, angle))
         timed = [(dur, t) for n, t, dur in laps.get(d, []) if dur and n > 1]
         if track is None and timed:
             dur, t = min(timed)
             lap = outline(rows, t, t + dur, angle)
             if len(lap) > 50:
                 track = lap
-    if not cars or not track:
+    if not raw or not track:
         print(f"{year} round {rnd['round']}: positions incomplete, no replay")
         return False
+
+    line = Track(track)
+    cars = {}
+    for d, (no, (xs, ys)) in raw.items():
+        meta = info.get(no, {})
+        cars[d] = {"code": meta.get("name_acronym"), "color": "#" + (meta.get("team_colour") or "888888"),
+                   "d": pack(line.distances(xs, ys))}
 
     order = {}
     for r in sorted(openf1.get(f"position?session_key={key}"), key=lambda r: r.get("date") or ""):
@@ -176,7 +246,9 @@ def race(year, rnd, key):
             pits.append([d, round(ts(r["date"]) - t0), round(lane, 1)])
 
     out = {
+        "v": VERSION,
         "step": STEP,
+        "lap": round(line.length),
         "end": round(end - t0),
         "track": track,
         "cars": cars,
