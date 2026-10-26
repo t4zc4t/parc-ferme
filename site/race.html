@@ -55,10 +55,11 @@
         <h2 class="panel-title">Race replay</h2>
         <span class="replay-flag mono" id="replay-flag" hidden></span>
       </div>
-      <p class="panel-note">Every car where it really was, from the timing data. Pick a driver in the tower to follow them, or click the lap chart below to jump.</p>
+      <p class="panel-note">Every car where it really was, from the timing data. Hover a car to see who it is, click it or a row in the tower to compare up to two drivers, or click the lap chart below to jump.</p>
       <div class="replay-grid">
         <div class="replay-map">
           <canvas id="replay-canvas" aria-label="Track map with every car's position"></canvas>
+          <div class="replay-tip" id="replay-tip" hidden></div>
           <span class="replay-lap mono" id="replay-lap"></span>
         </div>
         <ol class="tower" id="tower" aria-label="Running order"></ol>
@@ -74,6 +75,18 @@
         </div>
         <button type="button" class="seg-btn replay-end" id="replay-end">Skip to flag</button>
       </div>
+      <div class="replay-pickers">
+        <span class="mono cmp-label">COMPARE</span>
+        <select class="pick-sel" id="cmp-a" aria-label="First driver"></select>
+        <span class="mono dim">vs</span>
+        <select class="pick-sel" id="cmp-b" aria-label="Second driver"></select>
+        <button type="button" class="seg-btn cmp-clear" id="cmp-clear" hidden>Clear</button>
+        <div class="seg name-mode" role="group" aria-label="Names on the map" id="name-mode">
+          <button type="button" class="seg-btn on" aria-pressed="true" data-names="all">All names</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-names="picked">Leader and picks</button>
+        </div>
+      </div>
+      <div class="compare" id="compare" hidden></div>
       <div class="findings" id="findings" hidden></div>
     </div>
 

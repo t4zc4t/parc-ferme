@@ -98,7 +98,12 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   const INK = css.getPropertyValue('--ink').trim() || '#07070D';
 
   // ---- state ----
-  let t = 0, playing = false, speed = 30, follow = null, lastFrame = 0;
+  let t = 0, playing = false, speed = 30, lastFrame = 0;
+  // up to two drivers to compare, and whether every car gets its name on the map
+  let picks = [], names = 'all';
+  const RING = ['#EE3F7E', '#22A7B5'];
+  const ringOf = id => RING[picks.indexOf(id)];
+  let spots = [];   // where each dot was drawn, for hover and clicks
 
   function drawMap() {
     ctx.clearRect(0, 0, W, H);
@@ -110,34 +115,49 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     ctx.strokeStyle = '#34324f'; ctx.lineWidth = 2; ctx.stroke();
 
     const order = standing(t);
-    // back of the field first so the leaders sit on top
-    order.slice().reverse().forEach(({ id, out: gone }) => {
+    const comparing = picks.length > 0;
+    spots = [];
+    // back of the field first so the leaders sit on top, picked cars on top of all
+    const drawOrder = order.slice().reverse().sort((a, b) => picks.includes(a.id) - picks.includes(b.id));
+    drawOrder.forEach(({ id, out: gone }) => {
       const p = gone ? null : at(id, t);
       if (!p) return;
       const X = px(p[0]), Y = py(p[1]);
-      const mine = id === follow;
+      const mine = picks.includes(id);
+      spots.push({ id, X, Y });
+      ctx.globalAlpha = comparing && !mine ? 0.3 : 1;
       ctx.beginPath();
       ctx.arc(X, Y, mine ? 8 : 5.5, 0, Math.PI * 2);
       ctx.fillStyle = cars[id].color;
       ctx.fill();
       ctx.lineWidth = mine ? 3 : 1.5;
-      ctx.strokeStyle = mine ? '#ffffff' : INK;
+      ctx.strokeStyle = mine ? ringOf(id) : INK;
       ctx.stroke();
     });
-    // names for the leader and whoever is followed
+    ctx.globalAlpha = 1;
+
+    // names beside the dots, moved around so they don't sit on each other
     ctx.font = '600 11px "JetBrains Mono", monospace';
     ctx.textBaseline = 'middle';
-    const tag = new Set([order[0] && order[0].id, follow].filter(Boolean));
-    tag.forEach(id => {
-      const p = order.find(o => o.id === id).out ? null : at(id, t);
-      if (!p) return;
-      const X = px(p[0]) + 11, Y = py(p[1]) - 11;
+    const taken = [];
+    const free = (x, y, w, h) => !taken.some(r => x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y);
+    const leader = order[0] && order[0].id;
+    const wanted = spots.slice().reverse().filter(s => names === 'all' ? (!comparing || picks.includes(s.id) || s.id === leader)
+      : picks.includes(s.id) || s.id === leader);
+    // picked cars claim their spot first
+    wanted.sort((a, b) => picks.includes(b.id) - picks.includes(a.id));
+    wanted.forEach(({ id, X, Y }) => {
       const text = byId.get(id).code;
-      const tw = ctx.measureText(text).width + 8;
+      const w = ctx.measureText(text).width + 8, h = 16;
+      const tries = [[9, -h / 2], [-9 - w, -h / 2], [-w / 2, -9 - h], [-w / 2, 9]];
+      const spot = tries.map(([dx, dy]) => [X + dx, Y + dy]).find(([x, y]) => free(x, y, w, h));
+      if (!spot && !picks.includes(id)) return;
+      const [x, y] = spot || [X + 9, Y - h / 2];
+      taken.push({ x, y, w, h });
       ctx.fillStyle = 'rgba(7,7,13,.85)';
-      ctx.fillRect(X - 4, Y - 9, tw, 18);
-      ctx.fillStyle = id === follow ? '#ffffff' : cars[id].color;
-      ctx.fillText(text, X, Y);
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = picks.includes(id) ? ringOf(id) : '#d9d6ee';
+      ctx.fillText(text, x + 4, y + h / 2 + 1);
     });
   }
 
@@ -161,7 +181,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       el('span', { class: 'tw-code mono' }, r.code),
       el('span', { class: 'tw-gap mono' }),
       el('span', { class: 'tw-tyre mono' }));
-    const pick = () => { follow = follow === id ? null : id; if (follow && chart) chart.follow(id); render(); };
+    const pick = () => toggle(id);
     row.addEventListener('click', pick);
     row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
     rows[id] = row;
@@ -184,7 +204,8 @@ PF.replay = async function (race, { year, round, byId, chart }) {
         el('span', { class: 'stint-key tyre-' + ty.comp.toLowerCase() }, ty.comp[0]),
         el('span', { class: 'tw-age' }, String(ty.age))] : []));
       row.classList.toggle('tw-out', gone);
-      row.classList.toggle('tw-follow', id === follow);
+      row.classList.toggle('tw-follow', picks.includes(id));
+      row.style.setProperty('--ring', ringOf(id) || 'transparent');
       // a smooth slide when places change
       row.style.transform = 'translateY(' + (i * 30) + 'px)';
     });
@@ -207,7 +228,111 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     if (done) showFindings();
   }
 
-  function render() { drawMap(); drawTower(); drawStatus(); }
+  // ---- picking and comparing ----
+  function toggle(id) {
+    if (picks.includes(id)) picks = picks.filter(p => p !== id);
+    else picks = [...picks, id].slice(-2);
+    if (chart) picks.forEach(p => chart.follow(p));
+    syncPickers();
+    render();
+  }
+  const selA = $('cmp-a'), selB = $('cmp-b');
+  const byGrid = ids.slice().sort((a, b) => (byId.get(a).order || 99) - (byId.get(b).order || 99));
+  [selA, selB].forEach((sel, k) => {
+    sel.replaceChildren(el('option', { value: '' }, k ? 'Driver B' : 'Driver A'),
+      ...byGrid.map(id => el('option', { value: id }, byId.get(id).code + ' · ' + byId.get(id).name)));
+    sel.addEventListener('change', () => {
+      // the two boxes are the pair, a driver can't be picked twice
+      picks = [...new Set([selA.value, selB.value].filter(Boolean))];
+      if (chart) picks.forEach(p => chart.follow(p));
+      syncPickers();
+      render();
+    });
+  });
+  function syncPickers() {
+    selA.value = picks[0] || '';
+    selB.value = picks[1] || '';
+    $('cmp-clear').hidden = !picks.length;
+  }
+  $('cmp-clear').addEventListener('click', () => { picks = []; syncPickers(); render(); });
+  $('name-mode').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    names = b.dataset.names;
+    $('name-mode').querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    drawMap();
+  }));
+
+  const fmtLap = ms => { const m = Math.floor(ms / 60000); return m + ':' + ((ms % 60000) / 1000).toFixed(3).padStart(6, '0'); };
+  function drawCompare() {
+    const box = $('compare');
+    if (picks.length < 2) {
+      box.hidden = picks.length === 0;
+      box.replaceChildren(picks.length ? el('p', { class: 'cmp-hint' }, 'Pick a second driver to compare.') : '');
+      return;
+    }
+    const order = standing(t);
+    const info = id => {
+      const i = order.findIndex(o => o.id === id);
+      const gone = order[i].out;
+      const lap = lapOf(id, t);
+      const done = (race.drivers && race.drivers[id] || []).slice(0, Math.max(0, lap - 1)).map(r => r[1]).filter(Boolean);
+      const g = latest(data.gaps[id], t);
+      return {
+        gone, pos: gone ? 'OUT' : 'P' + (i + 1), gap: i === 0 ? 0 : g && typeof g[1] === 'number' ? g[1] : null,
+        lapped: g && typeof g[1] === 'string' ? g[1] : null,
+        tyre: gone ? null : tyreAt(id, t), pit: inPit(id, t),
+        stops: data.pits.filter(([d, s]) => d === id && s <= t).length,
+        last: done.length ? fmtLap(done[done.length - 1]) : '–',
+        best: done.length ? fmtLap(Math.min(...done)) : '–',
+      };
+    };
+    const [a, b] = picks, A = info(a), B = info(b);
+    let head;
+    if (A.gone || B.gone) head = (A.gone ? byId.get(a).code : byId.get(b).code) + ' is out of the race';
+    else if (A.gap != null && B.gap != null) {
+      const d = B.gap - A.gap;
+      const ahead = d >= 0 ? a : b;
+      head = byId.get(ahead).code + ' is ' + Math.abs(d).toFixed(1) + 's ahead';
+    } else head = (A.lapped || B.lapped) ? 'A lap or more apart' : 'Gap comes once the timing starts';
+    const tyre = x => x.tyre && x.tyre.comp !== 'UNKNOWN'
+      ? [el('span', { class: 'stint-key tyre-' + x.tyre.comp.toLowerCase() }, x.tyre.comp[0]), ' ' + x.tyre.age + ' laps'] : ['–'];
+    const row = (label, va, vb) => [el('span', { class: 'cmp-v' }, ...[].concat(va)), el('span', { class: 'cmp-k mono' }, label), el('span', { class: 'cmp-v' }, ...[].concat(vb))];
+    box.hidden = false;
+    box.replaceChildren(
+      el('div', { class: 'cmp-top' },
+        el('span', { class: 'cmp-name', style: '--ring:' + RING[0] }, byId.get(a).name),
+        el('span', { class: 'cmp-head' }, head),
+        el('span', { class: 'cmp-name cmp-right', style: '--ring:' + RING[1] }, byId.get(b).name)),
+      el('div', { class: 'cmp-grid' },
+        ...row('POSITION', A.pos + (A.pit ? ' · pit' : ''), B.pos + (B.pit ? ' · pit' : '')),
+        ...row('TYRE', tyre(A), tyre(B)),
+        ...row('STOPS', String(A.stops), String(B.stops)),
+        ...row('LAST LAP', A.last, B.last),
+        ...row('BEST SO FAR', A.best, B.best)));
+  }
+
+  // hover a dot for who it is, click it to pick it
+  const tip = $('replay-tip');
+  const nearest = ev => {
+    const r = canvas.getBoundingClientRect();
+    const mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    let best = null, d = 15;
+    spots.forEach(s => { const k = Math.hypot(s.X - mx, s.Y - my); if (k < d) { d = k; best = s; } });
+    return best && { ...best, mx, my };
+  };
+  canvas.addEventListener('pointermove', ev => {
+    const s = nearest(ev);
+    canvas.style.cursor = s ? 'pointer' : '';
+    if (!s) { tip.hidden = true; return; }
+    const r = byId.get(s.id), i = standing(t).findIndex(o => o.id === s.id);
+    tip.replaceChildren(el('b', null, 'P' + (i + 1) + ' ' + r.code), ' ' + r.name, el('br'), el('span', { class: 'dim' }, r.team));
+    tip.hidden = false;
+    tip.style.left = Math.min(s.mx + 14, W - 180) + 'px';
+    tip.style.top = (s.my + 14) + 'px';
+  });
+  canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
+  canvas.addEventListener('click', ev => { const s = nearest(ev); if (s) toggle(s.id); });
+
+  function render() { drawMap(); drawTower(); drawStatus(); drawCompare(); }
 
   // ---- the end: what the data says ----
   let shown = false;

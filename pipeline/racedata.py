@@ -20,6 +20,10 @@ import store  # noqa: E402
 import update  # noqa: E402
 
 
+def count(n, word):
+    return f"{n} {word}" + ("" if n == 1 else "s")
+
+
 def main():
     if len(sys.argv) < 2 or not Path(sys.argv[1]).is_file():
         sys.exit("usage: racedata.py <dump.zip>")
@@ -27,7 +31,7 @@ def main():
     n = laps.from_dump(sys.argv[1])
     print(f"laps from the dump: {n} files changed")
     if n:
-        labels.append(f"laps for {n} races")
+        labels.append(f"laps for {count(n, 'race')}")
 
     got = sheets = replays = 0
     for year in range(openf1.FIRST, datetime.now(timezone.utc).year + 1):
@@ -47,11 +51,11 @@ def main():
         except RuntimeError as err:
             print(f"openf1 {year} stopped: {err}")
     if got:
-        labels.append(f"tyres for {got} races")
+        labels.append(f"tyres for {count(got, 'race')}")
     if sheets:
-        labels.append(f"practice times for {sheets} sessions")
+        labels.append(f"practice times for {count(sheets, 'session')}")
     if replays:
-        labels.append(f"replays for {replays} races")
+        labels.append(f"replays for {count(replays, 'race')}")
 
     if sitegen.build() or labels:
         if store.commit("Race data: " + (", ".join(labels) or "site files rebuilt")):
