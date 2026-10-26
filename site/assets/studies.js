@@ -12,7 +12,7 @@
 
   $('s-index').replaceChildren(...data.studies.map((s, i) =>
     el('a', { class: 's-jump', href: '#' + s.id },
-      el('span', { class: 's-jump-num mono' }, 'STUDY ' + PF.pad2(i + 1)),
+      el('span', { class: 's-jump-num mono' }, 'Study ' + (i + 1)),
       el('span', { class: 's-jump-title' }, s.title),
       el('span', { class: 's-jump-answer' }, s.answer))));
 
@@ -25,8 +25,8 @@
   function study(s, i) {
     return el('article', { class: 's-card', id: s.id },
       el('div', { class: 'q-head' },
-        el('span', { class: 'q-num mono' }, 'STUDY ' + PF.pad2(i + 1)),
-        el('a', { class: 'q-link mono', href: '#' + s.id, 'aria-label': 'Link to this study' }, '#')),
+        el('span', { class: 'q-num' }, 'Study ' + (i + 1)),
+        PF.shareButton(() => ({ title: s.title, text: s.title, url: location.pathname + '#' + s.id }))),
       el('h2', { class: 's-title' }, s.title),
       el('p', { class: 'q-answer' }, s.answer),
       el('p', { class: 's-intro' }, s.intro),
@@ -35,7 +35,7 @@
         PF.chart(p.chart),
         el('p', { class: 's-text' }, p.text))),
       el('details', { class: 's-method' },
-        el('summary', { class: 'mono' }, 'HOW THIS WAS COUNTED'),
+        el('summary', { class: 'mono' }, 'How this was counted'),
         el('p', null, s.method)));
   }
 })();

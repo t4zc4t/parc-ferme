@@ -23,13 +23,13 @@
   function card(q, i) {
     return el('article', { class: 'q-card', id: q.id },
       el('div', { class: 'q-head' },
-        el('span', { class: 'q-num mono' }, 'Q' + PF.pad2(i + 1)),
-        el('a', { class: 'q-link mono', href: '#' + q.id, 'aria-label': 'Link to this question' }, '#')),
+        el('span', { class: 'q-num' }, 'Question ' + (i + 1)),
+        PF.shareButton(() => ({ title: q.q, text: q.q, url: location.pathname + '#' + q.id }))),
       el('h2', { class: 'q-title' }, q.q),
       el('p', { class: 'q-answer' }, q.answer),
       PF.chart(q.chart),
       el('p', { class: 'q-body' }, q.body),
       q.links && q.links.length ? el('div', { class: 'q-links' }, ...q.links.map(l =>
-        el('a', { class: 'q-go', href: l.href }, l.label, ' →'))) : null);
+        el('a', { class: 'q-go', href: l.href }, l.label))) : null);
   }
 })();

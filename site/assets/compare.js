@@ -65,7 +65,7 @@
 
     const matches = text => {
       const t = plain(text.trim());
-      if (!t) return { groups: [['ON THE GRID', grid], ['MOST RACES', people.drivers.slice(0, 40).map(p => p[0]).filter(id => !grid.includes(id))]] };
+      if (!t) return { groups: [['On the grid', grid], ['Most races', people.drivers.slice(0, 40).map(p => p[0]).filter(id => !grid.includes(id))]] };
       const starts = [], inside = [];
       for (const p of people.drivers) {
         const d = byId.get(p[0]);
@@ -321,12 +321,12 @@
     const yrs = rows => (rows.length ? yearsText(rows[0][0], rows[rows.length - 1][0]) : 'nothing');
     const races = { all: 'all races', shared: 'only races they both started', mates: 'only races as teammates' }[st.races];
     const pts = st.pts === 'now' ? 'points on today\'s system' : 'points as scored';
-    $('deck-sum').textContent = A.code + ' ' + yrs(ra) + ' (' + ra.length + ') vs ' + B.code + ' ' + yrs(rb) +
-      ' (' + rb.length + ')  ·  ' + races + '  ·  ' + pts;
+    $('deck-sum').textContent = A.name + ', ' + ra.length + ' races ' + yrs(ra) + ', against ' + B.name + ', ' + rb.length + ' races ' + yrs(rb) +
+      '. Counting ' + races + ', ' + pts + '.';
     const empty = [ra.length ? null : A.name, rb.length ? null : B.name].filter(Boolean);
     $('deck-sum').classList.toggle('warn', empty.length > 0);
     if (empty.length) {
-      $('deck-sum').textContent += '  ·  no races match for ' + empty.join(' or ') +
+      $('deck-sum').textContent += '. No races match for ' + empty.join(' or ') +
         (st.races !== 'all' ? ', their periods may not overlap' : '') + ', try a wider period';
     }
   }
@@ -334,11 +334,12 @@
   function head() {
     const side = (d, cls) => el('a', { class: 'vs-side ' + cls, href: '/drivers/' + encodeURIComponent(d.id) },
       el('span', { class: 'vs-ghost', 'aria-hidden': 'true' }, d.code),
-      el('span', { class: 'vs-code mono' }, d.code),
+      el('span', { class: 'vs-code' }, d.code),
       el('span', { class: 'vs-name' }, d.name),
-      el('span', { class: 'vs-sub' }, yearsText(...span(d)) + (d.nat ? ' · ' + d.nat : '') +
-        (d.titles ? ' · ' + d.titles + (d.titles === 1 ? ' title' : ' titles') : '')));
-    $('vs-head').replaceChildren(side(A, 'vs-a'), el('span', { class: 'vs-x', 'aria-hidden': 'true' }, 'VS'), side(B, 'vs-b'));
+      el('span', { class: 'vs-sub' }, yearsText(...span(d)) + (d.nat ? ', ' + d.nat : '') +
+        (d.titles ? ', ' + d.titles + (d.titles === 1 ? ' title' : ' titles') : '')));
+    $('vs-head').replaceChildren(side(A, 'vs-a'), el('span', { class: 'vs-x', 'aria-hidden': 'true' }, 'vs'), side(B, 'vs-b'),
+      el('div', { class: 'vs-share' }, PF.shareButton(() => ({ title: A.name + ' vs ' + B.name, text: A.name + ' vs ' + B.name + ', head to head', url: location.pathname + location.search }), 'Share this comparison')));
   }
 
   const pct = v => (v * 100).toFixed(1) + '%';
@@ -366,7 +367,7 @@
       return el('div', { class: 'duel' + (aWins ? ' a-wins' : bWins ? ' b-wins' : ' even') },
         el('span', { class: 'duel-v duel-a' }, show(va)),
         el('span', { class: 'duel-mid' },
-          el('span', { class: 'duel-label mono' }, label),
+          el('span', { class: 'duel-label' }, label),
           el('span', { class: 'duel-bar' },
             el('span', { class: 'duel-fa', style: 'width:' + share.toFixed(1) + '%' }),
             el('span', { class: 'duel-fb', style: 'width:' + (100 - share).toFixed(1) + '%' }))),
@@ -401,7 +402,7 @@
     $('tally').replaceChildren(
       el('span', { class: 'tally-n tally-a' }, score[0]),
       el('span', { class: 'tally-mid' },
-        el('span', { class: 'tally-label mono' }, 'STATS WON'),
+        el('span', { class: 'tally-label' }, 'Stats won'),
         el('span', { class: 'tally-bar' },
           el('span', { class: 'tally-fa', style: 'width:' + (100 * score[0] / total).toFixed(1) + '%' }),
           el('span', { class: 'tally-fb', style: 'width:' + (100 * score[1] / total).toFixed(1) + '%' }))),
@@ -475,8 +476,8 @@
     box.append(root);
     $('chart-note').replaceChildren(
       el('span', { class: 'key key-a' }), A.name + '   ',
-      el('span', { class: 'key key-b' }), B.name + '   ·   gold dots are titles' +
-        (stage ? '   ·   S1 is each driver\'s first season' : ''));
+      el('span', { class: 'key key-b' }), B.name + '. Gold dots are titles.' +
+        (stage ? ' S1 is each driver\'s first season.' : ''));
   }
 
   function against(ra, rb) {

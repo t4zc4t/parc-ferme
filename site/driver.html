@@ -14,7 +14,6 @@
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-<div class="rain" aria-hidden="true"></div>
 
 <header class="top">
   <div class="wrap top-row">
@@ -23,7 +22,7 @@
       <span class="brand-jp" lang="ja">パルク・フェルメ</span>
     </a>
     <nav aria-label="Main">
-      <a href="/#standings">Standings</a>
+      <a href="/standings">Standings</a>
       <a href="/schedule">Schedule</a>
       <a href="/drivers" aria-current="page">Drivers</a>
       <a href="/compare">Compare</a>
@@ -36,11 +35,11 @@
 
 <main id="driver-page">
   <section class="wrap dhero">
-    <a class="back mono" href="/drivers">← ALL DRIVERS</a>
+    <a class="back" href="/drivers">All drivers</a>
     <div class="dhero-row">
       <span class="dhero-num" id="d-num" aria-hidden="true"></span>
       <div class="dhero-copy">
-        <p class="kicker" id="d-kicker">DRIVER <span lang="ja">選手</span></p>
+        <p class="label" id="d-kicker">Driver</p>
         <h1 class="dname"><span class="dname-first" id="d-first"></span><span class="dname-last" id="d-last">Loading</span></h1>
         <p class="lede" id="d-meta"></p>
         <div class="go-row" id="d-links"></div>
@@ -50,7 +49,7 @@
 
   <section class="wrap block" id="season-block" hidden>
     <div class="block-head">
-      <h2 id="season-title">This season <span class="jp-h" lang="ja">今季</span></h2>
+      <h2 id="season-title">This season</h2>
       <span class="note mono" id="season-note"></span>
     </div>
     <div class="tiles tiles-3" id="season-tiles"></div>
@@ -69,10 +68,10 @@
         <div class="strip" id="strip"></div>
         <div class="legend mono">
           <span><i class="sq sq-win"></i>WIN</span>
-          <span><i class="sq sq-pod"></i>PODIUM</span>
-          <span><i class="sq sq-pts"></i>POINTS</span>
-          <span><i class="sq sq-out"></i>NO POINTS</span>
-          <span><i class="sq sq-dnf"></i>DID NOT FINISH</span>
+          <span><i class="sq sq-pod"></i>Podium</span>
+          <span><i class="sq sq-pts"></i>Points</span>
+          <span><i class="sq sq-out"></i>No points</span>
+          <span><i class="sq sq-dnf"></i>Did not finish</span>
         </div>
         <p class="strip-detail mono" id="strip-detail" aria-live="polite"></p>
       </div>
@@ -81,7 +80,7 @@
 
   <section class="wrap block" id="career-block" hidden>
     <div class="block-head">
-      <h2>Career <span class="jp-h" lang="ja">経歴</span></h2>
+      <h2>Career</h2>
       <span class="note mono" id="career-note"></span>
     </div>
     <div class="tiles tiles-6" id="career-tiles"></div>
@@ -95,7 +94,7 @@
     <div class="table-box">
       <table>
         <thead>
-          <tr><th scope="col">SEASON</th><th scope="col">TEAM</th><th scope="col">RACES</th><th scope="col">WINS</th><th scope="col">POS</th><th scope="col" class="num">POINTS</th></tr>
+          <tr><th scope="col">Season</th><th scope="col">Team</th><th scope="col">Races</th><th scope="col">Wins</th><th scope="col">Pos</th><th scope="col" class="num">Points</th></tr>
         </thead>
         <tbody id="season-rows"></tbody>
       </table>
@@ -106,11 +105,12 @@
 <footer>
   <div class="wrap foot-row">
     <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
-    <span class="mono" id="updated">Data: Jolpica</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
   </div>
 </footer>
 
 <script src="/assets/common.js"></script>
 <script src="/assets/driver.js"></script>
+<script src="/assets/search.js"></script>
 </body>
 </html>

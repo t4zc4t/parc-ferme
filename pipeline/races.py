@@ -24,7 +24,7 @@ def build(seasons, names, out):
                 "country": r["circuit"]["country"], "done": bool(r["results"]),
                 "winner": {"id": win["d"], "name": names.driver(win["d"]), "code": names.code(win["d"]),
                            "team": names.team(win["c"])} if win else None,
-                "laps": has_laps, "tyres": has_tyres,
+                "laps": has_laps, "tyres": has_tyres, "replay": replay.have(year, r["round"]),
             })
             if not r["results"]:
                 continue

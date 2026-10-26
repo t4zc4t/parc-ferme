@@ -23,7 +23,7 @@
   calendar();
 
   function pill(status, isNext) {
-    const text = status === 'live' ? 'LIVE' : status === 'done' ? 'DONE' : isNext ? 'NEXT' : 'LATER';
+    const text = status === 'live' ? 'Live' : status === 'done' ? 'Done' : isNext ? 'Next' : 'Later';
     return el('span', { class: 'pill pill-' + (isNext && status === 'upcoming' ? 'next' : status) }, text);
   }
 
@@ -53,9 +53,8 @@
   function weekend(r) {
     $('focus-block').hidden = false;
     const started = Date.parse(r.sessions[0].start) <= now;
-    $('focus-title').firstChild.textContent = started ? 'This weekend ' : 'Next weekend ';
-    $('focus-title').append(el('span', { class: 'jp-h', lang: 'ja' }, '今週末'));
-    $('focus-note').textContent = 'ROUND ' + r.round + ' / ' + sched.rounds.length + (r.sprint ? ' · SPRINT WEEKEND' : '');
+    $('focus-title').textContent = started ? 'This weekend' : 'Next weekend';
+    $('focus-note').textContent = 'Round ' + r.round + ' of ' + sched.rounds.length + (r.sprint ? ', sprint weekend' : '');
     $('weekend').append(
       el('div', { class: 'weekend-head' },
         el('span', { class: 'weekend-name' }, r.name),
@@ -67,7 +66,7 @@
   }
 
   function raceLink(r) {
-    return el('a', { class: 'go', href: '/races/' + sched.season + '/' + r.round }, 'Lap chart, tyres and pit stops →');
+    return el('a', { class: 'go', href: '/races/' + sched.season + '/' + r.round }, 'Race page');
   }
 
   function dateRange(r) {
@@ -82,7 +81,7 @@
     const box = $('calendar');
     box.textContent = '';
     const done = sched.rounds.filter(raceDone).length;
-    $('cal-note').textContent = done + ' OF ' + sched.rounds.length + ' RACED';
+    $('cal-note').textContent = done + ' of ' + sched.rounds.length + ' raced';
     sched.rounds.forEach(r => {
       const finished = raceDone(r);
       const isFocus = focus && focus.round === r.round;
@@ -91,13 +90,13 @@
           el('span', { class: 'round-num mono' }, 'R' + String(r.round).padStart(2, '0')),
           el('span', { class: 'round-main' },
             el('span', { class: 'round-name' }, r.name.replace(' Grand Prix', ' GP')),
-            el('span', { class: 'round-meta' }, r.circuit.locality + ' · ' + dateRange(r))
+            el('span', { class: 'round-meta' }, r.circuit.locality + ', ' + dateRange(r))
           ),
           el('span', { class: 'round-side' },
-            r.sprint ? el('span', { class: 'tagline mono' }, 'SPRINT') : null,
-            r.winner ? el('span', { class: 'round-win' }, el('span', { class: 'mono dim' }, 'WIN '), r.winner.code)
-              : finished ? el('span', { class: 'pill' }, 'RESULT SOON')
-              : isFocus ? el('span', { class: 'pill pill-next' }, 'NEXT') : null
+            r.sprint ? el('span', { class: 'tagline mono' }, 'Sprint') : null,
+            r.winner ? el('span', { class: 'round-win' }, el('span', { class: 'mono dim' }, 'Won by '), r.winner.code)
+              : finished ? el('span', { class: 'pill' }, 'Result soon')
+              : isFocus ? el('span', { class: 'pill pill-next' }, 'Next') : null
           )
         ),
         el('ul', { class: 'srows srows-small' }, ...r.sessions.map(s => sessionRow(r, s))),

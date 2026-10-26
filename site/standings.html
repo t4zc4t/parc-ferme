@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F1 standings for every season since 1950, round by round · Parc Fermé</title>
+<meta name="description" content="Formula 1 driver and constructor standings for every season since 1950, after any round, with a points chart and who led wins, podiums and poles.">
+<meta name="theme-color" content="#07070D">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="canonical" href="https://parc-ferme.pages.dev/standings">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Parc Fermé">
+<meta property="og:title" content="F1 standings for every season since 1950, round by round · Parc Fermé">
+<meta property="og:description" content="Formula 1 driver and constructor standings for every season since 1950, after any round, with a points chart and who led wins, podiums and poles.">
+<meta property="og:url" content="https://parc-ferme.pages.dev/standings">
+<meta property="og:image" content="https://parc-ferme.pages.dev/assets/share.png">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <span class="brand-name">PARC FERMÉ</span>
+      <span class="brand-jp" lang="ja">パルク・フェルメ</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="/standings" aria-current="page">Standings</a>
+      <a href="/schedule">Schedule</a>
+      <a href="/drivers">Drivers</a>
+      <a href="/compare">Compare</a>
+      <a href="/races">Races</a>
+      <a href="/studies">Studies</a>
+      <a href="/questions">Questions</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap page-head">
+    <h1 class="page-title">Standings</h1>
+    <p class="lede">Every championship since 1950, after any round. Drag through the season to see how the table moved.</p>
+    <div class="season-pick">
+      <button type="button" class="season-step" id="prev-year" aria-label="Previous season">←</button>
+      <select class="pick-sel season-sel" id="year" aria-label="Season"></select>
+      <button type="button" class="season-step" id="next-year" aria-label="Next season">→</button>
+      <span id="share-slot"></span>
+    </div>
+  </section>
+
+  <section class="wrap block st-block">
+    <div class="st-controls">
+      <div class="seg" role="group" aria-label="Championship">
+        <button type="button" class="chip on" data-table="drivers" aria-pressed="true">Drivers</button>
+        <button type="button" class="chip" data-table="teams" aria-pressed="false">Teams</button>
+      </div>
+      <label class="st-round">
+        <span class="label" id="round-label">After round 1</span>
+        <input type="range" id="round" min="1" max="1" step="1" value="1" aria-describedby="round-label">
+      </label>
+      <select class="field" id="team-filter" aria-label="Team"><option value="">All teams</option></select>
+    </div>
+    <p class="label st-note" id="st-note"></p>
+
+    <div class="st-grid">
+      <div>
+        <div class="table-box">
+          <table>
+            <thead><tr id="st-head"></tr></thead>
+            <tbody id="st-body"><tr class="empty"><td colspan="6">Loading standings.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="st-side">
+        <div class="panel st-chart-panel">
+          <h2 class="panel-title">Points race</h2>
+          <p class="panel-note" id="chart-note">The top six, click a row in the table to add or remove someone.</p>
+          <div class="st-chart" id="st-chart"></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">Season leaders</h2>
+          <p class="panel-note" id="leaders-note">Up to the round picked.</p>
+          <div class="leaders" id="leaders"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
+  </div>
+</footer>
+
+<script src="/assets/common.js"></script>
+<script src="/assets/standings.js"></script>
+<script src="/assets/search.js"></script>
+</body>
+</html>

@@ -21,7 +21,6 @@
 <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
-<div class="rain" aria-hidden="true"></div>
 
 <header class="top">
   <div class="wrap top-row">
@@ -30,7 +29,7 @@
       <span class="brand-jp" lang="ja">パルク・フェルメ</span>
     </a>
     <nav aria-label="Main">
-      <a href="/#standings">Standings</a>
+      <a href="/standings">Standings</a>
       <a href="/schedule">Schedule</a>
       <a href="/drivers">Drivers</a>
       <a href="/compare">Compare</a>
@@ -43,30 +42,40 @@
 
 <main>
   <section class="wrap page-head">
-    <p class="kicker">RACE EXPLORER <span lang="ja">決勝</span></p>
     <h1 class="page-title">Races</h1>
     <p class="lede">Every Grand Prix since 1950. Lap charts and pit stops from 1996, tyre strategies and safety cars from 2023.</p>
     <div class="season-pick">
       <button type="button" class="season-step" id="prev-year" aria-label="Previous season">←</button>
       <select class="pick-sel season-sel" id="year" aria-label="Season"></select>
       <button type="button" class="season-step" id="next-year" aria-label="Next season">→</button>
-      <span class="mono dim" id="year-note"></span>
+      <span class="label" id="year-note"></span>
+    </div>
+    <div class="filters" role="search">
+      <input class="field" type="search" id="race-q" placeholder="Filter by race, country, winner or team" aria-label="Filter races" autocomplete="off">
+      <select class="field" id="race-team" aria-label="Winning team"><option value="">Any winning team</option></select>
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" class="chip on" data-show="all" aria-pressed="true">All</button>
+        <button type="button" class="chip" data-show="done" aria-pressed="false">Run</button>
+        <button type="button" class="chip" data-show="soon" aria-pressed="false">Upcoming</button>
+      </div>
     </div>
   </section>
 
   <section class="wrap block">
     <div class="race-grid" id="rounds"><p class="dim">Loading races.</p></div>
+    <p class="label empty-note" id="race-empty" hidden>No races match. <button type="button" class="link-btn" id="race-reset">Clear the filters</button></p>
   </section>
 </main>
 
 <footer>
   <div class="wrap foot-row">
     <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
-    <span class="mono" id="updated">Data: Jolpica</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
   </div>
 </footer>
 
 <script src="/assets/common.js"></script>
 <script src="/assets/races.js"></script>
+<script src="/assets/search.js"></script>
 </body>
 </html>

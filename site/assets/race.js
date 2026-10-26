@@ -19,11 +19,11 @@
   }
   PF.stamp();
 
-  $('race-kicker').firstChild.textContent = 'ROUND ' + race.round + ' OF ' + race.rounds + ' · ' + year + ' ';
+  $('race-kicker').textContent = year + ', round ' + race.round + ' of ' + race.rounds;
   $('race-name').textContent = race.name;
   const c = race.circuit;
   const when = race.date ? new Date(race.date + 'T12:00:00Z').toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-  $('race-where').textContent = c.name + ', ' + c.locality + ', ' + c.country + (when ? ' · ' + when : '');
+  $('race-where').textContent = c.name + ', ' + c.locality + ', ' + c.country + (when ? ', ' + when : '');
   $('race-season').href = '/races?y=' + year;
   if (season) {
     const done = season.rounds.filter(r => r.winner);
@@ -35,6 +35,7 @@
       $(id).querySelector('span').textContent = r.name.replace(' Grand Prix', ' GP');
     });
   }
+  $('race-nav').append(PF.shareButton(() => ({ title: year + ' ' + race.name, text: year + ' ' + race.name + ', results and race replay', url: '/races/' + year + '/' + round })));
   $('race-body').hidden = false;
   $('static-summary')?.remove();
 
@@ -42,7 +43,6 @@
   const byId = new Map(res.map(r => [r.id, r]));
   const laps = race.drivers || null;
 
-  podium();
   facts();
   results();
   const chart = laps ? lapChart() : null;
@@ -63,32 +63,25 @@
     return mm + ':' + s.toFixed(3).padStart(6, '0');
   }
 
-  function podium() {
-    $('race-podium').replaceChildren(...res.filter(r => ['1', '2', '3'].includes(r.pos)).map(r =>
-      el('a', { href: PF.driverHref(r.id), class: 'step step-' + r.pos },
-        el('span', { class: 'step-pos mono' }, 'P' + r.pos),
-        el('span', { class: 'step-code' }, r.code),
-        el('span', { class: 'step-name' }, r.name),
-        el('span', { class: 'step-team' }, r.team))));
-  }
+
 
   function facts() {
     const win = res[0];
     const fast = res.find(r => r.fl === '1');
-    const items = [['LAPS', win.laps]];
-    if (race.pits) items.push(['PIT STOPS', race.pits.length]);
+    const items = [['Laps', win.laps]];
+    if (race.pits) items.push(['Pit stops', race.pits.length]);
     if (race.periods) {
       const n = k => race.periods.filter(p => p[0] === k).length;
       const parts = [['SC', n('SC')], ['VSC', n('VSC')], ['RED', n('RED')]].filter(p => p[1]);
-      items.push(['NEUTRALISED', parts.length ? parts.map(p => p[1] + ' ' + p[0]).join(' · ') : 'none']);
+      items.push(['Neutralised', parts.length ? parts.map(p => p[1] + ' ' + p[0]).join(', ') : 'none']);
     }
     if (race.weather && race.weather.air) {
       const w = race.weather;
-      items.push(['WEATHER', Math.round(w.air[1]) + '° air · ' + Math.round(w.track[1]) + '° track' + (w.rain ? ' · rain' : ' · dry')]);
+      items.push(['Weather', Math.round(w.air[1]) + '° air, ' + Math.round(w.track[1]) + '° track' + (w.rain ? ', rain' : ', dry')]);
     }
-    if (fast) items.push(['FASTEST LAP', fast.code]);
+    if (fast) items.push(['Fastest lap', fast.code]);
     $('race-facts').replaceChildren(...items.map(([k, v]) =>
-      el('div', { class: 'fact' }, el('span', { class: 'fact-k mono' }, k), el('span', { class: 'fact-v' }, v))));
+      el('div', { class: 'fact' }, el('span', { class: 'fact-k' }, k), el('span', { class: 'fact-v' }, v))));
   }
 
   function results() {
@@ -302,11 +295,11 @@
           const txt = v == null ? '–' : view === 'pos' ? 'P' + v : view === 'gap' ? (v < 0.001 ? 'leader' : '+' + v.toFixed(1) + 's') : fmtLap(Math.round(v * 1000));
           const pit = (race.pits || []).some(p => p[0] === id && p[1] === n);
           return el('div', { class: 'tip-row' }, el('span', { class: 'tip-dot', style: 'background:' + COLORS[slots.indexOf(id)] }),
-            el('span', { class: 'mono' }, byId.get(id).code), el('span', { class: 'mono tip-v' }, txt + (pit ? ' · pit' : '')));
+            el('span', { class: 'mono' }, byId.get(id).code), el('span', { class: 'mono tip-v' }, txt + (pit ? ', in the pits' : '')));
         });
         const over = hovered && !picked.includes(hovered) ? el('div', { class: 'tip-row' }, el('span', { class: 'tip-dot tip-dot-hover' }),
           el('span', { class: 'mono' }, byId.get(hovered).code), el('span', { class: 'mono tip-v' }, 'P' + value(hovered, n))) : null;
-        tip.replaceChildren(el('div', { class: 'tip-head mono' }, n === 0 ? 'GRID' : 'LAP ' + n + (period ? ' · ' + period[0] : '')), over, ...rows,
+        tip.replaceChildren(el('div', { class: 'tip-head mono' }, n === 0 ? 'Grid' : 'Lap ' + n + (period ? ', ' + period[0] : '')), over, ...rows,
           seek ? el('div', { class: 'tip-hint' }, 'Click to jump the replay here') : hovered && !picked.includes(hovered) ? el('div', { class: 'tip-hint' }, 'Click to follow ' + byId.get(hovered).code) : null);
         tip.hidden = false;
         const pr = $('lap-panel').getBoundingClientRect();
@@ -363,7 +356,7 @@
         const label = comp.charAt(0) + comp.slice(1).toLowerCase();
         return el('span', { class: 'stint tyre-' + comp.toLowerCase(),
           style: 'left:' + (100 * (a - 1) / total).toFixed(2) + '%;width:' + (100 * (b - a + 1) / total).toFixed(2) + '%',
-          title: 'Stint ' + (i + 1) + ' · ' + label + ' · laps ' + a + '–' + b + (age ? ' · ' + age + ' laps old at the start' : ' · new') },
+          title: 'Stint ' + (i + 1) + ', ' + label + ', laps ' + a + '–' + b + (age ? ', ' + age + ' laps old at the start' : ', new') },
           b - a >= 3 ? (TYRE[comp] || '?') : '');
       }));
       return el('div', { class: 'tyre-row' }, el('span', { class: 'tyre-who mono' }, r.code), bar);
@@ -413,7 +406,7 @@
       return el('li', { class: 'pit' },
         el('span', { class: 'pit-time mono' }, (ms / 1000).toFixed(2) + 's'),
         el('span', { class: 'pit-who' }, PF.driverLink(id, el('span', { class: 'code mono' }, r.code), r.name)),
-        el('span', { class: 'pit-lap mono' }, 'LAP ' + lap));
+        el('span', { class: 'pit-lap' }, 'lap ' + lap));
     }));
   }
 })();

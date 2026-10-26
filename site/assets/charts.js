@@ -3,7 +3,7 @@
   const { el } = PF;
   PF.chart = function (c) {
     if (!c) return null;
-    const box = el('div', { class: 'q-chart' }, c.title ? el('p', { class: 'q-chart-title mono' }, c.title.toUpperCase()) : null);
+    const box = el('div', { class: 'q-chart' }, c.title ? el('p', { class: 'q-chart-title' }, c.title) : null);
     if (c.type === 'pairs') {
       box.append(el('div', { class: 'pairs', style: '--n:' + c.cols.length },
         el('span', { class: 'pairs-corner' }),

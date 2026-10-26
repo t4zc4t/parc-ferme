@@ -7,6 +7,7 @@ import practice
 import questions
 import studies
 import races
+import standings
 from compare import is_pole
 import store
 import title
@@ -91,7 +92,7 @@ def home(season, names):
     last = done[-1] if done else None
     after = season["standings"]["round"]
     last_gp = last["round"] if last else 0
-    note = f"AFTER ROUND {last_gp} + ROUND {after} SPRINT" if after > last_gp else f"AFTER ROUND {after}"
+    note = f"after round {last_gp} and the round {after} sprint" if after > last_gp else f"after round {after}"
 
     out = {
         "season": season["year"],
@@ -277,6 +278,7 @@ def build(now=None):
     for did, f in results.items():
         changed |= store.write_json(out / "results" / f"{did}.json", f)
     changed |= races.build(seasons, names, out)
+    changed |= standings.build(seasons, names, out)
     changed |= store.write_json(out / "questions.json", questions.build(seasons, names, h["title"]))
     changed |= store.write_json(out / "studies.json", studies.build(seasons, names))
     # only bumps when something changed
