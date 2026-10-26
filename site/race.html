@@ -14,7 +14,6 @@
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-<div class="rain" aria-hidden="true"></div>
 
 <header class="top">
   <div class="wrap top-row">
@@ -23,7 +22,7 @@
       <span class="brand-jp" lang="ja">パルク・フェルメ</span>
     </a>
     <nav aria-label="Main">
-      <a href="/#standings">Standings</a>
+      <a href="/standings">Standings</a>
       <a href="/schedule">Schedule</a>
       <a href="/drivers">Drivers</a>
       <a href="/compare">Compare</a>
@@ -36,10 +35,10 @@
 
 <main>
   <section class="wrap page-head race-head">
-    <p class="kicker" id="race-kicker">RACE <span lang="ja">決勝</span></p>
+    <p class="label" id="race-kicker">Race</p>
     <h1 class="page-title" id="race-name">Loading</h1>
     <p class="lede" id="race-where"></p>
-    <nav class="race-nav" aria-label="Other races">
+    <nav class="race-nav" id="race-nav" aria-label="Other races">
       <a class="race-nav-link" id="race-prev" hidden>← <span></span></a>
       <a class="race-nav-link" id="race-season" href="/races">All races</a>
       <a class="race-nav-link" id="race-next" hidden><span></span> →</a>
@@ -47,7 +46,6 @@
   </section>
 
   <section class="wrap block" id="race-body" hidden>
-    <div class="podium" id="race-podium"></div>
     <div class="facts" id="race-facts"></div>
 
     <div class="panel replay-panel" id="replay-panel" hidden>
@@ -74,9 +72,10 @@
           <button type="button" class="seg-btn" aria-pressed="false" data-speed="60">60x</button>
         </div>
         <button type="button" class="seg-btn replay-end" id="replay-end">Skip to flag</button>
+        <span id="replay-share-slot"></span>
       </div>
       <div class="replay-pickers">
-        <span class="mono cmp-label">COMPARE</span>
+        <span class="cmp-label">Compare</span>
         <select class="pick-sel" id="cmp-a" aria-label="First driver"></select>
         <span class="mono dim">vs</span>
         <select class="pick-sel" id="cmp-b" aria-label="Second driver"></select>
@@ -129,8 +128,8 @@
       <div class="table-box">
         <table class="results">
           <thead><tr>
-            <th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col" class="opt">TEAM</th>
-            <th scope="col">GRID</th><th scope="col" class="opt">LAPS</th><th scope="col">TIME / STATUS</th><th scope="col" class="num">PTS</th>
+            <th scope="col">Pos</th><th scope="col">Driver</th><th scope="col" class="opt">Team</th>
+            <th scope="col">Grid</th><th scope="col" class="opt">Laps</th><th scope="col">Time or status</th><th scope="col" class="num">Pts</th>
           </tr></thead>
           <tbody id="results-body"></tbody>
         </table>
@@ -146,8 +145,8 @@
       <div class="table-box">
         <table class="results">
           <thead><tr>
-            <th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col" class="opt">TEAM</th>
-            <th scope="col">BEST LAP</th><th scope="col">GAP</th><th scope="col" class="num">LAPS</th>
+            <th scope="col">Pos</th><th scope="col">Driver</th><th scope="col" class="opt">Team</th>
+            <th scope="col">Best lap</th><th scope="col">Gap</th><th scope="col" class="num">Laps</th>
           </tr></thead>
           <tbody id="practice-body"></tbody>
         </table>
@@ -159,12 +158,13 @@
 <footer>
   <div class="wrap foot-row">
     <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
-    <span class="mono" id="updated">Data: Jolpica</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
   </div>
 </footer>
 
 <script src="/assets/common.js"></script>
 <script src="/assets/replay.js"></script>
 <script src="/assets/race.js"></script>
+<script src="/assets/search.js"></script>
 </body>
 </html>

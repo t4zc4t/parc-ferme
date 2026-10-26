@@ -38,16 +38,16 @@ const PF = {
 
   // no 0% or 100% until it's actually settled
   chance(t) {
-    if (t.clinched || (t.note || '').startsWith('Champion')) return 'CHAMPION';
-    if (!t.alive) return 'OUT';
+    if (t.clinched || (t.note || '').startsWith('Champion')) return 'Champion';
+    if (!t.alive) return 'Out';
     if (t.prob >= 0.995) return '>99%';
     if (t.prob < 0.005) return '<1%';
     return Math.round(t.prob * 100) + '%';
   },
 
   top3(t) {
-    if (t.top3Locked) return 'LOCKED';
-    if (!t.top3Alive) return 'OUT';
+    if (t.top3Locked) return 'Locked';
+    if (!t.top3Alive) return 'Out';
     if (t.top3 >= 0.995) return '>99%';
     if (t.top3 < 0.005) return '<1%';
     return Math.round(t.top3 * 100) + '%';
@@ -74,7 +74,7 @@ const PF = {
     if (!node) return;
     try {
       const meta = await PF.json('/data/meta.json');
-      node.textContent = 'Data: Jolpica · updated ' + PF.dayTime(meta.updated);
+      node.textContent = 'Data from Jolpica and OpenF1, updated ' + PF.dayTime(meta.updated);
     } catch (e) { /* keep the plain credit */ }
   },
 
@@ -124,6 +124,38 @@ const PF = {
       }
     }
     return null;
+  },
+
+  // share sheet on phones, copy the link elsewhere
+  shareButton(get, label) {
+    const btn = PF.el('button', { type: 'button', class: 'btn btn-quiet share-btn' }, label || 'Share');
+    btn.addEventListener('click', async () => {
+      const { title, text, url } = get();
+      const link = new URL(url || location.href, location.origin).href;
+      if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+        try { await navigator.share({ title, text, url: link }); } catch (e) { /* closed */ }
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(link);
+        PF.toast('Link copied');
+      } catch (e) {
+        PF.toast('Copy the link from the address bar');
+      }
+    });
+    return btn;
+  },
+
+  toast(text) {
+    let box = document.getElementById('toast');
+    if (!box) {
+      box = PF.el('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' });
+      document.body.append(box);
+    }
+    box.textContent = text;
+    box.classList.add('show');
+    clearTimeout(PF.toastTimer);
+    PF.toastTimer = setTimeout(() => box.classList.remove('show'), 1800);
   },
 
   fail(target, colspan, text) {

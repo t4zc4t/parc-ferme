@@ -54,7 +54,7 @@
       return;
     }
     const c = race.circuit;
-    $('next-round').textContent = 'ROUND ' + race.round + ' / ' + schedule.rounds.length;
+    $('next-round').textContent = 'Round ' + race.round + ' of ' + schedule.rounds.length;
     $('next-name').textContent = race.name;
     $('next-meta').textContent = c.name + ', ' + c.locality + ', ' + c.country;
 
@@ -63,9 +63,9 @@
     $('next-sessions').replaceChildren(...race.sessions.map(s => {
       const status = PF.status(s, now);
       const isNext = s === upcoming && !live;
-      const flag = status === 'live' ? el('span', { class: 'ns-flag flag-live' }, 'LIVE')
-        : status === 'done' ? el('span', { class: 'ns-flag' }, 'DONE')
-        : isNext ? el('span', { class: 'ns-flag flag-next' }, 'NEXT') : el('span', { class: 'ns-flag' });
+      const flag = status === 'live' ? el('span', { class: 'ns-flag flag-live' }, 'Live')
+        : status === 'done' ? el('span', { class: 'ns-flag' }, 'Done')
+        : isNext ? el('span', { class: 'ns-flag flag-next' }, 'Next') : el('span', { class: 'ns-flag' });
       const when = new Date(s.start).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
       return el('li', { class: 'ns is-' + status + (isNext ? ' is-next' : '') },
         el('span', { class: 'ns-label' }, s.label),
@@ -77,14 +77,14 @@
     let from, up, label;
     if (live) {
       from = Date.parse(live.start); up = true;
-      label = live.label.toUpperCase() + ' ON NOW · RUNNING FOR';
+      label = live.label + ' is on now, running for';
     } else if (upcoming) {
       from = Date.parse(upcoming.start); up = false;
-      label = 'UNTIL ' + (upcoming.type === 'R' ? 'LIGHTS OUT' : upcoming.label.toUpperCase());
+      label = 'Until ' + (upcoming.type === 'R' ? 'lights out' : upcoming.label);
     } else {
       // everything has run, the result is on its way
       from = null;
-      label = 'RESULT ON THE WAY';
+      label = 'Result on the way';
     }
     $('clock').hidden = from === null;
     $('clock-for').textContent = label;
@@ -111,36 +111,19 @@
   function showLast(last) {
     if (!last || !last.results.length) return;
     $('last').hidden = false;
-    $('last-note').textContent = 'ROUND ' + last.round + ' · ' + last.name.toUpperCase() + ' · ' + last.dateLabel.toUpperCase();
-
-    const podium = $('podium');
-    last.results.slice(0, 3).forEach((r, i) => {
-      podium.append(el('a', { href: '/drivers/' + r.id, class: 'step step-' + (i + 1) },
-        el('span', { class: 'step-pos mono' }, 'P' + (i + 1)),
-        el('span', { class: 'step-code' }, r.code),
-        el('span', { class: 'step-name' }, r.driver),
-        el('span', { class: 'step-team' }, r.team)
-      ));
-    });
-
-    $('last-links').replaceChildren(
-      el('a', { class: 'go', href: '/races/' + schedule.season + '/' + last.round }, 'Lap chart, tyres and pit stops →'),
-      el('a', { class: 'go', href: '/races?y=' + schedule.season }, 'Every race this season →'));
-
-    const body = $('last-body');
-    last.results.forEach(r => {
+    $('last-note').textContent = last.name + ', round ' + last.round + ', ' + last.dateLabel;
+    $('last-body').replaceChildren(...last.results.map(r => {
       const moved = Number.isFinite(+r.pos) && r.grid > 0 ? r.grid - +r.pos : null;
-      const delta = moved === null || moved === 0 ? null
-        : el('span', { class: 'delta ' + (moved > 0 ? 'up' : 'down') }, (moved > 0 ? '+' : '') + moved);
-      body.append(el('tr', null,
-        el('td', { class: 'pos mono' }, pad2(r.pos)),
-        el('td', { class: 'driver' }, driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.driver))),
-        el('td', { class: 'team opt' }, r.team),
-        el('td', { class: 'mono nowrap' }, r.grid === 0 ? 'PIT' : r.grid, delta ? ' ' : null, delta),
-        el('td', { class: 'mono dim opt' }, r.gap),
-        el('td', { class: 'num mono pts' }, r.points)
-      ));
-    });
+      return el('li', { class: 'rl-row' + (+r.pos <= 3 ? ' rl-top' : '') },
+        el('span', { class: 'rl-pos num-font' }, r.pos),
+        el('span', { class: 'rl-who' }, driverLink(r.id, el('span', { class: 'code' }, r.code), ...PF.name(r.driver)),
+          el('span', { class: 'rl-team' }, r.team)),
+        el('span', { class: 'rl-gap num-font' }, r.gap),
+        moved ? el('span', { class: 'delta ' + (moved > 0 ? 'up' : 'down'), title: 'Places gained from the grid' }, (moved > 0 ? '+' : '') + moved) : el('span'));
+    }));
+    $('last-links').replaceChildren(
+      el('a', { class: 'btn btn-solid', href: '/races/' + schedule.season + '/' + last.round }, schedule.season >= 2026 ? 'Watch the replay' : 'Lap chart and tyres'),
+      el('a', { class: 'btn btn-quiet', href: '/races?y=' + schedule.season }, 'Every race this season'));
   }
 
   function showTitle() {
@@ -149,11 +132,10 @@
     $('title').hidden = false;
     const top3 = stake === 'top3';
     $('fight-name').textContent = top3 ? 'Top 3 fight' : 'Title fight';
-    $('fight-jp').textContent = top3 ? '表彰台争い' : '王座争い';
-    const left = t.racesLeft + (t.racesLeft === 1 ? ' RACE' : ' RACES') +
-      (t.sprintsLeft ? ' + ' + t.sprintsLeft + (t.sprintsLeft === 1 ? ' SPRINT' : ' SPRINTS') : '');
-    $('title-note').textContent = t.finished ? t.season + ' · SEASON OVER'
-      : left + ' LEFT · ' + (which === 'teams' ? t.maxTeam : t.maxDriver) + ' PTS STILL ON OFFER';
+    const left = t.racesLeft + (t.racesLeft === 1 ? ' race' : ' races') +
+      (t.sprintsLeft ? ' + ' + t.sprintsLeft + (t.sprintsLeft === 1 ? ' sprint' : ' sprints') : '');
+    $('title-note').textContent = t.finished ? t.season + ' season over'
+      : left + ' left, ' + (which === 'teams' ? t.maxTeam : t.maxDriver) + ' points still on offer';
 
     const rows = which === 'teams' ? t.teams : t.drivers;
     const label = r => top3 ? PF.top3(r) : PF.chance(r);
@@ -165,7 +147,7 @@
     box.textContent = '';
     inIt.forEach((r, i) => {
       const text = label(r);
-      const sure = text === 'CHAMPION' || text === 'LOCKED';
+      const sure = text === 'Champion' || text === 'Locked';
       const p = top3 ? r.top3 : r.prob;
       const width = sure ? 100 : Math.max(p * 100, 1.5);
       const who = which === 'teams'
@@ -173,9 +155,9 @@
         : PF.driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.name));
       const gapTo = top3 && i >= 3 ? +inIt[2].points - r.points : r.gap;
       box.append(el('div', { class: 'f-row' + (i === 0 || (top3 && i < 3) ? ' f-lead' : '') },
-        el('span', { class: 'f-pos mono' }, PF.pad2(r.pos)),
+        el('span', { class: 'f-pos num-font' }, r.pos),
         el('span', { class: 'f-who' }, who,
-          el('span', { class: 'f-pts mono' }, r.points + ' PTS' + (gapTo > 0 && (!top3 || i >= 3) ? ' · −' + gapTo : ''))),
+          el('span', { class: 'f-pts mono' }, r.points + ' pts' + (gapTo > 0 && (!top3 || i >= 3) ? ', ' + gapTo + ' behind' : ''))),
         el('span', { class: 'f-bar', role: 'img', 'aria-label': (top3 ? 'top 3 chance ' : 'title chance ') + text },
           el('span', { class: 'f-fill', style: 'width:' + width.toFixed(1) + '%' })),
         el('span', { class: 'f-pct mono' }, text),
@@ -203,12 +185,12 @@
       PF.fail(body, 5, 'No races run yet this season.');
       return;
     }
-    $('standings-note').textContent = home.season + ' · ' + home.standingsNote;
+    $('standings-note').textContent = home.season + ', ' + home.standingsNote.toLowerCase();
     head.textContent = '';
-    const cols = which === 'teams' ? ['POS', 'TEAM', 'WINS', 'POINTS'] : ['POS', 'DRIVER', 'TEAM', 'WINS', 'POINTS'];
+    const cols = which === 'teams' ? ['Pos', 'Team', 'Wins', 'Points'] : ['Pos', 'Driver', 'Team', 'Wins', 'Points'];
     cols.forEach((c, i) => head.append(el('th', {
       scope: 'col',
-      class: i === cols.length - 1 ? 'num' : (which === 'drivers' && c === 'TEAM' ? 'opt' : null)
+      class: i === cols.length - 1 ? 'num' : (which === 'drivers' && c === 'Team' ? 'opt' : null)
     }, c)));
 
     body.textContent = '';
@@ -218,7 +200,7 @@
         : [el('td', { class: 'driver' }, driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.driver))),
            el('td', { class: 'team opt' }, r.team)];
       body.append(el('tr', { class: i < 3 ? 'top3' : null },
-        el('td', { class: 'pos mono' }, pad2(r.pos)),
+        el('td', { class: 'pos num-font' }, r.pos),
         ...cells,
         el('td', { class: 'mono' }, r.wins),
         el('td', { class: 'num mono pts' }, r.points)

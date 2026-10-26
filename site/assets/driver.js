@@ -24,20 +24,21 @@
     $('d-num').textContent = d.number || d.code;
     $('d-first').textContent = d.first;
     $('d-last').textContent = d.last;
-    $('d-kicker').firstChild.textContent = d.code + ' · DRIVER ';
+    $('d-kicker').textContent = d.code + ' ';
     const bits = [d.team, d.nationality, d.age ? d.age + ' years old' : null];
     if (d.career.debut) bits.push('debut ' + d.career.debut.year + ' ' + d.career.debut.race);
-    $('d-meta').textContent = bits.filter(Boolean).join(' · ');
+    $('d-meta').textContent = bits.filter(Boolean).join(', ');
     const mate = d.season.teammates[0];
     $('d-links').replaceChildren(...[
       mate ? el('a', { class: 'go', href: '/compare?' + new URLSearchParams({ a: d.id, b: mate.id, r: 'mates' }) },
-        'Compare with ' + mate.name.split(' ').slice(-1)[0] + ' →') : null,
-      el('a', { class: 'go', href: '/compare?a=' + encodeURIComponent(d.id) }, 'Compare with anyone →')].filter(Boolean));
+        'Compare with ' + mate.name.split(' ').slice(-1)[0]) : null,
+      el('a', { class: 'go', href: '/compare?a=' + encodeURIComponent(d.id) }, 'Compare with anyone'),
+      PF.shareButton(() => ({ title: d.first + ' ' + d.last, text: d.first + ' ' + d.last + ', career and ' + d.season.year + ' season', url: '/drivers/' + d.id }))].filter(Boolean));
   }
 
   function tile(label, value, sub, cls) {
     return el('div', { class: 'tile' + (cls ? ' ' + cls : '') },
-      el('span', { class: 'tile-label mono' }, label),
+      el('span', { class: 'tile-label' }, label),
       el('span', { class: 'tile-value' + (String(value).length >= 4 ? ' long' : '') }, value),
       sub ? el('span', { class: 'tile-sub' }, sub) : null
     );
@@ -47,33 +48,33 @@
     const s = d.season;
     $('season-block').hidden = false;
     $('season-title').firstChild.textContent = s.year + ' season ';
-    $('season-note').textContent = s.rounds.length + ' GRANDS PRIX SO FAR';
+    $('season-note').textContent = s.rounds.length + ' Grands Prix so far';
     const podiums = s.rounds.filter(r => ['1', '2', '3'].includes(r.finish)).length;
     $('season-tiles').append(
-      tile('CHAMPIONSHIP', 'P' + s.pos, 'right now', 'tile-hot'),
-      tile('POINTS', s.points, s.wins + (s.wins === 1 ? ' win' : ' wins')),
-      tile('PODIUMS', podiums, podiums ? 'in ' + s.rounds.length + ' races' : 'none yet')
+      tile('Championship', 'P' + s.pos, 'right now', 'tile-hot'),
+      tile('Points', s.points, s.wins + (s.wins === 1 ? ' win' : ' wins')),
+      tile('Podiums', podiums, podiums ? 'in ' + s.rounds.length + ' races' : 'none yet')
     );
 
     // title fight
     if (s.title) {
       const t = s.title;
       const label = PF.chance(t);
-      const state = label === 'CHAMPION' ? 'champ' : !t.alive ? 'out' : t.pos === '1' ? 'lead' : 'alive';
-      const word = { champ: 'CHAMPION', out: 'OUT OF THE FIGHT', lead: 'LEADING', alive: 'STILL IN IT' }[state];
+      const state = label === 'Champion' ? 'champ' : !t.alive ? 'out' : t.pos === '1' ? 'lead' : 'alive';
+      const word = { champ: 'Champion', out: 'Out of the fight', lead: 'Leading', alive: 'Still in it' }[state];
       const top3State = t.top3Locked ? 'champ' : !t.top3Alive ? 'out' : +t.pos <= 3 ? 'lead' : 'alive';
-      const top3Word = { champ: 'TOP 3 LOCKED', out: 'TOP 3 OUT OF REACH', lead: 'IN THE TOP 3', alive: 'CHASING THE TOP 3' }[top3State];
+      const top3Word = { champ: 'Top 3 locked', out: 'Top 3 out of reach', lead: 'In the top 3', alive: 'Chasing the top 3' }[top3State];
       $('title-panel').hidden = false;
       $('title-panel').append(
         el('div', { class: 'tp-head' },
           el('span', { class: 'pill tp-' + state }, word),
           el('span', { class: 'tp-pct' }, state === 'out' ? '' : label),
-          state === 'out' || state === 'champ' ? null : el('span', { class: 'tp-cap mono' }, 'TITLE CHANCE')),
+          state === 'out' || state === 'champ' ? null : el('span', { class: 'tp-cap' }, 'title chance')),
         el('p', { class: 'tp-note' }, t.note + '.'),
         el('div', { class: 'tp-head tp-sub' },
           el('span', { class: 'pill tp-' + top3State }, top3Word),
           el('span', { class: 'tp-pct' }, top3State === 'out' || top3State === 'champ' ? '' : PF.top3(t)),
-          top3State === 'out' || top3State === 'champ' ? null : el('span', { class: 'tp-cap mono' }, 'TOP 3 CHANCE')),
+          top3State === 'out' || top3State === 'champ' ? null : el('span', { class: 'tp-cap' }, 'top 3 chance')),
         el('p', { class: 'tp-note' }, t.top3Note + '.'),
         el('p', { class: 'fine' }, state === 'out'
           ? 'Even winning every remaining race wouldn\'t win the title, the maximum is ' + t.maxPoints + ' points.'
@@ -88,11 +89,11 @@
       box.append(el('p', { class: 'panel-note' }, 'No teammate data for this season yet.'));
     }
     s.teammates.forEach(t => {
-      box.append(el('div', { class: 'duel' },
-        el('p', { class: 'duel-head' }, 'vs ', PF.driverLink(t.id, t.name),
-          el('span', { class: 'dim mono' }, ' · ' + t.rounds + (t.rounds === 1 ? ' round' : ' rounds') + ' together')),
-        duelBar('QUALIFYING', t.quali),
-        duelBar('RACE', t.race)
+      box.append(el('div', { class: 'mate' },
+        el('p', { class: 'mate-head' }, 'vs ', PF.driverLink(t.id, t.name),
+          el('span', { class: 'dim mono' }, ', ' + t.rounds + (t.rounds === 1 ? ' round' : ' rounds') + ' together')),
+        duelBar('Qualifying', t.quali),
+        duelBar('Race', t.race)
       ));
     });
 
@@ -112,8 +113,8 @@
         (r.grid ? ', started P' + r.grid : ', started from the pit lane') + ', ' + r.points + ' pts';
       const cell = el('button', { type: 'button', class: 'cell ' + cls, title: text, 'aria-label': text },
         r.classified ? r.finish : 'DNF');
-      const tell = () => detail.replaceChildren(text + ' · ',
-        el('a', { href: '/races/' + s.year + '/' + r.round }, 'race page →'));
+      const tell = () => detail.replaceChildren(text + ', ',
+        el('a', { href: '/races/' + s.year + '/' + r.round }, 'race page'));
       cell.addEventListener('mouseenter', tell);
       cell.addEventListener('focus', tell);
       cell.addEventListener('click', tell);
@@ -125,7 +126,7 @@
     const total = pair[0] + pair[1];
     const share = total ? (100 * pair[0] / total) : 50;
     return el('div', { class: 'duel-row' },
-      el('span', { class: 'duel-label mono' }, label),
+      el('span', { class: 'duel-label' }, label),
       el('span', { class: 'duel-score mono' }, el('b', null, pair[0]), ' – ', pair[1]),
       el('span', { class: 'duel-bar', role: 'img', 'aria-label': label.toLowerCase() + ' ' + pair[0] + ' to ' + pair[1] },
         el('span', { class: 'duel-fill', style: 'width:' + share.toFixed(1) + '%' }))
@@ -135,16 +136,16 @@
   function career(d) {
     const c = d.career;
     $('career-block').hidden = false;
-    $('career-note').textContent = c.seasons.length + (c.seasons.length === 1 ? ' SEASON' : ' SEASONS') +
-      (c.debut ? ' SINCE ' + c.debut.year : '');
+    $('career-note').textContent = c.seasons.length + (c.seasons.length === 1 ? ' season' : ' seasons') +
+      (c.debut ? ' since ' + c.debut.year : '');
     const pct = n => c.races ? Math.round(100 * n / c.races) + '% of races' : '';
     $('career-tiles').append(
-      tile('RACES', c.races, c.finishRate + '% finished'),
-      tile('WINS', c.wins, pct(c.wins), c.wins ? 'tile-hot' : ''),
-      tile('PODIUMS', c.podiums, pct(c.podiums)),
-      tile('POLES', c.poles, pct(c.poles)),
-      tile('TITLES', c.titles, c.titles ? 'world champion' : 'not yet', c.titles ? 'tile-gold' : ''),
-      tile('POINTS', c.points, c.pointsFinishes + ' points finishes')
+      tile('Races', c.races, c.finishRate + '% finished'),
+      tile('Wins', c.wins, pct(c.wins), c.wins ? 'tile-hot' : ''),
+      tile('Podiums', c.podiums, pct(c.podiums)),
+      tile('Poles', c.poles, pct(c.poles)),
+      tile('Titles', c.titles, c.titles ? 'world champion' : 'not yet', c.titles ? 'tile-gold' : ''),
+      tile('Points', c.points, c.pointsFinishes + ' points finishes')
     );
 
     chart(c.seasons, d.season.year);
@@ -157,7 +158,7 @@
         el('td', { class: 'team' }, s.teams.join(', ')),
         el('td', { class: 'mono' }, s.races),
         el('td', { class: 'mono' }, s.wins),
-        el('td', { class: 'mono pos' }, /^\d+$/.test(s.pos || '') ? 'P' + s.pos : 'NC', champ ? el('span', { class: 'crown' }, ' CHAMPION') : null),
+        el('td', { class: 'mono pos' }, /^\d+$/.test(s.pos || '') ? 'P' + s.pos : 'NC', champ ? el('span', { class: 'crown' }, ' Champion') : null),
         el('td', { class: 'num mono pts' }, s.points ?? '–')
       ));
     });

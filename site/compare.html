@@ -21,7 +21,6 @@
 <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
-<div class="rain" aria-hidden="true"></div>
 
 <header class="top">
   <div class="wrap top-row">
@@ -30,7 +29,7 @@
       <span class="brand-jp" lang="ja">パルク・フェルメ</span>
     </a>
     <nav aria-label="Main">
-      <a href="/#standings">Standings</a>
+      <a href="/standings">Standings</a>
       <a href="/schedule">Schedule</a>
       <a href="/drivers">Drivers</a>
       <a href="/compare" aria-current="page">Compare</a>
@@ -43,17 +42,16 @@
 
 <main>
   <section class="wrap page-head">
-    <p class="kicker">HEAD TO HEAD <span lang="ja">比較</span></p>
     <h1 class="page-title">Compare</h1>
     <p class="lede">Any two drivers who started a Grand Prix since 1950, side by side.</p>
     <form class="pickers" id="pickers" autocomplete="off">
       <div class="picker picker-a">
-        <label class="picker-tag mono" for="pick-a">DRIVER A</label>
+        <label class="picker-tag" for="pick-a">Driver A</label>
         <input type="text" id="pick-a" placeholder="Type a name" spellcheck="false" autocomplete="off">
       </div>
       <button type="button" class="swap" id="swap" aria-label="Swap drivers">⇄</button>
       <div class="picker picker-b">
-        <label class="picker-tag mono" for="pick-b">DRIVER B</label>
+        <label class="picker-tag" for="pick-b">Driver B</label>
         <input type="text" id="pick-b" placeholder="Type a name" spellcheck="false" autocomplete="off">
       </div>
     </form>
@@ -62,7 +60,7 @@
   <section class="wrap block" id="result" hidden>
     <div class="deck" id="deck">
       <div class="deck-row">
-        <span class="deck-tag mono">PERIOD</span>
+        <span class="deck-tag">Period</span>
         <div class="seg" role="group" aria-label="Period">
           <button type="button" class="seg-btn on" aria-pressed="true" data-mode="same">Same years</button>
           <button type="button" class="seg-btn" aria-pressed="false" data-mode="own">Each their own</button>
@@ -71,7 +69,7 @@
         <div class="deck-range" id="range"></div>
       </div>
       <div class="deck-row">
-        <span class="deck-tag mono">RACES</span>
+        <span class="deck-tag">Races</span>
         <div class="seg" role="group" aria-label="Which races">
           <button type="button" class="seg-btn on" aria-pressed="true" data-races="all">All races</button>
           <button type="button" class="seg-btn" aria-pressed="false" data-races="shared">Only shared races</button>
@@ -79,13 +77,13 @@
         </div>
       </div>
       <div class="deck-row">
-        <span class="deck-tag mono">POINTS</span>
+        <span class="deck-tag">Points</span>
         <div class="seg" role="group" aria-label="Points system">
           <button type="button" class="seg-btn on" aria-pressed="true" data-pts="real">As scored</button>
           <button type="button" class="seg-btn" aria-pressed="false" data-pts="now">Today's system</button>
         </div>
       </div>
-      <p class="deck-sum mono" id="deck-sum"></p>
+      <p class="deck-sum" id="deck-sum"></p>
     </div>
 
     <div class="vs-head" id="vs-head"></div>
@@ -124,11 +122,12 @@
 <footer>
   <div class="wrap foot-row">
     <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
-    <span class="mono" id="updated">Data: Jolpica</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
   </div>
 </footer>
 
 <script src="/assets/common.js"></script>
 <script src="/assets/compare.js"></script>
+<script src="/assets/search.js"></script>
 </body>
 </html>

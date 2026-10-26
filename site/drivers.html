@@ -21,7 +21,6 @@
 <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
-<div class="rain" aria-hidden="true"></div>
 
 <header class="top">
   <div class="wrap top-row">
@@ -30,7 +29,7 @@
       <span class="brand-jp" lang="ja">パルク・フェルメ</span>
     </a>
     <nav aria-label="Main">
-      <a href="/#standings">Standings</a>
+      <a href="/standings">Standings</a>
       <a href="/schedule">Schedule</a>
       <a href="/drivers" aria-current="page">Drivers</a>
       <a href="/compare">Compare</a>
@@ -43,14 +42,20 @@
 
 <main>
   <section class="wrap page-head">
-    <p class="kicker">THE GRID <span lang="ja">選手一覧</span></p>
     <h1 class="page-title">Drivers</h1>
     <p class="lede" id="grid-lede">Everyone who has scored or started a race this season, in championship order.</p>
-    <div class="sort" role="group" aria-label="Sort drivers">
-      <button type="button" class="chip on" aria-pressed="true" data-sort="pos">Championship</button>
-      <button type="button" class="chip" aria-pressed="false" data-sort="wins">Career wins</button>
-      <button type="button" class="chip" aria-pressed="false" data-sort="races">Experience</button>
-      <button type="button" class="chip" aria-pressed="false" data-sort="team">Team</button>
+    <div class="filters">
+      <input class="field" type="search" id="d-q" placeholder="Filter by name" aria-label="Filter drivers" autocomplete="off">
+      <select class="field" id="d-team" aria-label="Team"><option value="">All teams</option></select>
+      <select class="field" id="d-nat" aria-label="Nationality"><option value="">Any nationality</option></select>
+      <label class="label sort-label">Sort by
+        <select class="field" id="d-sort">
+          <option value="pos">Championship</option>
+          <option value="wins">Career wins</option>
+          <option value="races">Experience</option>
+          <option value="team">Team</option>
+        </select>
+      </label>
     </div>
   </section>
 
@@ -58,17 +63,19 @@
     <div class="grid-cards" id="grid">
       <p class="dim">Loading drivers.</p>
     </div>
+    <p class="label empty-note" id="d-empty" hidden>No drivers match.</p>
   </section>
 </main>
 
 <footer>
   <div class="wrap foot-row">
     <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
-    <span class="mono" id="updated">Data: Jolpica</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
   </div>
 </footer>
 
 <script src="/assets/common.js"></script>
 <script src="/assets/drivers.js"></script>
+<script src="/assets/search.js"></script>
 </body>
 </html>

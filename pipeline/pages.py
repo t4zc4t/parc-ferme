@@ -11,7 +11,7 @@ from pathlib import Path
 SITE = "https://parc-ferme.pages.dev"
 ROOT = Path(__file__).resolve().parent.parent / "site"
 DATA = ROOT / "data"
-STATIC = ["", "schedule", "drivers", "compare", "races", "questions", "studies"]
+STATIC = ["", "standings", "schedule", "drivers", "compare", "races", "questions", "studies"]
 
 
 def read(p):

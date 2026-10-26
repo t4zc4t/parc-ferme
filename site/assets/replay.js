@@ -129,6 +129,10 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   let t = 0, playing = false, speed = 30, lastFrame = 0;
   // up to two drivers to compare, and whether every car gets its name on the map
   let picks = [], names = 'all';
+  // a shared link can open on a moment and a pair of drivers
+  const params = new URLSearchParams(location.search);
+  if (params.has('t')) t = Math.max(0, Math.min(end, +params.get('t') || 0));
+  if (params.has('d')) picks = params.get('d').split(',').filter(id => cars[id]).slice(0, 2);
   const RING = ['#EE3F7E', '#22A7B5'];
   const ringOf = id => RING[picks.indexOf(id)];
   let spots = [];   // where each dot was drawn, for hover and clicks
@@ -221,10 +225,10 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     order.forEach(({ id, out: gone }, i) => {
       const row = rows[id];
       const [pos, , , gap, tyre] = row.children;
-      pos.textContent = gone ? 'OUT' : PF.pad2(i + 1);
+      pos.textContent = gone ? 'Out' : PF.pad2(i + 1);
       const g = latest(data.gaps[id], t);
       const pit = inPit(id, t);
-      gap.textContent = gone ? '' : pit ? 'IN PIT' : i === 0 ? 'Leader'
+      gap.textContent = gone ? '' : pit ? 'In pit' : i === 0 ? 'Leader'
         : g && g[1] != null ? (typeof g[1] === 'number' ? '+' + g[1].toFixed(1) : g[1]) : '';
       gap.classList.toggle('tw-pit', pit && !gone);
       const ty = gone ? null : tyreAt(id, t);
@@ -244,11 +248,11 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   function drawStatus() {
     const lap = Math.min(totalLaps, Math.max(...ids.map(id => lapOf(id, t))));
     const done = t >= (data.laps[winner] || []).at(-1) + 60 || t >= end;
-    $('replay-lap').textContent = done ? 'FLAG' : lap ? 'LAP ' + lap + ' / ' + totalLaps : 'LIGHTS OUT';
+    $('replay-lap').textContent = done ? 'Chequered flag' : lap ? 'Lap ' + lap + ' of ' + totalLaps : 'Lights out';
     const p = (race.periods || []).find(([, a, b]) => lap >= a && lap <= b);
     const flag = $('replay-flag');
     flag.hidden = !p || done;
-    if (p) { flag.textContent = { SC: 'SAFETY CAR', VSC: 'VIRTUAL SAFETY CAR', RED: 'RED FLAG' }[p[0]] || p[0]; flag.className = 'replay-flag mono flag-' + p[0].toLowerCase(); }
+    if (p) { flag.textContent = { SC: 'Safety car', VSC: 'Virtual safety car', RED: 'Red flag' }[p[0]] || p[0]; flag.className = 'replay-flag mono flag-' + p[0].toLowerCase(); }
     const m = Math.floor(t / 60), s = Math.floor(t % 60);
     $('replay-time').textContent = Math.floor(m / 60) + ':' + PF.pad2(m % 60) + ':' + PF.pad2(s);
     $('replay-seek').value = String(Math.round(t));
@@ -268,7 +272,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   const byGrid = ids.slice().sort((a, b) => (byId.get(a).order || 99) - (byId.get(b).order || 99));
   [selA, selB].forEach((sel, k) => {
     sel.replaceChildren(el('option', { value: '' }, k ? 'Driver B' : 'Driver A'),
-      ...byGrid.map(id => el('option', { value: id }, byId.get(id).code + ' · ' + byId.get(id).name)));
+      ...byGrid.map(id => el('option', { value: id }, byId.get(id).code + ', ' + byId.get(id).name)));
     sel.addEventListener('change', () => {
       // the two boxes are the pair, a driver can't be picked twice
       picks = [...new Set([selA.value, selB.value].filter(Boolean))];
@@ -305,7 +309,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       const done = (race.drivers && race.drivers[id] || []).slice(0, Math.max(0, lap - 1)).map(r => r[1]).filter(Boolean);
       const g = latest(data.gaps[id], t);
       return {
-        gone, pos: gone ? 'OUT' : 'P' + (i + 1), gap: i === 0 ? 0 : g && typeof g[1] === 'number' ? g[1] : null,
+        gone, pos: gone ? 'Out' : 'P' + (i + 1), gap: i === 0 ? 0 : g && typeof g[1] === 'number' ? g[1] : null,
         lapped: g && typeof g[1] === 'string' ? g[1] : null,
         tyre: gone ? null : tyreAt(id, t), pit: inPit(id, t),
         stops: data.pits.filter(([d, s]) => d === id && s <= t).length,
@@ -331,11 +335,11 @@ PF.replay = async function (race, { year, round, byId, chart }) {
         el('span', { class: 'cmp-head' }, head),
         el('span', { class: 'cmp-name cmp-right', style: '--ring:' + RING[1] }, byId.get(b).name)),
       el('div', { class: 'cmp-grid' },
-        ...row('POSITION', A.pos + (A.pit ? ' · pit' : ''), B.pos + (B.pit ? ' · pit' : '')),
-        ...row('TYRE', tyre(A), tyre(B)),
-        ...row('STOPS', String(A.stops), String(B.stops)),
-        ...row('LAST LAP', A.last, B.last),
-        ...row('BEST SO FAR', A.best, B.best)));
+        ...row('Position', A.pos + (A.pit ? ', in the pits' : ''), B.pos + (B.pit ? ', in the pits' : '')),
+        ...row('Tyre', tyre(A), tyre(B)),
+        ...row('Stops', String(A.stops), String(B.stops)),
+        ...row('Last lap', A.last, B.last),
+        ...row('Best so far', A.best, B.best)));
   }
 
   // hover a dot for who it is, click it to pick it
@@ -406,6 +410,14 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     requestAnimationFrame(frame);
   }
 
+  $('replay-share-slot').replaceWith(PF.shareButton(() => {
+    const q = new URLSearchParams({ t: Math.round(t) });
+    if (picks.length) q.set('d', picks.join(','));
+    return { title: year + ' ' + race.name + ' replay', text: 'Lap ' + lapsDone(t) + ' of the ' + year + ' ' + race.name, url: '/races/' + year + '/' + round + '?' + q };
+  }, 'Share this moment'));
+  syncPickers();
+  if (chart) picks.forEach(p => chart.follow(p));
+  if (params.has('t')) $('replay-panel').scrollIntoView({ block: 'start' });
   size();
   render();
   let timer;

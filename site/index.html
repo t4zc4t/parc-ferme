@@ -22,7 +22,6 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "Parc Fermé", "url": "https://parc-ferme.pages.dev/", "description": "F1 driver and team standings updated after every session, the 2026 schedule in your time zone, every race since 1950 with lap charts and tyre strategies, and driver comparisons."}</script>
 </head>
 <body>
-<div class="rain" aria-hidden="true"></div>
 
 <header class="top">
   <div class="wrap top-row">
@@ -31,7 +30,7 @@
       <span class="brand-jp" lang="ja">パルク・フェルメ</span>
     </a>
     <nav aria-label="Main">
-      <a href="/#standings">Standings</a>
+      <a href="/standings">Standings</a>
       <a href="/schedule">Schedule</a>
       <a href="/drivers">Drivers</a>
       <a href="/compare">Compare</a>
@@ -43,146 +42,93 @@
 </header>
 
 <main>
-  <section class="hero wrap">
-    <div class="hero-main">
-      <div class="sign" lang="ja" aria-hidden="true">夜の決勝</div>
-      <div class="hero-copy">
-        <p class="kicker">THE PADDOCK AFTER DARK</p>
-        <h1>Every race,<br>every lap,<br><span class="neon">in the numbers.</span></h1>
-        <p class="lede">Standings, driver records, race data and studies that answer the questions fans argue about. It updates itself after every Grand Prix.</p>
-        <div class="cta">
-          <a class="btn btn-solid" href="#standings">See the standings</a>
-          <a class="btn btn-line" href="/schedule">Race weekend schedule</a>
-        </div>
-      </div>
-    </div>
-
-    <aside class="next" aria-labelledby="next-title">
-      <div class="next-head">
-        <span class="tag amber" id="next-title">NEXT RACE</span>
-        <span class="jp-small mono" id="next-round"></span>
-      </div>
-      <div class="next-name" id="next-name">Next race</div>
-      <div class="next-meta" id="next-meta">Loading the race calendar.</div>
+  <section class="wrap next-band" aria-labelledby="next-name">
+    <div class="next-info">
+      <p class="label"><span id="next-title">Next race</span>, <span id="next-round">this season</span></p>
+      <h1 class="next-name" id="next-name">Next race</h1>
+      <p class="next-meta" id="next-meta">Loading the race calendar.</p>
       <ul class="next-sessions" id="next-sessions" aria-label="Sessions this weekend, in your time zone"></ul>
-      <div class="clock-wrap">
-        <div class="clock" id="clock">
-          <div><b data-unit="d">--</b><small>DAYS</small></div>
-          <div><b data-unit="h">--</b><small>HRS</small></div>
-          <div><b data-unit="m">--</b><small>MIN</small></div>
-          <div><b data-unit="s">--</b><small>SEC</small></div>
+    </div>
+    <div class="clock-wrap">
+      <div class="clock" id="clock">
+        <div><b data-unit="d">--</b><small>days</small></div>
+        <div><b data-unit="h">--</b><small>hours</small></div>
+        <div><b data-unit="m">--</b><small>min</small></div>
+        <div><b data-unit="s">--</b><small>sec</small></div>
+      </div>
+      <p class="clock-for" id="clock-for"></p>
+      <a class="text-link" href="/schedule">Full weekend schedule</a>
+    </div>
+  </section>
+
+  <div class="wrap home-grid">
+    <section id="standings" class="block">
+      <div class="block-head">
+        <h2>Standings</h2>
+        <div class="seg" role="group" aria-label="Which standings">
+          <button type="button" class="seg-btn on" aria-pressed="true" data-table="drivers">Drivers</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-table="teams">Teams</button>
         </div>
-        <p class="clock-for mono" id="clock-for"></p>
       </div>
-      <a class="next-link mono" href="/schedule">FULL WEEKEND SCHEDULE →</a>
-    </aside>
-  </section>
-
-  <section id="last" class="wrap block" hidden>
-    <div class="block-head">
-      <h2>Last race <span class="jp-h" lang="ja">前戦</span></h2>
-      <span class="note mono" id="last-note"></span>
-    </div>
-    <div class="podium" id="podium"></div>
-    <div class="table-box">
-      <table>
-        <thead>
-          <tr><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col" class="opt">TEAM</th><th scope="col">GRID</th><th scope="col" class="opt">GAP</th><th scope="col" class="num">PTS</th></tr>
-        </thead>
-        <tbody id="last-body"></tbody>
-      </table>
-    </div>
-    <div class="go-row" id="last-links"></div>
-  </section>
-
-  <section id="title" class="wrap block" hidden>
-    <div class="block-head">
-      <h2><span id="fight-name">Title fight</span> <span class="jp-h" lang="ja" id="fight-jp">王座争い</span></h2>
-      <span class="note mono" id="title-note"></span>
-    </div>
-    <div class="sort-row">
-      <div class="sort" role="group" aria-label="Which championship">
-        <button type="button" class="chip on" aria-pressed="true" data-title="drivers">Drivers</button>
-        <button type="button" class="chip" aria-pressed="false" data-title="teams">Teams</button>
+      <p class="label" id="standings-note"></p>
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr id="standings-head"><th scope="col">Pos</th><th scope="col">Driver</th><th scope="col">Team</th><th scope="col">Wins</th><th scope="col" class="num">Points</th></tr>
+          </thead>
+          <tbody id="standings-body">
+            <tr class="empty"><td colspan="5">Loading standings.</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="sort" role="group" aria-label="What's at stake">
-        <button type="button" class="chip on" aria-pressed="true" data-stake="title">Title</button>
-        <button type="button" class="chip" aria-pressed="false" data-stake="top3">Top 3</button>
-      </div>
-    </div>
-    <div class="fight" id="fight"></div>
-    <p class="out-line" id="out-line"></p>
-    <p class="fine" id="title-fine"></p>
-  </section>
+      <div class="go-row"><a class="btn btn-quiet" href="/standings">Full standings, points chart and past seasons</a></div>
+    </section>
 
-  <section id="standings" class="wrap block">
-    <div class="block-head">
-      <h2>Standings <span class="jp-h" lang="ja">順位表</span></h2>
-      <span class="note mono" id="standings-note"></span>
-    </div>
-    <div class="sort" role="group" aria-label="Which standings">
-      <button type="button" class="chip on" aria-pressed="true" data-table="drivers">Drivers</button>
-      <button type="button" class="chip" aria-pressed="false" data-table="teams">Teams</button>
-    </div>
-    <div class="table-box">
-      <table>
-        <thead>
-          <tr id="standings-head"><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col">TEAM</th><th scope="col">WINS</th><th scope="col" class="num">POINTS</th></tr>
-        </thead>
-        <tbody id="standings-body">
-          <tr class="empty"><td colspan="5">Loading standings.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+    <div class="home-side">
+      <section id="last" class="block" hidden>
+        <div class="block-head">
+          <h2>Last race</h2>
+        </div>
+        <p class="label" id="last-note"></p>
+        <ol class="result-list" id="last-body"></ol>
+        <div class="go-row" id="last-links"></div>
+      </section>
 
-  <section id="explore" class="wrap block">
-    <div class="block-head">
-      <h2>Explore <span class="jp-h" lang="ja">探索</span></h2>
+      <section id="title" class="block" hidden>
+        <div class="block-head">
+          <h2 id="fight-name">Title fight</h2>
+        </div>
+        <p class="label" id="title-note"></p>
+        <div class="sort-row">
+          <div class="seg" role="group" aria-label="Which championship">
+            <button type="button" class="seg-btn on" aria-pressed="true" data-title="drivers">Drivers</button>
+            <button type="button" class="seg-btn" aria-pressed="false" data-title="teams">Teams</button>
+          </div>
+          <div class="seg" role="group" aria-label="What's at stake">
+            <button type="button" class="seg-btn on" aria-pressed="true" data-stake="title">Title</button>
+            <button type="button" class="seg-btn" aria-pressed="false" data-stake="top3">Top 3</button>
+          </div>
+        </div>
+        <div class="fight" id="fight"></div>
+        <p class="out-line" id="out-line"></p>
+        <details class="fine-print">
+          <summary>How the chances work</summary>
+          <p id="title-fine"></p>
+        </details>
+      </section>
     </div>
-    <div class="cards">
-      <a class="card card-live" href="/drivers">
-        <span class="card-jp pink" lang="ja">選手</span>
-        <span class="card-title">Drivers</span>
-        <span class="card-text">Every driver on this year's grid, with career numbers, season-by-season finishes and the battle with their teammate.</span>
-        <span class="soon live">OPEN</span>
-      </a>
-      <a class="card card-live" href="/compare">
-        <span class="card-jp cyan" lang="ja">比較</span>
-        <span class="card-title">Head to head</span>
-        <span class="card-text">Pick any two drivers since 1950 and line up their careers, title finishes, and every race they had against each other.</span>
-        <span class="soon live">OPEN</span>
-      </a>
-      <a class="card card-live" href="/races">
-        <span class="card-jp amber" lang="ja">決勝</span>
-        <span class="card-title">Race explorer</span>
-        <span class="card-text">Every Grand Prix since 1950. Lap charts and pit stops from 1996, tyre strategies and safety cars from 2023.</span>
-        <span class="soon live">OPEN</span>
-      </a>
-      <a class="card card-live" href="/questions">
-        <span class="card-jp pink" lang="ja">質問</span>
-        <span class="card-title">Questions</span>
-        <span class="card-text">Is Antonelli about to be the youngest champion? Did Hamilton's Ferrari move work? Do safety cars decide races? Answered with the numbers.</span>
-        <span class="soon live">OPEN</span>
-      </a>
-      <a class="card card-live" href="/studies">
-        <span class="card-jp cyan" lang="ja">研究</span>
-        <span class="card-title">Studies</span>
-        <span class="card-text">The longer reads. How much the car really decides, and how retirements almost vanished from racing.</span>
-        <span class="soon live">OPEN</span>
-      </a>
-    </div>
-  </section>
+  </div>
 </main>
 
 <footer>
   <div class="wrap foot-row">
     <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
-    <span class="mono" id="updated">Data: Jolpica</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
   </div>
 </footer>
 
 <script src="/assets/common.js"></script>
 <script src="/assets/app.js"></script>
+<script src="/assets/search.js"></script>
 </body>
 </html>

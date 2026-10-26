@@ -19,34 +19,36 @@
     team: (a, b) => a.team.localeCompare(b.team) || (+a.pos || 99) - (+b.pos || 99)
   };
 
-  function render(key) {
+  const q = $('d-q'), team = $('d-team'), nat = $('d-nat'), sortSel = $('d-sort');
+  const opts = (sel, vals) => sel.append(...[...new Set(vals.filter(Boolean))].sort().map(v => el('option', { value: v }, v)));
+  opts(team, data.drivers.map(d => d.team));
+  opts(nat, data.drivers.map(d => d.nationality));
+  [q, team, nat, sortSel].forEach(x => x.addEventListener(x === q ? 'input' : 'change', render));
+
+  function render() {
+    const key = sortSel.value;
+    const text = q.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     grid.textContent = '';
-    data.drivers.slice().sort(sorts[key]).forEach(d => {
+    data.drivers.slice().sort(sorts[key]).filter(d =>
+      (!text || (d.name + ' ' + d.code).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(text)) &&
+      (!team.value || d.team === team.value) && (!nat.value || d.nationality === nat.value)
+    ).forEach(d => {
       grid.append(el('a', { class: 'dcard', href: '/drivers/' + d.id },
         el('span', { class: 'dcard-num', 'aria-hidden': 'true' }, d.number || ''),
         el('span', { class: 'dcard-top' },
-          el('span', { class: 'code mono' }, d.code),
-          el('span', { class: 'dcard-pos mono' }, 'P' + d.pos + ' · ' + d.points + ' PTS')
+          el('span', { class: 'code' }, d.code),
+          el('span', { class: 'dcard-pos' }, 'P' + d.pos + ', ' + d.points + ' pts')
         ),
         el('span', { class: 'dcard-name' }, d.name),
-        el('span', { class: 'dcard-team' }, d.team + (d.nationality ? ' · ' + d.nationality : '')),
-        el('span', { class: 'dcard-stats mono' },
+        el('span', { class: 'dcard-team' }, d.team + (d.nationality ? ', ' + d.nationality : '')),
+        el('span', { class: 'dcard-stats' },
           el('span', null, el('b', null, d.races), ' races'),
           el('span', null, el('b', null, d.wins), ' wins'),
           d.titles ? el('span', { class: 'gold' }, el('b', null, d.titles), d.titles > 1 ? ' titles' : ' title') : null
         )
       ));
     });
+    $('d-empty').hidden = grid.children.length > 0;
   }
-
-  document.querySelectorAll('.chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.chip').forEach(b => {
-        b.classList.toggle('on', b === btn);
-        b.setAttribute('aria-pressed', b === btn);
-      });
-      render(btn.dataset.sort);
-    });
-  });
-  render('pos');
+  render();
 })();
