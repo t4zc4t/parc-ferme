@@ -24,7 +24,29 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     return out;
   };
   const cars = {};
-  ids.forEach(id => { cars[id] = { x: unpack(data.cars[id].x), y: unpack(data.cars[id].y), color: data.cars[id].color }; });
+  // newer files store how far each car has gone along the track, older ones x and y
+  const onTrack = data.v >= 2;
+  ids.forEach(id => {
+    const c = data.cars[id];
+    cars[id] = onTrack ? { d: unpack(c.d), color: c.color } : { x: unpack(c.x), y: unpack(c.y), color: c.color };
+  });
+
+  // the track as a line we can walk along, the same measure the data uses
+  const trackCum = [0];
+  data.track.forEach((p, i) => {
+    const q = data.track[(i + 1) % data.track.length];
+    trackCum.push(trackCum[i] + Math.hypot(q[0] - p[0], q[1] - p[1]));
+  });
+  const lapLen = trackCum[trackCum.length - 1];
+  const pointAt = dist => {
+    let s = dist % lapLen;
+    if (s < 0) s += lapLen;
+    let lo = 0, hi = data.track.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (trackCum[mid] <= s) lo = mid; else hi = mid - 1; }
+    const a = data.track[lo], b = data.track[(lo + 1) % data.track.length];
+    const f = (s - trackCum[lo]) / ((trackCum[lo + 1] - trackCum[lo]) || 1);
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+  };
 
   // a car that didn't finish is out a couple of minutes after its last lap began,
   // the feed keeps reporting it parked so its position alone can't tell us
@@ -36,6 +58,12 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   // ---- where things are at time t ----
   const at = (id, t) => {
     const c = cars[id], i = Math.floor(t / step), f = t / step - i;
+    if (onTrack) {
+      // move along the track between samples, never across the infield
+      const d0 = c.d[i], d1 = c.d[i + 1];
+      if (isNaN(d0)) return null;
+      return pointAt(isNaN(d1) ? d0 : d0 + (d1 - d0) * f);
+    }
     const x0 = c.x[i], x1 = c.x[i + 1], y0 = c.y[i], y1 = c.y[i + 1];
     if (isNaN(x0)) return null;
     if (isNaN(x1)) return [x0, y0];
