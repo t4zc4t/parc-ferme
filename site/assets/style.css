@@ -634,7 +634,7 @@ a.flip-race:hover { color: var(--text); text-decoration: underline; }
 .tw-row { position: absolute; left: 0; right: 0; top: 0; height: 28px; display: grid; grid-template-columns: 30px 8px 40px 1fr auto; align-items: center; gap: 8px; padding: 0 8px; background: var(--panel-2); border: 1px solid transparent; cursor: pointer; transition: transform .45s ease; }
 .tw-row:hover, .tw-row:focus-visible { border-color: var(--line-2); outline: none; }
 .tw-row.tw-follow { border-color: var(--text); background: #221f3a; }
-.tw-row.tw-out { opacity: .4; }
+.tw-row.tw-out { opacity: .65; }
 .tw-pos { font-size: 12px; color: var(--dim); }
 .tw-dot { width: 8px; height: 8px; border-radius: 50%; }
 .tw-code { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -864,3 +864,17 @@ select.field { cursor: pointer; }
 @keyframes feed-in { from { opacity: 0; transform: translateY(4px); } }
 @media (max-width: 640px) { .replay-feed li { font-size: 12px; } .replay-feed li:nth-child(n+3) { display: none; } }
 @media (prefers-reduced-motion: reduce) { .replay-feed li { animation: none; } }
+
+/* replay: cars out of the race, off the track */
+.replay-out { position: absolute; right: 10px; bottom: 10px; margin: 0; padding: 8px 10px; list-style: none; display: flex; flex-direction: column; gap: 3px; min-width: 120px; max-height: calc(100% - 20px); overflow: hidden; background: rgba(7,7,13,.88); border: 1px solid var(--line-2); border-radius: var(--radius); pointer-events: none; }
+.replay-out[hidden] { display: none; }
+.replay-out li { display: grid; grid-template-columns: 8px 34px 34px auto; align-items: center; gap: 6px; font-size: 12px; color: var(--soft); }
+.replay-out .out-head { display: block; font-size: 12px; color: var(--dim); margin-bottom: 2px; }
+.out-code { font: 600 12px var(--mono); color: var(--text); }
+.out-why { font-weight: 700; font-size: 11px; text-align: center; border-radius: 3px; padding: 0 3px; }
+.out-dnf { color: #fff; background: #b8323a; }
+.out-dns { color: var(--ink); background: var(--dim); }
+.out-dsq { color: var(--ink); background: var(--amber); }
+.out-lap { font: 11px var(--mono); color: var(--dim); }
+.tw-pos.tw-why { font-weight: 700; color: #e5484d; }
+@media (max-width: 640px) { .replay-out { min-width: 0; padding: 6px 8px; } .replay-out .out-head { display: none; } }

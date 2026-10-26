@@ -152,7 +152,32 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     const next = s[n] ?? (s[n - 1] + (s[n - 1] - (s[n - 2] ?? s[n - 1] - 90)));
     return Math.min(totalLaps, n - 1 + Math.min(1, (t - s[n - 1]) / Math.max(1, next - s[n - 1])));
   };
-  const out = (id, t) => !finished(id) && t > lastLap[id] + 150;
+  // why a car isn't running: did not start, disqualified, or a retirement of any kind
+  const whyOut = id => {
+    const st = byId.get(id).status || '';
+    if (finished(id)) return null;
+    if (/not start|withdr/i.test(st) || byId.get(id).pos === 'W') return 'DNS';
+    if (/disq/i.test(st)) return 'DSQ';
+    return 'DNF';
+  };
+  // the moment it stopped: its last lap, or sooner if it came to a halt or the feed lost it
+  const outAt = {};
+  ids.forEach(id => {
+    const why = whyOut(id);
+    if (!why) return;
+    if (why === 'DNS' || !lastLap[id]) { outAt[id] = 0; return; }
+    let when = lastLap[id] + 150;
+    if (onTrack) {
+      const c = cars[id], win = Math.round(20 / step);
+      for (let i = Math.floor(lastLap[id] / step); i < c.d.length; i++) {
+        const j = Math.min(c.d.length - 1, i + win);
+        const a = rawDist(id, i * step), b = rawDist(id, j * step);
+        if (isNaN(a) || isNaN(b) || b - a < 5) { when = Math.min(when, i * step + 5); break; }
+      }
+    }
+    outAt[id] = Math.max(lastLap[id] + 5, when);
+  });
+  const out = (id, t) => id in outAt && t >= outAt[id];
   const pitStops = data.pits.slice().sort((a, b) => a[1] - b[1]);
   const inPit = (id, t) => data.pits.some(([d, s, lane]) => d === id && t >= s && t <= s + lane);
   const tyreAt = (id, t) => {
@@ -326,15 +351,34 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   });
   tower.replaceChildren(...ids.map(id => rows[id]));
 
+  const outNote = id => whyOut(id) === 'DNS' ? 'Did not start' : 'Lap ' + Math.max(1, byId.get(id).laps + 1);
+
+  // cars out of the race leave the track and line up in a box beside it
+  const outBox = $('replay-out');
+  let outKey = '';
+  function drawOut() {
+    const gone = ids.filter(id => out(id, t)).sort((a, b) => outAt[a] - outAt[b]);
+    const key = gone.join();
+    if (key === outKey) return;
+    outKey = key;
+    outBox.hidden = !gone.length;
+    outBox.replaceChildren(el('li', { class: 'out-head' }, 'Out of the race'), ...gone.map(id => el('li', null,
+      el('span', { class: 'feed-dot', style: 'background:' + cars[id].color }),
+      el('span', { class: 'out-code' }, byId.get(id).code),
+      el('span', { class: 'out-why out-' + whyOut(id).toLowerCase() }, whyOut(id)),
+      el('span', { class: 'out-lap' }, whyOut(id) === 'DNS' ? '' : 'L' + Math.max(1, byId.get(id).laps + 1)))));
+  }
+
   function drawTower() {
     const order = standing(t);
     order.forEach(({ id, out: gone }, i) => {
       const row = rows[id];
       const [pos, , , gap, tyre] = row.children;
-      pos.textContent = gone ? 'Out' : PF.pad2(i + 1);
+      pos.textContent = gone ? whyOut(id) : PF.pad2(i + 1);
+      pos.classList.toggle('tw-why', gone);
       const g = latest(data.gaps[id], t);
       const pit = inPit(id, t);
-      gap.textContent = gone ? '' : pit ? 'In pit' : i === 0 ? 'Leader'
+      gap.textContent = gone ? outNote(id) : pit ? 'In pit' : i === 0 ? 'Leader'
         : g && g[1] != null ? (typeof g[1] === 'number' ? '+' + g[1].toFixed(1) : g[1]) : '';
       gap.classList.toggle('tw-pit', pit && !gone);
       const ty = gone ? null : tyreAt(id, t);
@@ -355,8 +399,9 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   pitStops.forEach(([id, s, lane]) => events.push({ t: s, kind: 'pit', id,
     text: byId.get(id).code + ' pits on lap ' + Math.max(1, lapOf(id, s)) + ', ' + lane.toFixed(1) + 's in the lane' }));
   ids.forEach(id => {
-    if (!finished(id) && lastLap[id]) events.push({ t: lastLap[id] + 150, kind: 'out', id,
-      text: byId.get(id).code + ' retires' + (/^(retired|dnf|did not finish)?$/i.test(byId.get(id).status || '') ? '' : ', ' + byId.get(id).status.toLowerCase()) });
+    if (id in outAt) events.push({ t: outAt[id], kind: 'out', id,
+      text: whyOut(id) === 'DNS' ? byId.get(id).code + ' did not start'
+        : byId.get(id).code + (whyOut(id) === 'DSQ' ? ' is disqualified' : ' retires') + ' on lap ' + Math.max(1, byId.get(id).laps + 1) });
     (data.order[id] || []).forEach(([s, pos]) => { if (pos === 1) events.push({ t: s, kind: 'p1', id }); });
   });
   // keep only the moments the lead changed hands
@@ -504,7 +549,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
   canvas.addEventListener('click', ev => { const s = nearest(ev); if (s) toggle(s.id); });
 
-  function render() { drawMap(); drawTower(); drawStatus(); drawCompare(); drawFeed(); }
+  function render() { drawMap(); drawTower(); drawStatus(); drawCompare(); drawFeed(); drawOut(); }
 
   // ---- the end: what the data says ----
   let shown = false;
