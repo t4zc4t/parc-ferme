@@ -852,3 +852,15 @@ select.field { cursor: pointer; }
 .dcard:hover { transform: none; border-color: var(--dim); background: var(--panel-2); }
 .dcard[hidden] { display: none; }
 @media (max-width: 640px) { .sort-label { margin-left: 0; } .filters .field { flex: 1 1 140px; } }
+
+/* replay: what just happened */
+.replay-feed { position: absolute; left: 12px; bottom: 10px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; max-width: calc(100% - 24px); pointer-events: none; }
+.replay-feed li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); background: rgba(7,7,13,.85); border-radius: 4px; padding: 4px 9px; width: fit-content; animation: feed-in .25s ease-out; }
+.replay-feed li:not(:first-child) { opacity: .6; }
+.replay-feed .feed-pit { box-shadow: inset 2px 0 0 #FFB547; }
+.replay-feed .feed-out { box-shadow: inset 2px 0 0 #e5484d; }
+.replay-feed .feed-p1, .replay-feed .feed-flag { box-shadow: inset 2px 0 0 var(--pink); }
+.feed-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+@keyframes feed-in { from { opacity: 0; transform: translateY(4px); } }
+@media (max-width: 640px) { .replay-feed li { font-size: 12px; } .replay-feed li:nth-child(n+3) { display: none; } }
+@media (prefers-reduced-motion: reduce) { .replay-feed li { animation: none; } }
