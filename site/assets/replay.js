@@ -56,13 +56,74 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   ids.forEach(id => { const s = data.laps[id] || []; lastLap[id] = s.length ? s[s.length - 1] : 0; });
 
   // ---- where things are at time t ----
+  // the feed drops out now and then, so short gaps are bridged along the track
+  const GAP = 90;
+  if (onTrack) ids.forEach(id => {
+    const d = cars[id].d, n = d.length;
+    const prev = new Int32Array(n), next = new Int32Array(n);
+    let last = -1;
+    for (let i = 0; i < n; i++) { if (!isNaN(d[i])) last = i; prev[i] = last; }
+    last = -1;
+    for (let i = n - 1; i >= 0; i--) { if (!isNaN(d[i])) last = i; next[i] = last; }
+    Object.assign(cars[id], { prev, next });
+  });
+  const rawDist = (id, t) => {
+    const c = cars[id], i = Math.floor(t / step), f = t / step - i;
+    if (i < 0 || i >= c.d.length) return NaN;
+    const a = c.prev[i], b = c.next[Math.min(i + 1, c.d.length - 1)];
+    if (a < 0) return NaN;
+    if (a === i && !isNaN(c.d[i + 1])) return c.d[i] + (c.d[i + 1] - c.d[i]) * f;
+    if (b < 0 || b <= a || (b - a) * step > GAP) return a === i ? c.d[i] : NaN;
+    return c.d[a] + (c.d[b] - c.d[a]) * ((t - a * step) / ((b - a) * step));
+  };
+
+  // every classified car crosses the line at the end of its last lap and stops there
+  const finishLine = {};
+  if (onTrack) ids.forEach(id => {
+    const r = byId.get(id);
+    if (!finished(id) || !r.laps) return;
+    const starts = data.laps[id] || [];
+    // the feed sometimes skips a lap's start (often the first), so count from the last one:
+    // where the car was when its last lap began, plus that one lap
+    // (a start logged after the flag is the slow-down lap, so never count past the laps run)
+    const K = Math.min(starts.length, r.laps);
+    for (let k = K; k >= 2; k--) {
+      const d = rawDist(id, starts[k - 1]);
+      if (isNaN(d)) continue;
+      const D = (Math.round(d / lapLen) + K - k + 1) * lapLen;
+      // when it got there, or when it would have at its usual pace if the feed ran out
+      const c = cars[id];
+      let T = null;
+      for (let i = 0; i < c.d.length; i++) if (c.d[i] >= D) { T = i * step - (c.d[i] - D) / Math.max(1, (c.d[i] - (c.d[i - 1] ?? c.d[i])) / step || 50); break; }
+      if (T === null) {
+        const a = c.prev[c.d.length - 1];
+        const laps = starts.slice(1).map((v, j) => v - starts[j]).filter(x => x > 0).sort((x, y) => x - y);
+        const pace = lapLen / (laps[laps.length >> 1] || 90);
+        T = a < 0 ? null : a * step + Math.max(0, D - c.d[a]) / pace;
+        if (T !== null) c.tail = { t: a * step, d: c.d[a], pace };
+      }
+      // then roll on a little and line up past the line in finishing order, the winner in front
+      if (T !== null) finishLine[id] = { d: D, t: Math.max(0, T), park: Math.max(24, 240 - ((r.order || 20) - 1) * 11) };
+      break;
+    }
+  });
+  const distAt = (id, t) => {
+    const fin = finishLine[id];
+    if (fin && t >= fin.t) {
+      const k = Math.min(1, (t - fin.t) / 14);
+      return fin.d + (1 - (1 - k) * (1 - k)) * fin.park;
+    }
+    const c = cars[id];
+    if (fin && c.tail && t >= c.tail.t) return Math.min(fin.d, c.tail.d + (t - c.tail.t) * c.tail.pace);
+    return rawDist(id, t);
+  };
+
   const at = (id, t) => {
     const c = cars[id], i = Math.floor(t / step), f = t / step - i;
     if (onTrack) {
       // move along the track between samples, never across the infield
-      const d0 = c.d[i], d1 = c.d[i + 1];
-      if (isNaN(d0)) return null;
-      return pointAt(isNaN(d1) ? d0 : d0 + (d1 - d0) * f);
+      const d = distAt(id, t);
+      return isNaN(d) ? null : pointAt(d);
     }
     const x0 = c.x[i], x1 = c.x[i + 1], y0 = c.y[i], y1 = c.y[i + 1];
     if (isNaN(x0)) return null;
@@ -92,6 +153,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     return Math.min(totalLaps, n - 1 + Math.min(1, (t - s[n - 1]) / Math.max(1, next - s[n - 1])));
   };
   const out = (id, t) => !finished(id) && t > lastLap[id] + 150;
+  const pitStops = data.pits.slice().sort((a, b) => a[1] - b[1]);
   const inPit = (id, t) => data.pits.some(([d, s, lane]) => d === id && t >= s && t <= s + lane);
   const tyreAt = (id, t) => {
     const lap = Math.max(1, lapOf(id, t));
@@ -137,6 +199,39 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   const ringOf = id => RING[picks.indexOf(id)];
   let spots = [];   // where each dot was drawn, for hover and clicks
 
+  // the timing line sits where the traced lap began
+  function drawLine() {
+    const n = data.track.length;
+    const [x0, y0] = data.track[0];
+    const k = Math.min(n - 1, 3);
+    const dx = px(data.track[k][0]) - px(data.track[n - k][0]), dy = py(data.track[k][1]) - py(data.track[n - k][1]);
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+    const X = px(x0), Y = py(y0), half = 10;
+    // a two-row chequer across the track
+    const cw = half * 2 / 6, ch = 3;
+    ctx.save();
+    ctx.translate(X, Y);
+    ctx.rotate(Math.atan2(ny, nx));
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) {
+      ctx.fillStyle = (i + j) % 2 ? '#F2F0FA' : '#07070D';
+      ctx.fillRect(-half + i * cw, (j - 1) * ch, cw, ch);
+    }
+    ctx.strokeStyle = '#F2F0FA'; ctx.lineWidth = 0.75;
+    ctx.strokeRect(-half, -ch, half * 2, ch * 2);
+    ctx.restore();
+    // a small tag off to the side, away from the cars
+    ctx.font = '600 10px "Zen Kaku Gothic New", sans-serif';
+    ctx.textBaseline = 'middle';
+    const label = 'Start / finish';
+    const w = ctx.measureText(label).width + 8;
+    const side = (nx * (W / 2 - X) + ny * (H / 2 - Y)) > 0 ? -1 : 1;
+    let lx = X + nx * side * 22 - (side * nx < 0 ? w : 0), ly = Y + ny * side * 22 - 8;
+    lx = Math.max(4, Math.min(W - w - 4, lx)); ly = Math.max(4, Math.min(H - 20, ly));
+    ctx.fillStyle = 'rgba(7,7,13,.85)'; ctx.fillRect(lx, ly, w, 16);
+    ctx.fillStyle = '#B9B6CF'; ctx.fillText(label, lx + 4, ly + 9);
+  }
+
   function drawMap() {
     ctx.clearRect(0, 0, W, H);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -145,6 +240,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     ctx.closePath();
     ctx.strokeStyle = '#1d1c30'; ctx.lineWidth = 14; ctx.stroke();
     ctx.strokeStyle = '#34324f'; ctx.lineWidth = 2; ctx.stroke();
+    drawLine();
 
     const order = standing(t);
     const comparing = picks.length > 0;
@@ -165,6 +261,14 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       ctx.lineWidth = mine ? 3 : 1.5;
       ctx.strokeStyle = mine ? ringOf(id) : INK;
       ctx.stroke();
+      // in the pit lane: a dashed amber ring
+      if (inPit(id, t)) {
+        ctx.beginPath();
+        ctx.setLineDash([3, 3]);
+        ctx.arc(X, Y, (mine ? 8 : 5.5) + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = '#FFB547'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.setLineDash([]);
+      }
     });
     ctx.globalAlpha = 1;
 
@@ -178,8 +282,10 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       : picks.includes(s.id) || s.id === leader);
     // picked cars claim their spot first
     wanted.sort((a, b) => picks.includes(b.id) - picks.includes(a.id));
+    // a car in the pits always gets its name
+    spots.forEach(sp => { if (inPit(sp.id, t) && !wanted.includes(sp)) wanted.push(sp); });
     wanted.forEach(({ id, X, Y }) => {
-      const text = byId.get(id).code;
+      const text = byId.get(id).code + (inPit(id, t) ? ' PIT' : '');
       const w = ctx.measureText(text).width + 8, h = 16;
       const tries = [[9, -h / 2], [-9 - w, -h / 2], [-w / 2, -9 - h], [-w / 2, 9]];
       const spot = tries.map(([dx, dy]) => [X + dx, Y + dy]).find(([x, y]) => free(x, y, w, h));
@@ -188,7 +294,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       taken.push({ x, y, w, h });
       ctx.fillStyle = 'rgba(7,7,13,.85)';
       ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = picks.includes(id) ? ringOf(id) : '#d9d6ee';
+      ctx.fillStyle = picks.includes(id) ? ringOf(id) : inPit(id, t) ? '#FFB547' : '#d9d6ee';
       ctx.fillText(text, x + 4, y + h / 2 + 1);
     });
   }
@@ -244,10 +350,44 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     tower.style.height = ids.length * 30 + 'px';
   }
 
+  // ---- what just happened: pit stops, lead changes, retirements, the flag ----
+  const events = [];
+  pitStops.forEach(([id, s, lane]) => events.push({ t: s, kind: 'pit', id,
+    text: byId.get(id).code + ' pits on lap ' + Math.max(1, lapOf(id, s)) + ', ' + lane.toFixed(1) + 's in the lane' }));
+  ids.forEach(id => {
+    if (!finished(id) && lastLap[id]) events.push({ t: lastLap[id] + 150, kind: 'out', id,
+      text: byId.get(id).code + ' retires' + (/^(retired|dnf|did not finish)?$/i.test(byId.get(id).status || '') ? '' : ', ' + byId.get(id).status.toLowerCase()) });
+    (data.order[id] || []).forEach(([s, pos]) => { if (pos === 1) events.push({ t: s, kind: 'p1', id }); });
+  });
+  // keep only the moments the lead changed hands
+  events.sort((a, b) => a.t - b.t);
+  let holder = null;
+  const feed = [];
+  events.forEach(e => {
+    if (e.kind !== 'p1') { feed.push(e); return; }
+    if (e.id !== holder) {
+      if (holder !== null && e.t > 5) feed.push({ ...e, text: byId.get(e.id).code + ' takes the lead on lap ' + Math.max(1, lapOf(e.id, e.t)) });
+      holder = e.id;
+    }
+  });
+  if (finishLine[winner]) feed.push({ t: finishLine[winner].t, kind: 'flag', id: winner, text: byId.get(winner).code + ' takes the chequered flag' });
+  feed.sort((a, b) => a.t - b.t);
+  const feedBox = $('replay-feed');
+  let feedKey = '';
+  function drawFeed() {
+    // the last few things within three minutes of race time
+    const recent = feed.filter(e => e.t <= t && e.t > t - 180).slice(-4).reverse();
+    const key = recent.map(e => e.t + e.id).join();
+    if (key === feedKey) return;
+    feedKey = key;
+    feedBox.replaceChildren(...recent.map(e => el('li', { class: 'feed-' + e.kind },
+      el('span', { class: 'feed-dot', style: 'background:' + cars[e.id].color }), e.text)));
+  }
+
   // ---- lap, flags, clock ----
   function drawStatus() {
     const lap = Math.min(totalLaps, Math.max(...ids.map(id => lapOf(id, t))));
-    const done = t >= (data.laps[winner] || []).at(-1) + 60 || t >= end;
+    const done = finishLine[winner] ? t >= finishLine[winner].t : t >= (data.laps[winner] || []).at(-1) + 60 || t >= end;
     $('replay-lap').textContent = done ? 'Chequered flag' : lap ? 'Lap ' + lap + ' of ' + totalLaps : 'Lights out';
     const p = (race.periods || []).find(([, a, b]) => lap >= a && lap <= b);
     const flag = $('replay-flag');
@@ -364,7 +504,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   canvas.addEventListener('pointerleave', () => { tip.hidden = true; });
   canvas.addEventListener('click', ev => { const s = nearest(ev); if (s) toggle(s.id); });
 
-  function render() { drawMap(); drawTower(); drawStatus(); drawCompare(); }
+  function render() { drawMap(); drawTower(); drawStatus(); drawCompare(); drawFeed(); }
 
   // ---- the end: what the data says ----
   let shown = false;
