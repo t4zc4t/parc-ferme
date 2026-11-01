@@ -624,7 +624,7 @@ a.flip-race:hover { color: var(--text); text-decoration: underline; }
 }
 
 /* race replay */
-.replay-grid { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 16px; margin-top: 8px; }
+.replay-grid { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 16px; margin-top: 8px; }
 .replay-map { position: relative; background: var(--ink); border: 1px solid var(--line); }
 .replay-map canvas { display: block; width: 100%; }
 .replay-lap { position: absolute; left: 12px; top: 10px; font-size: 13px; font-weight: 600; color: var(--text); background: rgba(7,7,13,.8); padding: 4px 8px; }
@@ -905,3 +905,9 @@ select.field { cursor: pointer; }
 /* replay: a car that has taken the flag */
 .tw-row.tw-done .tw-dot { background: conic-gradient(#F2F0FA 25%, #07070D 0 50%, #F2F0FA 0 75%, #07070D 0) 0 0 / 5px 5px !important; border-radius: 2px; box-shadow: 0 0 0 1px #F2F0FA; }
 .tw-row.tw-done .tw-gap { color: var(--text); }
+
+/* tower: gap mode and laps-down tag */
+.tower-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.gap-mode { width: 100%; }
+.gap-mode .seg-btn { flex: 1; min-height: 30px; font-size: 12px; }
+.lap-tag { display: inline-block; margin-right: 6px; padding: 0 4px; border-radius: 3px; font: 600 10px var(--mono); line-height: 15px; color: var(--ink); background: var(--dim); vertical-align: 1px; }
