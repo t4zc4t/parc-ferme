@@ -77,32 +77,25 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     return c.d[a] + (c.d[b] - c.d[a]) * ((t - a * step) / ((b - a) * step));
   };
 
-  // the chequered flag: the winner finishes at the end of its last lap, then everyone else
-  // finishes the next time they cross the line, however many laps down they are
+  // ---- the finish, pinned to the official result ----
+  // the winner takes the flag at the end of its last lap; every other classified car
+  // crosses the line exactly its official gap later (lapped cars too, on their own last lap),
+  // so the order and timing at the line mirror the result sheet
   const finishLine = {};
   const paceOf = id => {
     const starts = data.laps[id] || [];
     const laps = starts.slice(1).map((v, j) => v - starts[j]).filter(x => x > 0).sort((x, y) => x - y);
     return lapLen / (laps[laps.length >> 1] || 90);
   };
-  // when a car got to distance D, or when it would have at its usual pace if the feed ran out
-  const reach = (id, D, after = 0) => {
-    const c = cars[id];
-    for (let i = Math.max(1, Math.floor(after / step)); i < c.d.length; i++) {
-      if (c.d[i] >= D) {
-        // between two readings, or right at the reading after a gap in the feed
-        const prev = c.d[i - 1];
-        const t = !isNaN(prev) && c.d[i] > prev ? i * step - step * (c.d[i] - D) / (c.d[i] - prev) : i * step;
-        return { t: Math.max(after, t) };
-      }
-    }
-    const a = c.prev[c.d.length - 1];
-    if (a < 0) return null;
-    const pace = paceOf(id);
-    return { t: Math.max(after, a * step + Math.max(0, D - c.d[a]) / pace), tail: { t: a * step, d: c.d[a], pace } };
+  // distance from the feed, carried on at the car's usual pace where the feed runs dry
+  const baseDist = (id, t) => {
+    const d = rawDist(id, t);
+    if (!isNaN(d)) return d;
+    const c = cars[id], i = Math.min(c.d.length - 1, Math.max(0, Math.floor(t / step)));
+    const a = c.prev[i];
+    if (a < 0 || t - a * step > 400) return NaN;
+    return c.d[a] + (t - a * step) * paceOf(id);
   };
-  // the winner's line: where it was when its last lap began, plus that lap
-  // (the feed sometimes skips a lap's start, or logs the slow-down lap after the flag)
   const lineByLaps = id => {
     const r = byId.get(id), starts = data.laps[id] || [];
     const K = Math.min(starts.length, r.laps);
@@ -112,39 +105,91 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     }
     return null;
   };
-  const settle = (id, D, after) => {
-    const hit = D === null ? null : reach(id, D, after);
-    if (!hit) return;
-    if (hit.tail) cars[id].tail = hit.tail;
-    finishLine[id] = { d: D, t: Math.max(0, hit.t) };
+  const crossing = (id, D) => {
+    for (let t = 0; t <= end + 600; t += step) if (baseDist(id, t) >= D) return t;
+    return null;
+  };
+  const secs = s => {
+    if (!s) return null;
+    const p = String(s).replace('+', '').split(':').map(Number);
+    return p.reduce((a, v) => a * 60 + v, 0);
   };
   const first = race.results[0].id;
+  let flagT = null;
   if (onTrack && cars[first] && finished(first)) {
-    settle(first, lineByLaps(first), 0);
-    const flagT = finishLine[first] && finishLine[first].t;
-    ids.forEach(id => {
-      if (id === first || !finished(id)) return;
-      // its first crossing of the line once the flag is out
-      let d = flagT == null ? NaN : rawDist(id, flagT);
-      if (isNaN(d) && flagT != null) {
-        // the feed ran out just before the flag: carry it on at its usual pace
-        const c = cars[id], a = c.prev[Math.min(c.d.length - 1, Math.floor(flagT / step))];
-        if (a >= 0 && flagT - a * step < 300) d = c.d[a] + (flagT - a * step) * paceOf(id);
+    // the winner's crossing of the line nearest its official race time, which beats
+    // counting laps when the feed misses a lap or logs the slow-down lap
+    const official = secs(byId.get(first).time);
+    if (official) {
+      const d = baseDist(first, official);
+      if (!isNaN(d)) {
+        const near = [Math.floor(d / lapLen), Math.ceil(d / lapLen)].map(n => n * lapLen)
+          .map(D => crossing(first, D)).filter(T => T !== null);
+        if (near.length) flagT = near.reduce((a, b) => Math.abs(b - official) < Math.abs(a - official) ? b : a);
       }
-      const D = isNaN(d) ? lineByLaps(id) : Math.ceil(d / lapLen) * lapLen;
-      settle(id, D, flagT || 0);
-    });
+    }
+    if (flagT === null) {
+      const D = lineByLaps(first);
+      flagT = D === null ? null : crossing(first, D);
+    }
   }
+  // fine-tune the flag against the whole field: the moment that puts every car's
+  // official crossing closest to the line in the position data
+  if (flagT !== null) {
+    const gaps = ids.filter(id => id !== first && finished(id) && /^\+[\d:.]+$/.test(byId.get(id).time || ''))
+      .map(id => [id, secs(byId.get(id).time)]);
+    const miss = F => {
+      const offs = gaps.map(([id, g]) => {
+        const d = baseDist(id, F + g);
+        return isNaN(d) ? null : Math.abs(d - Math.round(d / lapLen) * lapLen);
+      }).filter(v => v !== null).sort((a, b) => a - b);
+      return offs.length ? offs[offs.length >> 1] : Infinity;
+    };
+    if (gaps.length >= 3) {
+      let best = flagT, score = miss(flagT);
+      for (let F = flagT - 15; F <= flagT + 15; F += 0.5) { const m = miss(F); if (m < score - 1) { best = F; score = m; } }
+      flagT = best;
+    }
+  }
+  const BLEND = 30;
+  if (flagT !== null) ids.forEach(id => {
+    if (!finished(id)) return;
+    const r = byId.get(id);
+    const gap = id === first ? 0 : /^\+[\d:.]+$/.test(r.time || '') ? secs(r.time) : null;
+    let T, D;
+    if (gap !== null) {
+      // the official moment it crossed, and the line it was nearest to then
+      T = flagT + gap;
+      const d = baseDist(id, T);
+      if (isNaN(d)) return;
+      D = Math.round(d / lapLen) * lapLen;
+    } else {
+      // no official gap: the first time over the line once the flag is out
+      const d = baseDist(id, flagT);
+      if (isNaN(d)) return;
+      D = Math.ceil(d / lapLen) * lapLen;
+      T = crossing(id, D);
+      if (T === null) return;
+    }
+    // how far the feed is from the line at that moment, eased out over the run to the flag
+    finishLine[id] = { d: D, t: T, fix: D - baseDist(id, T) };
+  });
+
   const distAt = (id, t) => {
     const fin = finishLine[id];
     if (fin && t >= fin.t) {
       const k = Math.min(1, (t - fin.t) / 8);
       return fin.d + (1 - (1 - k) * (1 - k)) * 70;
     }
-    const c = cars[id];
-    if (fin && c.tail && t >= c.tail.t) return Math.min(fin.d, c.tail.d + (t - c.tail.t) * c.tail.pace);
+    const span = fin ? Math.max(BLEND, Math.abs(fin.fix) / 12) : 0;
+    if (fin && t > fin.t - span) {
+      const d = baseDist(id, t);
+      const k = (t - (fin.t - span)) / span;
+      return isNaN(d) ? NaN : Math.min(fin.d, d + fin.fix * k * k * (3 - 2 * k));
+    }
     return rawDist(id, t);
   };
+
 
   // after the flag a car rolls past the line and fades off to parc ferme
   const home = (id, t) => !!finishLine[id] && t >= finishLine[id].t;
@@ -352,7 +397,10 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     // a car in the pits always gets its name
     spots.forEach(sp => { if (inPit(sp.id, t) && !wanted.includes(sp)) wanted.push(sp); });
     wanted.forEach(({ id, X, Y }) => {
-      const text = byId.get(id).code + (inPit(id, t) ? ' PIT' : '');
+      // a lapped car says so, the reason it can take the flag before cars ahead of it
+      const g = latest(data.gaps[id], t);
+      const down = g && typeof g[1] === 'string' && /lap/i.test(g[1]) ? ' ' + g[1].replace(/\s*laps?/i, 'L').trim() : '';
+      const text = byId.get(id).code + (inPit(id, t) ? ' PIT' : '') + (home(id, t) ? '' : down);
       const w = ctx.measureText(text).width + 8, h = 16;
       const tries = [[9, -h / 2], [-9 - w, -h / 2], [-w / 2, -9 - h], [-w / 2, 9]];
       const spot = tries.map(([dx, dy]) => [X + dx, Y + dy]).find(([x, y]) => free(x, y, w, h));
@@ -462,7 +510,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       holder = e.id;
     }
   });
-  if (finishLine[winner]) feed.push({ t: finishLine[winner].t, kind: 'flag', id: winner, text: byId.get(winner).code + ' takes the chequered flag' });
+  if (finishLine[winner]) feed.push({ t: finishLine[winner].t, kind: 'flag', id: winner, text: byId.get(winner).code + ' wins, everyone else finishes on their next pass of the line' });
   // everyone else as they cross the line, with the place they finished in
   Object.entries(finishLine).forEach(([id, f]) => {
     if (id !== winner) feed.push({ t: f.t, kind: 'flag', id, text: byId.get(id).code + ' finishes P' + byId.get(id).order + (finalGap(id) ? ', ' + finalGap(id) : '') });
