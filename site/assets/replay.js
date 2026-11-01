@@ -77,36 +77,65 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     return c.d[a] + (c.d[b] - c.d[a]) * ((t - a * step) / ((b - a) * step));
   };
 
-  // every classified car crosses the line at the end of its last lap and stops there
+  // the chequered flag: the winner finishes at the end of its last lap, then everyone else
+  // finishes the next time they cross the line, however many laps down they are
   const finishLine = {};
-  if (onTrack) ids.forEach(id => {
-    const r = byId.get(id);
-    if (!finished(id) || !r.laps) return;
+  const paceOf = id => {
     const starts = data.laps[id] || [];
-    // the feed sometimes skips a lap's start (often the first), so count from the last one:
-    // where the car was when its last lap began, plus that one lap
-    // (a start logged after the flag is the slow-down lap, so never count past the laps run)
+    const laps = starts.slice(1).map((v, j) => v - starts[j]).filter(x => x > 0).sort((x, y) => x - y);
+    return lapLen / (laps[laps.length >> 1] || 90);
+  };
+  // when a car got to distance D, or when it would have at its usual pace if the feed ran out
+  const reach = (id, D, after = 0) => {
+    const c = cars[id];
+    for (let i = Math.max(1, Math.floor(after / step)); i < c.d.length; i++) {
+      if (c.d[i] >= D) {
+        // between two readings, or right at the reading after a gap in the feed
+        const prev = c.d[i - 1];
+        const t = !isNaN(prev) && c.d[i] > prev ? i * step - step * (c.d[i] - D) / (c.d[i] - prev) : i * step;
+        return { t: Math.max(after, t) };
+      }
+    }
+    const a = c.prev[c.d.length - 1];
+    if (a < 0) return null;
+    const pace = paceOf(id);
+    return { t: Math.max(after, a * step + Math.max(0, D - c.d[a]) / pace), tail: { t: a * step, d: c.d[a], pace } };
+  };
+  // the winner's line: where it was when its last lap began, plus that lap
+  // (the feed sometimes skips a lap's start, or logs the slow-down lap after the flag)
+  const lineByLaps = id => {
+    const r = byId.get(id), starts = data.laps[id] || [];
     const K = Math.min(starts.length, r.laps);
     for (let k = K; k >= 2; k--) {
       const d = rawDist(id, starts[k - 1]);
-      if (isNaN(d)) continue;
-      const D = (Math.round(d / lapLen) + K - k + 1) * lapLen;
-      // when it got there, or when it would have at its usual pace if the feed ran out
-      const c = cars[id];
-      let T = null;
-      for (let i = 0; i < c.d.length; i++) if (c.d[i] >= D) { T = i * step - (c.d[i] - D) / Math.max(1, (c.d[i] - (c.d[i - 1] ?? c.d[i])) / step || 50); break; }
-      if (T === null) {
-        const a = c.prev[c.d.length - 1];
-        const laps = starts.slice(1).map((v, j) => v - starts[j]).filter(x => x > 0).sort((x, y) => x - y);
-        const pace = lapLen / (laps[laps.length >> 1] || 90);
-        T = a < 0 ? null : a * step + Math.max(0, D - c.d[a]) / pace;
-        if (T !== null) c.tail = { t: a * step, d: c.d[a], pace };
-      }
-      // then roll on a little and line up past the line in finishing order, the winner in front
-      if (T !== null) finishLine[id] = { d: D, t: Math.max(0, T), park: Math.max(24, 240 - ((r.order || 20) - 1) * 11) };
-      break;
+      if (!isNaN(d)) return (Math.round(d / lapLen) + K - k + 1) * lapLen;
     }
-  });
+    return null;
+  };
+  const park = id => Math.max(24, 240 - ((byId.get(id).order || 20) - 1) * 11);
+  const settle = (id, D, after) => {
+    const hit = D === null ? null : reach(id, D, after);
+    if (!hit) return;
+    if (hit.tail) cars[id].tail = hit.tail;
+    finishLine[id] = { d: D, t: Math.max(0, hit.t), park: park(id) };
+  };
+  const first = race.results[0].id;
+  if (onTrack && cars[first] && finished(first)) {
+    settle(first, lineByLaps(first), 0);
+    const flagT = finishLine[first] && finishLine[first].t;
+    ids.forEach(id => {
+      if (id === first || !finished(id)) return;
+      // its first crossing of the line once the flag is out
+      let d = flagT == null ? NaN : rawDist(id, flagT);
+      if (isNaN(d) && flagT != null) {
+        // the feed ran out just before the flag: carry it on at its usual pace
+        const c = cars[id], a = c.prev[Math.min(c.d.length - 1, Math.floor(flagT / step))];
+        if (a >= 0 && flagT - a * step < 300) d = c.d[a] + (flagT - a * step) * paceOf(id);
+      }
+      const D = isNaN(d) ? lineByLaps(id) : Math.ceil(d / lapLen) * lapLen;
+      settle(id, D, flagT || 0);
+    });
+  }
   const distAt = (id, t) => {
     const fin = finishLine[id];
     if (fin && t >= fin.t) {
@@ -213,13 +242,15 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   const INK = css.getPropertyValue('--ink').trim() || '#07070D';
 
   // ---- state ----
-  let t = 0, playing = false, speed = 30, lastFrame = 0;
+  let t = 0, playing = false, speed = 10, lastFrame = 0;
   // up to two drivers to compare, and whether every car gets its name on the map
   let picks = [], names = 'all';
   // a shared link can open on a moment and a pair of drivers
   const params = new URLSearchParams(location.search);
   if (params.has('t')) t = Math.max(0, Math.min(end, +params.get('t') || 0));
   if (params.has('d')) picks = params.get('d').split(',').filter(id => cars[id]).slice(0, 2);
+  // cars taken off the map by the viewer
+  const hidden = new Set(params.has('h') ? params.get('h').split(',').filter(id => cars[id]) : []);
   const RING = ['#EE3F7E', '#22A7B5'];
   const ringOf = id => RING[picks.indexOf(id)];
   let spots = [];   // where each dot was drawn, for hover and clicks
@@ -273,7 +304,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     // back of the field first so the leaders sit on top, picked cars on top of all
     const drawOrder = order.slice().reverse().sort((a, b) => picks.includes(a.id) - picks.includes(b.id));
     drawOrder.forEach(({ id, out: gone }) => {
-      const p = gone ? null : at(id, t);
+      const p = gone || hidden.has(id) ? null : at(id, t);
       if (!p) return;
       const X = px(p[0]), Y = py(p[1]);
       const mine = picks.includes(id);
@@ -387,6 +418,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
         el('span', { class: 'tw-age' }, String(ty.age))] : []));
       row.classList.toggle('tw-out', gone);
       row.classList.toggle('tw-follow', picks.includes(id));
+      row.classList.toggle('tw-hidden', hidden.has(id));
       row.style.setProperty('--ring', ringOf(id) || 'transparent');
       // a smooth slide when places change
       row.style.transform = 'translateY(' + (i * 30) + 'px)';
@@ -477,6 +509,36 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     $('name-mode').querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
     drawMap();
   }));
+
+  // ---- which cars are on the map ----
+  const carsPanel = $('cars-panel'), carsBtn = $('cars-btn');
+  const chips = {};
+  $('cars-list').replaceChildren(...byGrid.map(id => {
+    const chip = el('button', { type: 'button', class: 'car-chip', 'aria-pressed': 'true' },
+      el('span', { class: 'feed-dot', style: 'background:' + cars[id].color }), byId.get(id).code);
+    chip.addEventListener('click', () => { hidden.has(id) ? hidden.delete(id) : hidden.add(id); syncCars(); render(); });
+    chips[id] = chip;
+    return chip;
+  }));
+  function syncCars() {
+    ids.forEach(id => { chips[id].setAttribute('aria-pressed', !hidden.has(id)); chips[id].classList.toggle('off', hidden.has(id)); });
+    $('cars-count').textContent = hidden.size ? (ids.length - hidden.size) + ' of ' + ids.length + ' shown' : '';
+    carsBtn.textContent = hidden.size ? 'Cars on map (' + (ids.length - hidden.size) + ')' : 'Cars on map';
+  }
+  carsBtn.addEventListener('click', () => {
+    carsPanel.hidden = !carsPanel.hidden;
+    carsBtn.setAttribute('aria-expanded', !carsPanel.hidden);
+    carsBtn.classList.toggle('on', !carsPanel.hidden);
+  });
+  carsPanel.querySelectorAll('[data-show]').forEach(b => b.addEventListener('click', () => {
+    const order = standing(t).map(x => x.id);
+    const keep = { all: ids, none: [], top10: order.slice(0, 10), picks }[b.dataset.show];
+    hidden.clear();
+    ids.forEach(id => { if (!keep.includes(id)) hidden.add(id); });
+    syncCars();
+    render();
+  }));
+  syncCars();
 
   const fmtLap = ms => { const m = Math.floor(ms / 60000); return m + ':' + ((ms % 60000) / 1000).toFixed(3).padStart(6, '0'); };
   function drawCompare() {
@@ -598,6 +660,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   $('replay-share-slot').replaceWith(PF.shareButton(() => {
     const q = new URLSearchParams({ t: Math.round(t) });
     if (picks.length) q.set('d', picks.join(','));
+    if (hidden.size) q.set('h', [...hidden].join(','));
     return { title: year + ' ' + race.name + ' replay', text: 'Lap ' + lapsDone(t) + ' of the ' + year + ' ' + race.name, url: '/races/' + year + '/' + round + '?' + q };
   }, 'Share this moment'));
   syncPickers();

@@ -878,3 +878,26 @@ select.field { cursor: pointer; }
 .out-lap { font: 11px var(--mono); color: var(--dim); }
 .tw-pos.tw-why { font-weight: 700; color: #e5484d; }
 @media (max-width: 640px) { .replay-out { min-width: 0; padding: 6px 8px; } .replay-out .out-head { display: none; } }
+
+/* replay: which cars are on the map */
+.cars-btn.on { color: var(--text); background: var(--panel-2); }
+.cars-panel { margin-top: 12px; padding: 12px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel); }
+.cars-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.cars-count { margin-left: auto; }
+.cars-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.car-chip { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--mono); color: var(--text); background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 99px; padding: 5px 10px; cursor: pointer; }
+.car-chip:hover { border-color: var(--dim); }
+.car-chip.off { color: var(--dim); background: transparent; border-style: dashed; text-decoration: line-through; }
+.car-chip.off .feed-dot { opacity: .3; }
+.tw-row.tw-hidden .tw-code { text-decoration: line-through; color: var(--dim); }
+.tw-row.tw-hidden .tw-dot { opacity: .3; }
+#replay-speed { flex-wrap: wrap; }
+.cars-quick .seg-btn { border: 1px solid var(--line-2); border-radius: var(--radius); min-height: 34px; }
+.cars-quick .seg-btn { white-space: nowrap; padding: 0 10px; }
+@media (max-width: 640px) {
+  .replay-pickers { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+  .replay-pickers .cmp-label { grid-column: 1 / -1; }
+  .replay-pickers .pick-sel { min-width: 0; width: 100%; }
+  .replay-pickers .cars-btn, .replay-pickers .name-mode, .replay-pickers .cmp-clear { grid-column: 1 / -1; width: 100%; }
+  .cars-count { width: 100%; margin-left: 0; }
+}
