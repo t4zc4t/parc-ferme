@@ -112,12 +112,11 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     }
     return null;
   };
-  const park = id => Math.max(24, 240 - ((byId.get(id).order || 20) - 1) * 11);
   const settle = (id, D, after) => {
     const hit = D === null ? null : reach(id, D, after);
     if (!hit) return;
     if (hit.tail) cars[id].tail = hit.tail;
-    finishLine[id] = { d: D, t: Math.max(0, hit.t), park: park(id) };
+    finishLine[id] = { d: D, t: Math.max(0, hit.t) };
   };
   const first = race.results[0].id;
   if (onTrack && cars[first] && finished(first)) {
@@ -139,12 +138,23 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   const distAt = (id, t) => {
     const fin = finishLine[id];
     if (fin && t >= fin.t) {
-      const k = Math.min(1, (t - fin.t) / 14);
-      return fin.d + (1 - (1 - k) * (1 - k)) * fin.park;
+      const k = Math.min(1, (t - fin.t) / 8);
+      return fin.d + (1 - (1 - k) * (1 - k)) * 70;
     }
     const c = cars[id];
     if (fin && c.tail && t >= c.tail.t) return Math.min(fin.d, c.tail.d + (t - c.tail.t) * c.tail.pace);
     return rawDist(id, t);
+  };
+
+  // after the flag a car rolls past the line and fades off to parc ferme
+  const home = (id, t) => !!finishLine[id] && t >= finishLine[id].t;
+  const fade = (id, t) => !home(id, t) ? 1 : Math.max(0, 1 - (t - finishLine[id].t - 6) / 4);
+  const finalGap = id => {
+    const r = byId.get(id), w = race.results[0];
+    if (id === w.id) return 'Winner';
+    const down = (w.laps || 0) - (r.laps || 0);
+    if (down > 0) return '+' + down + (down === 1 ? ' lap' : ' laps');
+    return /^\+/.test(r.time || '') ? r.time : '';
   };
 
   const at = (id, t) => {
@@ -304,12 +314,13 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     // back of the field first so the leaders sit on top, picked cars on top of all
     const drawOrder = order.slice().reverse().sort((a, b) => picks.includes(a.id) - picks.includes(b.id));
     drawOrder.forEach(({ id, out: gone }) => {
-      const p = gone || hidden.has(id) ? null : at(id, t);
+      const alpha = fade(id, t);
+      const p = gone || hidden.has(id) || alpha <= 0 ? null : at(id, t);
       if (!p) return;
       const X = px(p[0]), Y = py(p[1]);
       const mine = picks.includes(id);
-      spots.push({ id, X, Y });
-      ctx.globalAlpha = comparing && !mine ? 0.3 : 1;
+      if (alpha > 0.5) spots.push({ id, X, Y });
+      ctx.globalAlpha = (comparing && !mine ? 0.3 : 1) * alpha;
       ctx.beginPath();
       ctx.arc(X, Y, mine ? 8 : 5.5, 0, Math.PI * 2);
       ctx.fillStyle = cars[id].color;
@@ -360,7 +371,9 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     return ids.map(id => {
       const p = latest(data.order[id], t);
       const grid = byId.get(id).grid || 30;
-      return { id, pos: p ? p[1] : grid, out: out(id, t) };
+      // once it has taken the flag its place is the final result
+      const pos = home(id, t) ? byId.get(id).order : p ? p[1] : grid;
+      return { id, pos, out: out(id, t) };
     }).sort((a, b) => (a.out - b.out) || (a.pos - b.pos));
   }
 
@@ -409,7 +422,9 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       pos.classList.toggle('tw-why', gone);
       const g = latest(data.gaps[id], t);
       const pit = inPit(id, t);
-      gap.textContent = gone ? outNote(id) : pit ? 'In pit' : i === 0 ? 'Leader'
+      const done = !gone && home(id, t);
+      row.classList.toggle('tw-done', done);
+      gap.textContent = gone ? outNote(id) : done ? finalGap(id) : pit ? 'In pit' : i === 0 ? 'Leader'
         : g && g[1] != null ? (typeof g[1] === 'number' ? '+' + g[1].toFixed(1) : g[1]) : '';
       gap.classList.toggle('tw-pit', pit && !gone);
       const ty = gone ? null : tyreAt(id, t);
@@ -448,6 +463,10 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     }
   });
   if (finishLine[winner]) feed.push({ t: finishLine[winner].t, kind: 'flag', id: winner, text: byId.get(winner).code + ' takes the chequered flag' });
+  // everyone else as they cross the line, with the place they finished in
+  Object.entries(finishLine).forEach(([id, f]) => {
+    if (id !== winner) feed.push({ t: f.t, kind: 'flag', id, text: byId.get(id).code + ' finishes P' + byId.get(id).order + (finalGap(id) ? ', ' + finalGap(id) : '') });
+  });
   feed.sort((a, b) => a.t - b.t);
   const feedBox = $('replay-feed');
   let feedKey = '';
@@ -465,7 +484,10 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   function drawStatus() {
     const lap = Math.min(totalLaps, Math.max(...ids.map(id => lapOf(id, t))));
     const done = finishLine[winner] ? t >= finishLine[winner].t : t >= (data.laps[winner] || []).at(-1) + 60 || t >= end;
-    $('replay-lap').textContent = done ? 'Chequered flag' : lap ? 'Lap ' + lap + ' of ' + totalLaps : 'Lights out';
+    const racing = ids.filter(id => finished(id));
+    const homeNow = racing.filter(id => home(id, t)).length;
+    $('replay-lap').textContent = done ? 'Chequered flag' + (homeNow < racing.length ? ', ' + homeNow + ' of ' + racing.length + ' home' : ', all home')
+      : lap ? 'Lap ' + lap + ' of ' + totalLaps : 'Lights out';
     const p = (race.periods || []).find(([, a, b]) => lap >= a && lap <= b);
     const flag = $('replay-flag');
     flag.hidden = !p || done;

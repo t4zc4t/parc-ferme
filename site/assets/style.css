@@ -901,3 +901,7 @@ select.field { cursor: pointer; }
   .replay-pickers .cars-btn, .replay-pickers .name-mode, .replay-pickers .cmp-clear { grid-column: 1 / -1; width: 100%; }
   .cars-count { width: 100%; margin-left: 0; }
 }
+
+/* replay: a car that has taken the flag */
+.tw-row.tw-done .tw-dot { background: conic-gradient(#F2F0FA 25%, #07070D 0 50%, #F2F0FA 0 75%, #07070D 0) 0 0 / 5px 5px !important; border-radius: 2px; box-shadow: 0 0 0 1px #F2F0FA; }
+.tw-row.tw-done .tw-gap { color: var(--text); }
