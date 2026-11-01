@@ -62,7 +62,13 @@
           <ol class="replay-feed" id="replay-feed" aria-label="Latest from the race"></ol>
           <ol class="replay-out" id="replay-out" aria-label="Out of the race" hidden></ol>
         </div>
-        <ol class="tower" id="tower" aria-label="Running order"></ol>
+        <div class="tower-col">
+          <div class="seg gap-mode" role="group" aria-label="Gap shown" id="gap-mode">
+            <button type="button" class="seg-btn on" aria-pressed="true" data-gap="leader">To leader</button>
+            <button type="button" class="seg-btn" aria-pressed="false" data-gap="interval">To car ahead</button>
+          </div>
+          <ol class="tower" id="tower" aria-label="Running order"></ol>
+        </div>
       </div>
       <div class="replay-controls">
         <button type="button" class="btn-play" id="replay-play" aria-pressed="false">Play</button>
@@ -97,6 +103,7 @@
           <span class="label">Show</span>
           <button type="button" class="seg-btn" data-show="all">Everyone</button>
           <button type="button" class="seg-btn" data-show="top10">Top 10</button>
+          <button type="button" class="seg-btn" data-show="lead" title="Hide cars that were lapped or retired">Full distance only</button>
           <button type="button" class="seg-btn" data-show="picks">Just my picks</button>
           <button type="button" class="seg-btn" data-show="none">Nobody</button>
           <span class="label cars-count" id="cars-count"></span>

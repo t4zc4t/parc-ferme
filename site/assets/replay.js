@@ -194,13 +194,32 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   // after the flag a car rolls past the line and fades off to parc ferme
   const home = (id, t) => !!finishLine[id] && t >= finishLine[id].t;
   const fade = (id, t) => !home(id, t) ? 1 : Math.max(0, 1 - (t - finishLine[id].t - 6) / 4);
+  // laps behind the winner at the end, and the official time it crossed the line after the winner
+  const lapsDown = id => Math.max(0, (race.results[0].laps || 0) - (byId.get(id).laps || 0));
   const finalGap = id => {
-    const r = byId.get(id), w = race.results[0];
-    if (id === w.id) return 'Winner';
-    const down = (w.laps || 0) - (r.laps || 0);
-    if (down > 0) return '+' + down + (down === 1 ? ' lap' : ' laps');
-    return /^\+/.test(r.time || '') ? r.time : '';
+    const r = byId.get(id);
+    if (id === race.results[0].id) return 'Winner';
+    if (/^\+[\d:.]+$/.test(r.time || '')) return r.time;
+    const down = lapsDown(id);
+    return down ? '+' + down + (down === 1 ? ' lap' : ' laps') : '';
   };
+  // how long ago car a went past the spot where car b is now, the gap you'd time on the road
+  const roadGap = (a, b, t) => {
+    const db = distAt(b, t), da = distAt(a, t);
+    if (isNaN(db) || isNaN(da)) return null;
+    const spot = ((db % lapLen) + lapLen) % lapLen;
+    const target = da - ((((da - spot) % lapLen) + lapLen) % lapLen);
+    let lo = Math.max(0, t - 300), hi = t;
+    const dl = distAt(a, lo);
+    if (isNaN(dl) || dl > target) return null;
+    for (let k = 0; k < 28; k++) {
+      const mid = (lo + hi) / 2, d = distAt(a, mid);
+      if (isNaN(d)) return null;
+      if (d < target) lo = mid; else hi = mid;
+    }
+    return t - hi;
+  };
+  const secsText = v => v >= 60 ? '+' + Math.floor(v / 60) + ':' + (v % 60).toFixed(1).padStart(4, '0') : '+' + v.toFixed(1);
 
   const at = (id, t) => {
     const c = cars[id], i = Math.floor(t / step), f = t / step - i;
@@ -461,6 +480,36 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       el('span', { class: 'out-lap' }, whyOut(id) === 'DNS' ? '' : 'L' + Math.max(1, byId.get(id).laps + 1)))));
   }
 
+  // the gap column: a time for everyone, with a small tag for laps down
+  let gapMode = 'leader';
+  const lapTag = n => el('span', { class: 'lap-tag', title: n + (n === 1 ? ' lap' : ' laps') + ' behind the leader' }, n + 'L');
+  const liveDown = g => g && typeof g[1] === 'string' && /lap/i.test(g[1]) ? parseInt(g[1].replace(/\D+/g, ''), 10) || 1 : 0;
+  function gapCell(id, i, order, g, gone, done, pit) {
+    if (gone) return [outNote(id)];
+    if (done) {
+      const down = lapsDown(id), text = finalGap(id);
+      return down ? [lapTag(down), text] : [text];
+    }
+    if (pit) return ['In pit'];
+    if (i === 0) return ['Leader'];
+    const down = liveDown(g);
+    if (gapMode === 'interval') {
+      const ahead = order[i - 1].id, v = roadGap(ahead, id, t);
+      const diff = down - liveDown(latest(data.gaps[ahead], t));
+      return [...(diff > 0 ? [lapTag(diff)] : []), v === null ? '' : secsText(v)];
+    }
+    if (down) {
+      const v = roadGap(order[0].id, id, t);
+      return [lapTag(down), v === null ? '' : secsText(v)];
+    }
+    return [g && typeof g[1] === 'number' ? secsText(g[1]) : ''];
+  }
+  $('gap-mode').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    gapMode = b.dataset.gap;
+    $('gap-mode').querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    drawTower();
+  }));
+
   function drawTower() {
     const order = standing(t);
     order.forEach(({ id, out: gone }, i) => {
@@ -472,8 +521,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
       const pit = inPit(id, t);
       const done = !gone && home(id, t);
       row.classList.toggle('tw-done', done);
-      gap.textContent = gone ? outNote(id) : done ? finalGap(id) : pit ? 'In pit' : i === 0 ? 'Leader'
-        : g && g[1] != null ? (typeof g[1] === 'number' ? '+' + g[1].toFixed(1) : g[1]) : '';
+      gap.replaceChildren(...gapCell(id, i, order, g, gone, done, pit));
       gap.classList.toggle('tw-pit', pit && !gone);
       const ty = gone ? null : tyreAt(id, t);
       tyre.replaceChildren(...(ty && ty.comp !== 'UNKNOWN' ? [
@@ -513,7 +561,7 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   if (finishLine[winner]) feed.push({ t: finishLine[winner].t, kind: 'flag', id: winner, text: byId.get(winner).code + ' wins, everyone else finishes on their next pass of the line' });
   // everyone else as they cross the line, with the place they finished in
   Object.entries(finishLine).forEach(([id, f]) => {
-    if (id !== winner) feed.push({ t: f.t, kind: 'flag', id, text: byId.get(id).code + ' finishes P' + byId.get(id).order + (finalGap(id) ? ', ' + finalGap(id) : '') });
+    if (id !== winner) feed.push({ t: f.t, kind: 'flag', id, text: byId.get(id).code + ' finishes P' + byId.get(id).order + (lapsDown(id) ? ', ' + lapsDown(id) + (lapsDown(id) === 1 ? ' lap' : ' laps') + ' down' : finalGap(id) ? ', ' + finalGap(id) : '') });
   });
   feed.sort((a, b) => a.t - b.t);
   const feedBox = $('replay-feed');
@@ -602,7 +650,8 @@ PF.replay = async function (race, { year, round, byId, chart }) {
   });
   carsPanel.querySelectorAll('[data-show]').forEach(b => b.addEventListener('click', () => {
     const order = standing(t).map(x => x.id);
-    const keep = { all: ids, none: [], top10: order.slice(0, 10), picks }[b.dataset.show];
+    const lead = ids.filter(id => finished(id) && !lapsDown(id));
+    const keep = { all: ids, none: [], top10: order.slice(0, 10), picks, lead }[b.dataset.show];
     hidden.clear();
     ids.forEach(id => { if (!keep.includes(id)) hidden.add(id); });
     syncCars();
