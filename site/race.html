@@ -69,9 +69,13 @@
         <input type="range" class="replay-seek" id="replay-seek" min="0" max="1" step="1" value="0" aria-label="Race time">
         <span class="replay-time mono" id="replay-time">0:00:00</span>
         <div class="seg" role="group" aria-label="Speed" id="replay-speed">
-          <button type="button" class="seg-btn" aria-pressed="false" data-speed="10">10x</button>
-          <button type="button" class="seg-btn on" aria-pressed="true" data-speed="30">30x</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-speed="1" title="Real time">1x</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-speed="2">2x</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-speed="5">5x</button>
+          <button type="button" class="seg-btn on" aria-pressed="true" data-speed="10">10x</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-speed="30">30x</button>
           <button type="button" class="seg-btn" aria-pressed="false" data-speed="60">60x</button>
+          <button type="button" class="seg-btn" aria-pressed="false" data-speed="120">120x</button>
         </div>
         <button type="button" class="seg-btn replay-end" id="replay-end">Skip to flag</button>
         <span id="replay-share-slot"></span>
@@ -82,10 +86,22 @@
         <span class="mono dim">vs</span>
         <select class="pick-sel" id="cmp-b" aria-label="Second driver"></select>
         <button type="button" class="seg-btn cmp-clear" id="cmp-clear" hidden>Clear</button>
+        <button type="button" class="seg-btn cars-btn" id="cars-btn" aria-expanded="false" aria-controls="cars-panel">Cars on map</button>
         <div class="seg name-mode" role="group" aria-label="Names on the map" id="name-mode">
           <button type="button" class="seg-btn on" aria-pressed="true" data-names="all">All names</button>
           <button type="button" class="seg-btn" aria-pressed="false" data-names="picked">Leader and picks</button>
         </div>
+      </div>
+      <div class="cars-panel" id="cars-panel" hidden>
+        <div class="cars-quick">
+          <span class="label">Show</span>
+          <button type="button" class="seg-btn" data-show="all">Everyone</button>
+          <button type="button" class="seg-btn" data-show="top10">Top 10</button>
+          <button type="button" class="seg-btn" data-show="picks">Just my picks</button>
+          <button type="button" class="seg-btn" data-show="none">Nobody</button>
+          <span class="label cars-count" id="cars-count"></span>
+        </div>
+        <div class="cars-list" id="cars-list"></div>
       </div>
       <div class="compare" id="compare" hidden></div>
       <div class="findings" id="findings" hidden></div>
