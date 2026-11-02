@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import api  # noqa: E402
+import early  # noqa: E402
 import laps  # noqa: E402
 import openf1  # noqa: E402
 import practice  # noqa: E402
@@ -42,7 +43,9 @@ def waiting_sessions(data, now):
                 continue
             begin = sitegen.when(start)
             end = begin + timedelta(minutes=sitegen.MINUTES[kind])
-            if begin + timedelta(minutes=EARLIEST[kind]) <= now < end + WATCH and not sitegen.has_data(rnd, kind):
+            # a provisional result from openf1 still waits for the official one
+            missing = not sitegen.has_data(rnd, kind) or kind in (rnd.get("provisional") or [])
+            if begin + timedelta(minutes=EARLIEST[kind]) <= now < end + WATCH and missing:
                 out.append((rnd["round"], kind, end))
     return out
 
@@ -65,7 +68,7 @@ def looks_sane(new, old):
         return bool(new["rounds"])
     if new["year"] != old["year"] or not new["rounds"]:
         return False
-    had = sum(1 for r in old["rounds"] if r["results"])
+    had = sum(1 for r in old["rounds"] if r["results"] and "R" not in (r.get("provisional") or []))
     has = sum(1 for r in new["rounds"] if r["results"])
     return has >= had and len(new["standings"]["drivers"]) >= min(len(old["standings"]["drivers"]), 10)
 
@@ -92,8 +95,21 @@ def refresh(now):
     year = current_year(now)
     labels = []
     data = season.fetch(year)
-    if not looks_sane(data, store.load(year)):
+    old = store.load(year)
+    if not looks_sane(data, old):
         raise SystemExit(f"the API answer for {year} has less data than the store, keeping what we have")
+    # keep provisional results until the official ones arrive
+    if old:
+        kept = False
+        for o, n in zip(old["rounds"], data["rounds"]):
+            for kind in o.get("provisional") or []:
+                field = early.KINDS[kind][0]
+                if o["round"] == n["round"] and not n[field]:
+                    n[field] = o[field]
+                    n["provisional"] = sorted(set(n.get("provisional") or []) | {kind})
+                    kept = True
+        if kept:
+            early.restand(data)
     if store.save_season(data, finished=data["complete"]):
         labels.append(f"{year} {'archived' if data['complete'] else 'updated'}")
     # start next season once its calendar is out
@@ -158,6 +174,24 @@ def race_extras(now):
     return labels
 
 
+def provisional(now):
+    """openf1's classification while the official results are still on their way"""
+    year = current_year(now)
+    data = store.load(year)
+    if data is None or year < openf1.FIRST:
+        return []
+    if openf1.locked(data, now, sitegen.MINUTES):
+        return []
+    try:
+        added = early.fill(data, now)
+    except RuntimeError as err:
+        print(f"provisional results failed: {err}")
+        return []
+    if added and store.save_season(data, finished=False):
+        return [f"provisional {', '.join(added)}"]
+    return []
+
+
 def trigger_build():
     hook = os.environ.get("CF_DEPLOY_HOOK")
     if not hook:
@@ -177,6 +211,7 @@ def main():
         print(f"refreshing: {reason}")
         labels = refresh(now)
         store.write_json(CHECKED, {"full": sitegen.iso(now.replace(second=0, microsecond=0))})
+    labels += provisional(now)
     labels += race_extras(now)
     if not reason and not labels:
         print("nothing to do")

@@ -19,7 +19,8 @@
   }
   PF.stamp();
 
-  $('race-kicker').textContent = year + ', round ' + race.round + ' of ' + race.rounds;
+  $('race-kicker').textContent = year + ', round ' + race.round + ' of ' + race.rounds +
+    (race.provisional ? '. Provisional result from live timing, the official one follows' : '');
   $('race-name').textContent = race.name;
   const c = race.circuit;
   const when = race.date ? new Date(race.date + 'T12:00:00Z').toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
