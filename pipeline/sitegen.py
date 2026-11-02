@@ -107,6 +107,7 @@ def home(season, names):
         start = when(last["sessions"]["R"])
         out["lastRace"] = {
             "round": last["round"], "name": last["name"],
+            "provisional": "R" in (last.get("provisional") or []),
             "dateLabel": f"{start.day} {start.strftime('%b %Y')}",
             "results": [row_out(r, names) for r in last["results"][:10]],
         }

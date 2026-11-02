@@ -31,6 +31,7 @@ def build(seasons, names, out):
             page = {
                 "year": year, "round": r["round"], "name": r["name"], "date": rounds[-1]["date"],
                 "circuit": r["circuit"], "rounds": len(s["rounds"]),
+                "provisional": "R" in (r.get("provisional") or []),
                 "results": [{
                     "id": x["d"], "name": names.driver(x["d"]), "code": names.code(x["d"]), "team": names.team(x["c"]),
                     "no": x.get("no"), "grid": x["grid"], "pos": x["text"] or str(x["pos"]), "order": x["pos"],

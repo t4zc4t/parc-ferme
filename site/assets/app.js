@@ -111,7 +111,8 @@
   function showLast(last) {
     if (!last || !last.results.length) return;
     $('last').hidden = false;
-    $('last-note').textContent = last.name + ', round ' + last.round + ', ' + last.dateLabel;
+    $('last-note').textContent = last.name + ', round ' + last.round + ', ' + last.dateLabel +
+      (last.provisional ? '. Provisional, from live timing until the official result is out' : '');
     $('last-body').replaceChildren(...last.results.map(r => {
       const moved = Number.isFinite(+r.pos) && r.grid > 0 ? r.grid - +r.pos : null;
       return el('li', { class: 'rl-row' + (+r.pos <= 3 ? ' rl-top' : '') },
