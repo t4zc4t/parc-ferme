@@ -18,7 +18,7 @@ Once a month another Action saves Jolpica's full database dump as a release asse
 
 The Jolpica API allows 4 requests a second and 500 an hour, shared by everyone on the same IP. A normal update is about 15 requests, and the one-time backfill of all 76 finished seasons was spread out at one request every 7.5 seconds to stay under the hourly cap. GitHub's scheduled runs often come late or not at all, which is why the Worker does the waking; Cloudflare's free plan gives it 100,000 runs a day and it uses 144. Cloudflare's free plan allows 500 builds a month, and this uses a handful per race weekend.
 
-Live timing during sessions isn't free anywhere I've found, so for now the site updates after each session rather than during it.
+Live timing during sessions isn't free anywhere I've found, so for now the site updates after each session rather than during it (since this is a totally cost free version maybe in future might upgrade it )
 
 ## Security
 
