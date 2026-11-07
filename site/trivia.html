@@ -65,7 +65,7 @@
       <p class="tv-meta label" id="quiz-meta"></p>
       <p class="tv-q" id="quiz-q">Loading a question.</p>
       <div class="tv-options" id="quiz-options"></div>
-      <p class="tv-explain" id="quiz-explain" hidden></p>
+      <div class="tv-explain" id="quiz-explain" hidden></div>
       <div class="go-row">
         <button type="button" class="btn btn-solid" id="quiz-next">Next question</button>
         <span id="quiz-share"></span>
@@ -98,7 +98,7 @@
       <p class="panel-note">Everything on this page is plain JSON you can fetch from a Discord bot or anything else. No key needed, it refreshes after each race, and please cache it rather than fetching on every message.</p>
       <ul class="tv-endpoints">
         <li><code>/data/trivia/facts.json</code><span><span id="n-facts"></span> facts, each with an <code>id</code>, <code>category</code>, <code>text</code> and a <code>link</code> back to the data</span></li>
-        <li><code>/data/trivia/quiz.json</code><span><span id="n-quiz"></span> questions, each with <code>q</code>, four <code>options</code>, the <code>answer</code> index, an <code>explain</code> line, <code>category</code> and <code>difficulty</code></span></li>
+        <li><code>/data/trivia/quiz.json</code><span><span id="n-quiz"></span> questions, each with <code>q</code>, four <code>options</code>, the <code>answer</code> index, an <code>explain</code> line, a <code>table</code> of the numbers behind it, a <code>link</code>, <code>category</code> and <code>difficulty</code></span></li>
         <li><code>/data/trivia/onthisday.json</code><span>races by date, keyed <code>"MM-DD"</code>, newest first</span></li>
       </ul>
       <pre class="tv-code"><code>const base = 'https://parc-ferme.pages.dev';

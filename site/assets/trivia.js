@@ -61,8 +61,13 @@
     });
     const ex = $('quiz-explain');
     ex.hidden = false;
-    ex.replaceChildren(el('b', null, ok ? 'Right. ' : 'Not quite. '), current.explain,
-      current.link ? el('a', { class: 'text-link', href: current.link }, ' See the data') : '');
+    const answerText = current.options[current.answer];
+    // the full answer, the numbers behind it and where to look
+    ex.replaceChildren(
+      el('p', { class: 'tv-verdict' }, el('b', null, ok ? 'Right, ' + answerText + '. ' : 'Not quite, it\'s ' + answerText + '. '), current.explain),
+      current.table && current.table.length ? el('table', { class: 'tv-table' }, el('tbody', null, ...current.table.map(([k, v, href]) => el('tr', { class: k.includes(answerText) || v === answerText ? 'is-answer' : null },
+        el('td', null, href ? el('a', { href }, k) : k), el('td', { class: 'num-font' }, v))))) : '',
+      current.link ? el('a', { class: 'btn btn-quiet tv-source', href: current.link }, current.linkText || 'See the data') : '');
     $('quiz-score').textContent = right + ' of ' + asked + (streak > 2 ? ', ' + streak + ' in a row' : '');
   }
   document.addEventListener('keydown', e => {
@@ -91,7 +96,7 @@
     $('fact-text').textContent = f.text;
     $('fact-cat').textContent = label(f.category);
     $('fact-link').hidden = !f.link;
-    if (f.link) $('fact-link').href = f.link;
+    if (f.link) { $('fact-link').href = f.link; $('fact-link').textContent = f.linkText || 'See the data'; }
   }
   $('fact-next').addEventListener('click', fact);
   fact();

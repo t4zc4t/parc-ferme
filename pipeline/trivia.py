@@ -111,16 +111,26 @@ def build(seasons, names):
     nm = names.driver
     facts, quiz = [], []
 
-    def fact(fid, category, text, link=None):
-        facts.append({"id": fid, "category": category, "text": text, "link": link})
+    def fact(fid, category, text, link=None, link_text=None):
+        facts.append({"id": fid, "category": category, "text": text, "link": link,
+                      "linkText": link_text or ("The race" if link and link.startswith("/races/") else "Career record" if link else None)})
 
-    def question(qid, category, difficulty, q, right, wrong, explain, link=None):
+    def question(qid, category, difficulty, q, right, wrong, explain, link=None, link_text=None, table=None):
+        """table: the numbers behind the answer, [label, value, link] rows shown after answering"""
         wrong = [w for w in dict.fromkeys(wrong) if w != right][:3]
         if len(wrong) < 3:
             return
         options = mix(qid, [right] + wrong)
         quiz.append({"id": qid, "category": category, "difficulty": difficulty, "q": q,
-                     "options": options, "answer": options.index(right), "explain": explain, "link": link})
+                     "options": options, "answer": options.index(right), "explain": explain,
+                     "table": table or [], "link": link,
+                     "linkText": link_text or ("The race" if link and link.startswith("/races/") else
+                                               "The standings" if link and link.startswith("/standings") else
+                                               "Career record" if link else None)})
+
+    def board(rows, unit):
+        """a ranking as table rows: [(count, driver), ...]"""
+        return [[nm(d), plural(n, unit), link_driver(d)] for n, d in rows[:5]]
 
     def ranked(value, keep=lambda d, c: True):
         rows = [(value(c), d) for d, c in career.items() if keep(d, c)]
@@ -144,26 +154,30 @@ def build(seasons, names):
         (n, d), (n2, d2) = wins[0], wins[1]
         fact("most-wins", "records", f"{nm(d)} has won more Grands Prix than anyone, {n}. {nm(d2)} is next with {n2}.", link_driver(d))
         question("most-wins", "records", "easy", "Who has won the most Formula 1 Grands Prix?",
-                 nm(d), [nm(x) for _, x in wins[1:4]], f"{nm(d)} with {n} wins, {nm(d2)} has {n2}.", link_driver(d))
+                 nm(d), [nm(x) for _, x in wins[1:4]], f"{nm(d)} has won {n} Grands Prix, the most of anyone. {nm(d2)} is next with {n2}.",
+                 link_driver(d), table=board(wins, "win"))
     poles = ranked(lambda c: c["poles"])
     if clear_top(poles):
         (n, d), (n2, d2) = poles[0], poles[1]
         fact("most-poles", "records", f"{nm(d)} has started from pole {n} times, the most ever. {nm(d2)} has {n2}.", link_driver(d))
         question("most-poles", "records", "easy", "Who has the most pole positions in Formula 1?",
-                 nm(d), [nm(x) for _, x in poles[1:4]], f"{nm(d)} with {n} poles.", link_driver(d))
+                 nm(d), [nm(x) for _, x in poles[1:4]], f"{nm(d)} has started from pole {n} times, {nm(d2)} {n2}.",
+                 link_driver(d), table=board(poles, "pole"))
 
     no_title = ranked(lambda c: len(c["wins"]), lambda d, c: d not in titles)
     if clear_top(no_title):
         n, d = no_title[0]
         fact("wins-no-title", "records", f"{nm(d)} has {n} Grand Prix wins, more than anyone who has never been world champion.", link_driver(d))
         question("wins-no-title", "records", "medium", "Who has won the most Grands Prix without ever becoming world champion?",
-                 nm(d), [nm(x) for _, x in no_title[1:4]], f"{nm(d)}, with {n} wins and no title.", link_driver(d))
+                 nm(d), [nm(x) for _, x in no_title[1:4]], f"{nm(d)} won {n} Grands Prix but never the title, the most of anyone without one.",
+                 link_driver(d), table=board(no_title, "win"))
     podium_no_win = ranked(lambda c: c["podiums"], lambda d, c: not c["wins"])
     if clear_top(podium_no_win):
         n, d = podium_no_win[0]
         fact("podiums-no-win", "records", f"{nm(d)} stood on the podium {n} times without ever winning a Grand Prix, the most of anyone.", link_driver(d))
         question("podiums-no-win", "records", "hard", "Who has the most podium finishes without a single Grand Prix win?",
-                 nm(d), [nm(x) for _, x in podium_no_win[1:4]], f"{nm(d)}, {n} podiums and no win.", link_driver(d))
+                 nm(d), [nm(x) for _, x in podium_no_win[1:4]], f"{nm(d)} stood on the podium {n} times without ever winning.",
+                 link_driver(d), table=board(podium_no_win, "podium"))
     seconds_no_win = ranked(lambda c: c["seconds"], lambda d, c: not c["wins"])
     if clear_top(seconds_no_win):
         n, d = seconds_no_win[0]
@@ -173,13 +187,15 @@ def build(seasons, names):
         n, d = starts_no_podium[0]
         fact("starts-no-podium", "records", f"{nm(d)} started {n} Grands Prix without a single podium, the longest such career.", link_driver(d))
         question("starts-no-podium", "records", "hard", "Who started the most Grands Prix without ever finishing on the podium?",
-                 nm(d), [nm(x) for _, x in starts_no_podium[1:4]], f"{nm(d)}, {n} starts and no podium.", link_driver(d))
+                 nm(d), [nm(x) for _, x in starts_no_podium[1:4]], f"{nm(d)} started {n} Grands Prix and never finished in the top three.",
+                 link_driver(d), table=board(starts_no_podium, "start"))
     waited = ranked(lambda c: (c["first_win_after"] or 0))
     if clear_top(waited):
         n, d = waited[0]
         fact("longest-wait", "records", f"{nm(d)} needed {n} starts to win a Grand Prix, the longest wait of any winner.", link_driver(d))
         question("longest-wait", "records", "hard", "Which winner needed the most starts before their first Grand Prix win?",
-                 nm(d), [nm(x) for _, x in waited[1:4]], f"{nm(d)} won at the {ordinal(n)} attempt.", link_driver(d))
+                 nm(d), [nm(x) for _, x in waited[1:4]], f"{nm(d)} won at the {ordinal(n)} attempt, the longest wait of any winner.",
+                 link_driver(d), table=[[nm(x), f"win at start {k}", link_driver(x)] for k, x in waited[:5]])
     debut = sorted({d for d, c in career.items() if c["first_win_after"] == 1 and not c["wins"][0]["indy"]})
     if debut:
         fact("won-on-debut", "records", f"Leaving out the Indianapolis 500, only {plural(len(debut), 'driver')} won on their championship debut: "
@@ -199,8 +215,14 @@ def build(seasons, names):
         for a, dr, w2 in sorted(winners_age, key=lambda x: x[0]):
             if dr not in young:
                 young.append(dr)
+        first_win_age = {}
+        for a, dr, w2 in sorted(winners_age, key=lambda x: x[0]):
+            first_win_age.setdefault(dr, (a, w2))
         question("youngest-winner", "records", "medium", "Who is the youngest driver to win a Formula 1 Grand Prix?",
-                 nm(d), [nm(x) for x in young[1:4]], f"{nm(d)}, {y} years and {dd} days old at the {w['year']} {w['name']}.", link_race(w["year"], w["round"]))
+                 nm(d), [nm(x) for x in young[1:4]], f"{nm(d)} was {y} years and {dd} days old when he won the {w['year']} {w['name']}.",
+                 link_race(w["year"], w["round"]),
+                 table=[[nm(x), f"{first_win_age[x][0][0]} years {first_win_age[x][0][1]} days, {first_win_age[x][1]['year']}",
+                         link_race(first_win_age[x][1]["year"], first_win_age[x][1]["round"])] for x in young[:5]])
         (y, dd), d, w = max(winners_age, key=lambda x: x[0])
         fact("oldest-winner", "records", f"{nm(d)} is the oldest Grand Prix winner, {y} years old at the {w['year']} {w['name']}.", link_race(w["year"], w["round"]))
 
@@ -227,7 +249,7 @@ def build(seasons, names):
         n, d, (y, gp) = best
         fact("win-streak", "records", f"The longest winning run is {n} races in a row, by {nm(d)}, starting at the {y} {gp}.", link_driver(d))
         question("win-streak", "records", "medium", "What is the record for consecutive Grand Prix wins?",
-                 str(n), [str(n - 1), str(n + 1), str(n - 2)], f"{n}, set by {nm(d)}.", link_driver(d))
+                 str(n), [str(n - 1), str(n + 1), str(n - 2)], f"{n} in a row, by {nm(d)} from the {y} {gp}.", f"/standings?y={y}", f"The {y} season")
 
     # seasons
     season_rows = []
@@ -244,13 +266,16 @@ def build(seasons, names):
         y, d, n, total, _ = max(season_rows, key=lambda x: (x[2], -x[0]))
         fact("most-wins-season", "records", f"The most wins in one season is {n}, by {nm(d)} in {y} ({n} of {total} races).", link_driver(d))
         question("most-wins-season", "records", "medium", "What is the record for most Grand Prix wins in a single season?",
-                 str(n), [str(n - 1), str(n - 2), str(n + 2)], f"{n}, by {nm(d)} in {y}.", link_driver(d))
+                 str(n), [str(n - 1), str(n - 2), str(n + 2)], f"{n} wins, by {nm(d)} in {y}, from {total} races.", f"/standings?y={y}", f"The {y} season",
+                 table=[[f"{nm(x[1])}, {x[0]}", f"{x[2]} of {x[3]}", f"/standings?y={x[0]}"] for x in sorted(season_rows, key=lambda x: (-x[2], x[0]))[:5]])
         y, d, n, total, _ = max((x for x in season_rows if x[3] >= 5), key=lambda x: (x[2] / x[3], -x[0]))
         fact("best-season-rate", "records", f"{nm(d)} won {n} of {total} races in {y}, {round(100 * n / total)}%, the highest win rate in a season.", link_driver(d))
         y, _, _, total, k = max(season_rows, key=lambda x: (x[4], -x[0]))
         fact("most-winners", "seasons", f"{y} had {k} different winners in {total} races, the most in any season.")
         question("most-winners", "seasons", "hard", "Which season had the most different Grand Prix winners?",
-                 str(y), [str(x[0]) for x in sorted(season_rows, key=lambda x: (-x[4], x[0]))[1:4]], f"{y}, with {k} different winners.")
+                 str(y), [str(x[0]) for x in sorted(season_rows, key=lambda x: (-x[4], x[0]))[1:4]], f"{y}, with {k} different winners in {total} races.",
+                 f"/races?y={y}", f"The {y} races",
+                 table=[[str(x[0]), f"{x[4]} winners in {x[3]} races", f"/races?y={x[0]}"] for x in sorted(season_rows, key=lambda x: (-x[4], x[0]))[:5]])
 
     # title fights
     margins = [(y, t[0]["pts"] - t[1]["pts"], t[0]["d"], t[1]["d"]) for y, t in champions.items() if len(t) > 1]
@@ -261,7 +286,8 @@ def build(seasons, names):
                       for y, t in champions.items()), key=lambda x: (x[1], x[0]))
         fact("fewest-wins-champion", "seasons", f"{nm(fewest[2])} won the {fewest[0]} title with just {plural(fewest[1], 'win')}, the fewest for any champion.", f"/standings?y={fewest[0]}")
         question("fewest-wins-champion", "seasons", "hard", f"How many races did {nm(fewest[2])} win on the way to the {fewest[0]} title?",
-                 str(fewest[1]), [str(fewest[1] + k) for k in (1, 2, 3)], f"Just {plural(fewest[1], 'win')}, the fewest for any champion.", f"/standings?y={fewest[0]}")
+                 str(fewest[1]), [str(fewest[1] + k) for k in (1, 2, 3)], f"{nm(fewest[2])} won the {fewest[0]} title with just {plural(fewest[1], 'win')}, the fewest for any champion.",
+                 f"/standings?y={fewest[0]}")
     most_titles = sorted(titles.items(), key=lambda x: (-x[1], x[0]))
     if len(most_titles) >= 4:
         top = [x for x in most_titles if x[1] == most_titles[0][1]]
@@ -276,7 +302,9 @@ def build(seasons, names):
         others = [x["d"] for x in t[1:3]] + [champions[z][0]["d"] for z in (y - 1, y + 1, y - 2) if z in champions]
         question(f"champion-{y}", "seasons", diff, f"Who won the {y} drivers' championship?",
                  nm(t[0]["d"]), [nm(x) for x in others if x != t[0]["d"]],
-                 f"{nm(t[0]['d'])}, {t[0]['pts']} points to {nm(t[1]['d'])}'s {t[1]['pts']}.", f"/standings?y={y}")
+                 f"{nm(t[0]['d'])} won the {y} title with {t[0]['pts']} points, {nm(t[1]['d'])} was second on {t[1]['pts']}.",
+                 f"/standings?y={y}", f"The {y} standings",
+                 table=[[nm(x["d"]), f"{x['pts']} pts", link_driver(x["d"])] for x in t[:3]])
     for y, t in sorted(team_champions.items()):
         if len(t) < 3:
             continue
@@ -284,7 +312,9 @@ def build(seasons, names):
         others = [x["c"] for x in t[1:3]] + [team_champions[z][0]["c"] for z in (y - 1, y + 1, y - 3) if z in team_champions]
         question(f"constructors-{y}", "teams", diff, f"Which team won the {y} constructors' championship?",
                  names.team(t[0]["c"]), [names.team(x) for x in others if x != t[0]["c"]],
-                 f"{names.team(t[0]['c'])}, with {t[0]['pts']} points.", f"/standings?y={y}&t=teams")
+                 f"{names.team(t[0]['c'])} won the {y} constructors' title with {t[0]['pts']} points.",
+                 f"/standings?y={y}&t=teams", f"The {y} standings",
+                 table=[[names.team(x["c"]), f"{x['pts']} pts", None] for x in t[:3]])
     team_titles = Counter(t[0]["c"] for t in team_champions.values())
     if team_titles:
         (c, n), = team_titles.most_common(1)
@@ -295,14 +325,16 @@ def build(seasons, names):
         top = team_one_two.most_common(4)
         if len(top) == 4 and top[0][1] > top[1][1]:
             question("one-twos", "teams", "medium", "Which team has scored the most one-two finishes?",
-                     names.team(c), [names.team(x) for x, _ in top[1:]], f"{names.team(c)}, {n} of them.")
+                     names.team(c), [names.team(x) for x, _ in top[1:]], f"{names.team(c)} have finished first and second {n} times.",
+                     table=[[names.team(x), plural(k, "one-two"), None] for x, k in team_one_two.most_common(5)])
 
     # circuits
     held = Counter(r["name"] for _, r in races)
     (gp, n), = held.most_common(1)
     fact("most-held", "circuits", f"The {gp} has been part of the championship {n} times, more than any other race.")
     question("most-held", "circuits", "medium", "Which Grand Prix has been held the most times in the championship?",
-             gp, [g for g, _ in held.most_common(4)[1:]], f"The {gp}, {n} times.")
+             gp, [g for g, _ in held.most_common(4)[1:]], f"The {gp} has been held {n} times.",
+             table=[[g, plural(k, "race"), None] for g, k in held.most_common(5)])
     first_year, first_r = races[0]
     fact("first-race", "circuits", f"The first world championship race was the {first_year} {first_r['name']} at {first_r['circuit']['name']}.", link_race(first_year, first_r["round"]))
     rates = [(pole_wins[c] / pole_races[c], c) for c in pole_races if circuit_races[c] >= MIN_CIRCUIT]
@@ -323,20 +355,27 @@ def build(seasons, names):
         fact(f"circuit-{c}", "circuits", f"{who} {'share the record at' if len(tied) > 1 else 'has the most wins at'} {circuit_names[c]}, "
              f"{plural(n, 'win')}{' each' if len(tied) > 1 else ''} from {circuit_races[c]} races held there.", link_driver(d))
         if len(top) == 4 and n > top[1][1]:
+            years = [w for w in career[d]["wins"] if w["circuit"] == c]
             question(f"circuit-{c}", "circuits", "medium", f"Who has the most wins at {circuit_names[c]}?",
-                     nm(d), [nm(x) for x, _ in top[1:]], f"{nm(d)}, {plural(n, 'win')} there.", link_driver(d))
+                     nm(d), [nm(x) for x, _ in top[1:]],
+                     f"{nm(d)} has won {plural(n, 'time')} at {circuit_names[c]}: " + ", ".join(str(w["year"]) for w in years) + ".",
+                     link_race(years[-1]["year"], years[-1]["round"]), f"{nm(d).split()[-1]}'s last win there",
+                     table=[[nm(x), plural(k, "win"), link_driver(x)] for x, k in circuit_wins[c].most_common(5)])
 
     # numbers and firsts for the big winners
     big = [(len(c["wins"]), d) for d, c in career.items() if len(c["wins"]) >= 10]
     for n, d in sorted(big, reverse=True)[:30]:
         c = career[d]
+        first = c["wins"][0]
         steps = mix(d, [-3, -2, -1, 1, 2, 3])
         question(f"wins-{d}", "drivers", "medium" if n >= 30 else "hard", f"How many Grand Prix wins does {nm(d)} have?",
-                 str(n), [str(n + k) for k in steps if n + k > 0], f"{n} wins from {c['starts']} starts.", link_driver(d))
-        first = c["wins"][0]
+                 str(n), [str(n + k) for k in steps if n + k > 0],
+                 f"{nm(d)} has {n} wins from {c['starts']} starts, the first at the {first['year']} {first['name']}.", link_driver(d),
+                 table=[["Starts", str(c["starts"]), None], ["Wins", str(n), None], ["Podiums", str(c["podiums"]), None], ["Poles", str(c["poles"]), None]])
         question(f"first-win-{d}", "drivers", "hard", f"In which season did {nm(d)} win their first Grand Prix?",
                  str(first["year"]), [str(first["year"] + k) for k in mix(d + "y", [-2, -1, 1, 2]) if first["year"] + k <= now_year],
-                 f"{first['year']}, at the {first['name']}.", link_race(first["year"], first["round"]))
+                 f"{nm(d)} took their first win at the {first['year']} {first['name']}, at the {ordinal(c['first_win_after'])} start.",
+                 link_race(first["year"], first["round"]))
 
     # odd one out: a big name who never won, hidden among winners of the same years
     winners = {d: c for d, c in career.items() if c["wins"]}
@@ -346,8 +385,11 @@ def build(seasons, names):
         picks = [w for _, w in alike[:6]]
         if len(picks) < 3:
             continue
+        shown = mix(d, picks)[:3]
         question(f"never-won-{d}", "drivers", "hard", "Which of these drivers never won a Grand Prix?",
-                 nm(d), [nm(w) for w in mix(d, picks)[:3]], f"{nm(d)}, despite {plural(n, 'podium')}.", link_driver(d))
+                 nm(d), [nm(w) for w in shown], f"{nm(d)} never won, despite {plural(n, 'podium')}. The other three all won races.",
+                 link_driver(d),
+                 table=[[nm(x), f"{plural(len(career[x]['wins']), 'win')}, {plural(career[x]['podiums'], 'podium')}", link_driver(x)] for x in [d] + shown])
     # the team a big winner first won with
     for n, d in sorted(big, reverse=True)[:30]:
         first = career[d]["wins"][0]
@@ -355,7 +397,7 @@ def build(seasons, names):
         others = [names.team(t) for t, _ in teams.most_common(8) if t != first["team"]]
         question(f"first-win-team-{d}", "drivers", "hard", f"Which team did {nm(d)} take their first Grand Prix win with?",
                  names.team(first["team"]), mix(d + "t", others)[:3],
-                 f"{names.team(first['team'])}, at the {first['year']} {first['name']}.", link_race(first["year"], first["round"]))
+                 f"{nm(d)} first won with {names.team(first['team'])}, at the {first['year']} {first['name']}.", link_race(first["year"], first["round"]))
 
     # recent race winners
     for year, r in races:
@@ -367,7 +409,9 @@ def build(seasons, names):
         diff = "easy" if year >= now_year - 1 else "medium"
         question(f"winner-{year}-{r['round']}", "races", diff, f"Who won the {year} {r['name']}?",
                  nm(top[0]["d"]), [nm(x["d"]) for x in top[1:]],
-                 f"{nm(top[0]['d'])} for {names.team(top[0]['c'])}, ahead of {nm(top[1]['d'])}.", link_race(year, r["round"]))
+                 f"{nm(top[0]['d'])} won the {year} {r['name']} for {names.team(top[0]['c'])}, ahead of {nm(top[1]['d'])}.",
+                 link_race(year, r["round"]), f"The {year} {short(r['name'])}",
+                 table=[[f"P{x['pos']} {nm(x['d'])}", x["time"] or x["status"] or "", None] for x in top[:3]])
 
     # this season
     rnds = [r for r in current["rounds"] if r["results"]]
