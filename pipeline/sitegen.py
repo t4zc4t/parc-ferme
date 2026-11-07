@@ -8,6 +8,7 @@ import questions
 import studies
 import races
 import standings
+import trivia
 from compare import is_pole
 import store
 import title
@@ -291,6 +292,8 @@ def build(now=None):
     changed |= standings.build(seasons, names, out)
     changed |= store.write_json(out / "questions.json", questions.build(seasons, names, h["title"]))
     changed |= store.write_json(out / "studies.json", studies.build(seasons, names))
+    for name, data in trivia.build(seasons, names).items():
+        changed |= store.write_json(out / "trivia" / f"{name}.json", data)
     # only bumps when something changed
     if changed or not (out / "meta.json").exists():
         store.write_json(out / "meta.json", {"updated": stamp, "season": current["year"]})

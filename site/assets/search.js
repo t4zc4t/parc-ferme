@@ -21,7 +21,7 @@
     if (items) return;
     items = [
       ['Standings', '/standings', 'Page'], ['Schedule', '/schedule', 'Page'], ['Drivers', '/drivers', 'Page'],
-      ['Compare drivers', '/compare', 'Page'], ['Races', '/races', 'Page'], ['Studies', '/studies', 'Page'], ['Questions', '/questions', 'Page'],
+      ['Compare drivers', '/compare', 'Page'], ['Races', '/races', 'Page'], ['Studies', '/studies', 'Page'], ['Questions', '/questions', 'Page'], ['Trivia and quiz', '/trivia', 'Page'],
     ].map(([name, href, kind]) => ({ name, href, kind, rank: 1 }));
     const get = p => PF.json(p).catch(() => null);
     const [people, grid, schedule, qs, studies, index] = await Promise.all([
