@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F1 trivia: facts, quiz questions and on this day · Parc Fermé</title>
+<meta name="description" content="Formula 1 facts, quiz questions and on-this-day moments worked out from every race since 1950, updated after each Grand Prix.">
+<meta name="theme-color" content="#07070D">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="canonical" href="https://parc-ferme.pages.dev/trivia">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Parc Fermé">
+<meta property="og:title" content="F1 trivia: facts, quiz questions and on this day">
+<meta property="og:description" content="Formula 1 facts, quiz questions and on-this-day moments worked out from every race since 1950, updated after each Grand Prix.">
+<meta property="og:url" content="https://parc-ferme.pages.dev/trivia">
+<meta property="og:image" content="https://parc-ferme.pages.dev/assets/share.png">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <span class="brand-name">PARC FERMÉ</span>
+      <span class="brand-jp" lang="ja">パルク・フェルメ</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="/standings">Standings</a>
+      <a href="/schedule">Schedule</a>
+      <a href="/drivers">Drivers</a>
+      <a href="/compare">Compare</a>
+      <a href="/races">Races</a>
+      <a href="/studies">Studies</a>
+      <a href="/questions">Questions</a>
+      <a href="/trivia" aria-current="page">Trivia</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap page-head">
+    <h1 class="page-title">Trivia</h1>
+    <p class="lede">Facts and quiz questions worked out from every championship race since 1950. Nothing is typed in by hand, so the numbers move on by themselves after each Grand Prix.</p>
+  </section>
+
+  <section class="wrap block tv-grid">
+    <div class="panel tv-quiz" id="quiz">
+      <div class="lap-top">
+        <h2 class="panel-title">Quiz</h2>
+        <span class="label tv-score" id="quiz-score"></span>
+      </div>
+      <div class="tv-filters">
+        <select class="field" id="quiz-cat" aria-label="Category"><option value="">Any topic</option></select>
+        <div class="seg" role="group" aria-label="Difficulty" id="quiz-level">
+          <button type="button" class="chip on" data-level="" aria-pressed="true">Any</button>
+          <button type="button" class="chip" data-level="easy" aria-pressed="false">Easy</button>
+          <button type="button" class="chip" data-level="medium" aria-pressed="false">Medium</button>
+          <button type="button" class="chip" data-level="hard" aria-pressed="false">Hard</button>
+        </div>
+      </div>
+      <p class="tv-meta label" id="quiz-meta"></p>
+      <p class="tv-q" id="quiz-q">Loading a question.</p>
+      <div class="tv-options" id="quiz-options"></div>
+      <p class="tv-explain" id="quiz-explain" hidden></p>
+      <div class="go-row">
+        <button type="button" class="btn btn-solid" id="quiz-next">Next question</button>
+        <span id="quiz-share"></span>
+      </div>
+    </div>
+
+    <div class="tv-side">
+      <div class="panel tv-fact">
+        <div class="lap-top">
+          <h2 class="panel-title">Did you know</h2>
+          <span class="label" id="fact-cat"></span>
+        </div>
+        <p class="tv-fact-text" id="fact-text">Loading a fact.</p>
+        <div class="go-row">
+          <button type="button" class="btn btn-quiet" id="fact-next">Another fact</button>
+          <a class="text-link" id="fact-link" hidden>See the data</a>
+        </div>
+      </div>
+      <div class="panel">
+        <h2 class="panel-title">On this day</h2>
+        <p class="panel-note" id="day-note"></p>
+        <ol class="tv-days" id="day-list"></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap block">
+    <div class="panel tv-api">
+      <h2 class="panel-title">Use it in your bot</h2>
+      <p class="panel-note">Everything on this page is plain JSON you can fetch from a Discord bot or anything else. No key needed, it refreshes after each race, and please cache it rather than fetching on every message.</p>
+      <ul class="tv-endpoints">
+        <li><code>/data/trivia/facts.json</code><span><span id="n-facts"></span> facts, each with an <code>id</code>, <code>category</code>, <code>text</code> and a <code>link</code> back to the data</span></li>
+        <li><code>/data/trivia/quiz.json</code><span><span id="n-quiz"></span> questions, each with <code>q</code>, four <code>options</code>, the <code>answer</code> index, an <code>explain</code> line, <code>category</code> and <code>difficulty</code></span></li>
+        <li><code>/data/trivia/onthisday.json</code><span>races by date, keyed <code>"MM-DD"</code>, newest first</span></li>
+      </ul>
+      <pre class="tv-code"><code>const base = 'https://parc-ferme.pages.dev';
+const { questions } = await (await fetch(base + '/data/trivia/quiz.json')).json();
+const q = questions[Math.floor(Math.random() * questions.length)];
+// q.q, q.options, q.options[q.answer], q.explain, base + q.link</code></pre>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
+  </div>
+</footer>
+
+<script src="/assets/common.js"></script>
+<script src="/assets/trivia.js"></script>
+<script src="/assets/search.js"></script>
+</body>
+</html>
