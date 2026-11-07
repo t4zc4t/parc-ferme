@@ -106,6 +106,10 @@ def refresh(now):
                 field = early.KINDS[kind][0]
                 if o["round"] == n["round"] and not n[field]:
                     n[field] = o[field]
+                    # a stand-in driver only openf1 knows about so far
+                    for row in o[field]:
+                        if row["d"] not in data["drivers"] and row["d"] in old["drivers"]:
+                            data["drivers"][row["d"]] = old["drivers"][row["d"]]
                     n["provisional"] = sorted(set(n.get("provisional") or []) | {kind})
                     kept = True
         if kept:

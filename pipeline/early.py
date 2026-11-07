@@ -40,6 +40,35 @@ def who(season):
     return out
 
 
+def slug(text):
+    import unicodedata
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    return "_".join("".join(ch if ch.isalnum() else " " for ch in plain).split())
+
+
+def stand_ins(season, key, numbers, wanted):
+    """cars the season hasn't seen yet, a stand-in driver say: name and team from openf1"""
+    missing = [n for n in wanted if n not in numbers]
+    if not missing:
+        return
+    teams = {v["name"].lower(): c for c, v in season["teams"].items()}
+    for d in openf1.get(f"drivers?session_key={key}"):
+        n = d.get("driver_number")
+        if n not in missing or not d.get("last_name"):
+            continue
+        did = slug(d["last_name"])
+        if did in season["drivers"] and season["drivers"][did].get("number") not in (None, str(n)):
+            did = slug(f"{d.get('first_name', '')} {d['last_name']}")
+        name = (d.get("team_name") or "").lower()
+        team = next((c for t, c in teams.items() if t and name and (t in name or name in t)), None)
+        if team is None:
+            continue
+        season["drivers"].setdefault(did, {"first": d.get("first_name"), "last": d["last_name"],
+                                           "code": d.get("name_acronym"), "number": str(n), "nat": None, "dob": None})
+        numbers[n] = (did, team)
+        print(f"car {n} is {d.get('full_name')} for {season['teams'][team]['name']}, not in the season yet")
+
+
 def session_key(year, rnd, name):
     rows = openf1.get(f"sessions?year={year}&session_name={name}")
     by_day = {openf1.day(s["date_start"]): s["session_key"] for s in rows}
@@ -65,6 +94,7 @@ def quali_rows(season, key):
     res = openf1.get(f"session_result?session_key={key}")
     if not res or not any(r.get("position") for r in res):
         return None
+    stand_ins(season, key, numbers, [r["driver_number"] for r in res])
     out = []
     for r in sorted(res, key=lambda r: (r.get("position") is None, r.get("position") or 0)):
         no = r["driver_number"]
@@ -82,6 +112,7 @@ def rows_for(season, rnd, key):
     res = openf1.get(f"session_result?session_key={key}")
     if not res or not any(r.get("position") for r in res):
         return None
+    stand_ins(season, key, numbers, [r["driver_number"] for r in res])
     grid = {q["d"]: q["pos"] for q in rnd.get("quali") or []}
     # fastest lap ranks from the lap times
     best = {}
