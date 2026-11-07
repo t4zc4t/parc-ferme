@@ -109,9 +109,13 @@
   }
 
   function showLast(last) {
+    // a sprint run since the last Grand Prix is the newest result
+    const sprint = home.lastSprint;
+    if (sprint && sprint.results.length) last = sprint;
     if (!last || !last.results.length) return;
     $('last').hidden = false;
-    $('last-note').textContent = last.name + ', round ' + last.round + ', ' + last.dateLabel +
+    $('last-title').textContent = last === sprint ? 'Latest sprint' : 'Last race';
+    $('last-note').textContent = last.name + (last === sprint ? ' sprint' : '') + ', round ' + last.round + ', ' + last.dateLabel +
       (last.provisional ? '. Provisional, from live timing until the official result is out' : '');
     $('last-body').replaceChildren(...last.results.map(r => {
       const moved = Number.isFinite(+r.pos) && r.grid > 0 ? r.grid - +r.pos : null;
@@ -123,7 +127,7 @@
         moved ? el('span', { class: 'delta ' + (moved > 0 ? 'up' : 'down'), title: 'Places gained from the grid' }, (moved > 0 ? '+' : '') + moved) : el('span'));
     }));
     $('last-links').replaceChildren(
-      el('a', { class: 'btn btn-solid', href: '/races/' + schedule.season + '/' + last.round }, schedule.season >= 2026 ? 'Watch the replay' : 'Lap chart and tyres'),
+      el('a', { class: 'btn btn-solid', href: '/races/' + schedule.season + '/' + last.round }, last === sprint ? 'Sprint and qualifying' : schedule.season >= 2026 ? 'Watch the replay' : 'Lap chart and tyres'),
       el('a', { class: 'btn btn-quiet', href: '/races?y=' + schedule.season }, 'Every race this season'));
   }
 

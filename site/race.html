@@ -148,14 +148,15 @@
       </div>
     </div>
 
-    <div class="panel">
-      <h2 class="panel-title">Result</h2>
+    <div class="panel" id="result-panel">
+      <div class="lap-top">
+        <h2 class="panel-title">Result</h2>
+        <div class="seg" role="group" aria-label="Session" id="result-seg" hidden></div>
+      </div>
+      <p class="panel-note" id="result-note" hidden></p>
       <div class="table-box">
         <table class="results">
-          <thead><tr>
-            <th scope="col">Pos</th><th scope="col">Driver</th><th scope="col" class="opt">Team</th>
-            <th scope="col">Grid</th><th scope="col" class="opt">Laps</th><th scope="col">Time or status</th><th scope="col" class="num">Pts</th>
-          </tr></thead>
+          <thead><tr id="results-head"></tr></thead>
           <tbody id="results-body"></tbody>
         </table>
       </div>

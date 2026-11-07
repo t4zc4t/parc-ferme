@@ -25,20 +25,34 @@ def build(seasons, names, out):
                 "winner": {"id": win["d"], "name": names.driver(win["d"]), "code": names.code(win["d"]),
                            "team": names.team(win["c"])} if win else None,
                 "laps": has_laps, "tyres": has_tyres, "replay": replay.have(year, r["round"]),
+                "sprint": bool(r.get("sprint")), "page": bool(r["results"] or r.get("sprint") or r.get("quali")),
             })
-            if not r["results"]:
+            if not (r["results"] or r.get("sprint") or r.get("quali")):
                 continue
-            page = {
-                "year": year, "round": r["round"], "name": r["name"], "date": rounds[-1]["date"],
-                "circuit": r["circuit"], "rounds": len(s["rounds"]),
-                "provisional": "R" in (r.get("provisional") or []),
-                "results": [{
+
+            def rows(src):
+                return [{
                     "id": x["d"], "name": names.driver(x["d"]), "code": names.code(x["d"]), "team": names.team(x["c"]),
                     "no": x.get("no"), "grid": x["grid"], "pos": x["text"] or str(x["pos"]), "order": x["pos"],
                     "laps": x["laps"], "status": x["status"], "time": x["time"], "points": x["pts"],
                     "fl": x.get("fl"),
-                } for x in sorted(r["results"], key=lambda x: x["pos"])],
+                } for x in sorted(src, key=lambda x: x["pos"])]
+            prov = r.get("provisional") or []
+            page = {
+                "year": year, "round": r["round"], "name": r["name"], "date": rounds[-1]["date"],
+                "circuit": r["circuit"], "rounds": len(s["rounds"]),
+                "provisional": "R" in prov,
+                "results": rows(r["results"]),
             }
+            if r.get("sprint"):
+                page["sprint"] = rows(r["sprint"])
+                page["sprintProvisional"] = "SR" in prov
+            if r.get("quali"):
+                page["quali"] = [{
+                    "id": q["d"], "name": names.driver(q["d"]), "code": names.code(q["d"]), "team": names.team(q["c"]),
+                    "pos": q["pos"], "q1": q.get("q1"), "q2": q.get("q2"), "q3": q.get("q3"),
+                } for q in sorted(r["quali"], key=lambda q: q["pos"] or 99)]
+                page["qualiProvisional"] = "Q" in prov
             if has_laps:
                 page.update(store.read_json(lap_file))
             if has_tyres:
