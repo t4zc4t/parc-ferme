@@ -95,6 +95,11 @@
       if (r.replay) body.push(el('span', { class: 'rc-badge' }, 'Replay'));
       return el('a', { class: 'race-card', href: '/races/' + year + '/' + r.round }, ...body);
     }
+    // qualifying or the sprint has run, the race is still to come
+    if (r.page) {
+      body.push(el('span', { class: 'rc-soon' }, r.sprint ? 'Sprint done, race to come' : 'Qualifying done, race to come'));
+      return el('a', { class: 'race-card is-soon', href: '/races/' + year + '/' + r.round }, ...body);
+    }
     body.push(el('span', { class: 'rc-soon' }, r.done ? 'No result' : 'Upcoming'));
     return el('div', { class: 'race-card is-soon' }, ...body);
   }

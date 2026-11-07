@@ -9,7 +9,7 @@ from datetime import timedelta
 import openf1
 import sitegen
 
-KINDS = {"R": ("results", "Race"), "SR": ("sprint", "Sprint")}
+KINDS = {"R": ("results", "Race"), "SR": ("sprint", "Sprint"), "Q": ("quali", "Qualifying")}
 WAIT = timedelta(minutes=35)       # openf1 opens 30 minutes after a session
 
 
@@ -51,6 +51,30 @@ def session_key(year, rnd, name):
         if d + timedelta(days=off) in by_day:
             return by_day[d + timedelta(days=off)]
     return None
+
+
+def lap_text(v):
+    if not isinstance(v, (int, float)) or v <= 0:
+        return None
+    m, s = divmod(v, 60)
+    return f"{int(m)}:{s:06.3f}"
+
+
+def quali_rows(season, key):
+    numbers = who(season)
+    res = openf1.get(f"session_result?session_key={key}")
+    if not res or not any(r.get("position") for r in res):
+        return None
+    out = []
+    for r in sorted(res, key=lambda r: (r.get("position") is None, r.get("position") or 0)):
+        no = r["driver_number"]
+        if no not in numbers:
+            raise RuntimeError(f"car {no} isn't in the season yet, waiting for Jolpica")
+        did, team = numbers[no]
+        times = r.get("duration") if isinstance(r.get("duration"), list) else [r.get("duration")]
+        times = [lap_text(t) for t in times] + [None, None, None]
+        out.append({"d": did, "c": team, "pos": r.get("position"), "q1": times[0], "q2": times[1], "q3": times[2]})
+    return out
 
 
 def rows_for(season, rnd, key):
@@ -113,6 +137,8 @@ def restand(season):
         if not rnd.get("provisional"):
             continue
         for kind in rnd["provisional"]:
+            if kind == "Q":
+                continue
             for row in rnd[KINDS[kind][0]]:
                 d = drivers.setdefault(row["d"], {"d": row["d"], "pts": 0, "wins": 0, "c": []})
                 d["pts"] = (d.get("pts") or 0) + row["pts"]
@@ -151,13 +177,13 @@ def fill(season, now):
             if key is None:
                 print(f"round {rnd['round']} {name.lower()}: no openf1 session yet")
                 continue
-            rows = rows_for(season, rnd, key)
+            rows = quali_rows(season, key) if kind == "Q" else rows_for(season, rnd, key)
             if not rows:
                 print(f"round {rnd['round']} {name.lower()}: openf1 has no result yet")
                 continue
             rnd[field] = rows
             rnd["provisional"] = sorted(set(rnd.get("provisional") or []) | {kind})
             added.append(f"round {rnd['round']} {name.lower()}")
-    if added:
+    if any(not a.endswith("qualifying") for a in added):
         restand(season)
     return added

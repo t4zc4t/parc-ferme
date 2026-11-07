@@ -29,6 +29,7 @@
   if (season) {
     const done = season.rounds.filter(r => r.winner);
     const i = done.findIndex(r => r.round === round);
+    if (i < 0) done.length = 0;
     [[done[i - 1], 'race-prev'], [done[i + 1], 'race-next']].forEach(([r, id]) => {
       if (!r) return;
       $(id).hidden = false;
@@ -44,10 +45,15 @@
   const byId = new Map(res.map(r => [r.id, r]));
   const laps = race.drivers || null;
 
-  facts();
+  if (res.length) facts(); else $('race-facts').hidden = true;
   results();
-  const chart = laps ? lapChart() : null;
-  if (!laps) {
+  const chart = laps && res.length ? lapChart() : null;
+  if (!res.length) {
+    // a sprint or qualifying weekend in progress, the race itself still to come
+    $('no-laps').hidden = false;
+    $('no-laps').querySelector('.panel-title').textContent = 'The race';
+    $('no-laps-note').textContent = 'The Grand Prix hasn\'t run yet. Its result, lap chart and replay show up here a few hours after the flag.';
+  } else if (!laps) {
     $('no-laps').hidden = false;
     // from 1996 on a missing chart just means the laps haven't come in yet
     if (year >= 1996) $('no-laps-note').textContent = 'The lap-by-lap data for this race hasn\'t come in yet. It usually lands within a few hours of the chequered flag, so check back soon.';
@@ -85,7 +91,44 @@
       el('div', { class: 'fact' }, el('span', { class: 'fact-k' }, k), el('span', { class: 'fact-v' }, v))));
   }
 
+  // race, sprint and qualifying, whichever have run
   function results() {
+    const kinds = [['race', 'Race', res, race.provisional], ['sprint', 'Sprint', race.sprint || [], race.sprintProvisional],
+      ['quali', 'Qualifying', race.quali || [], race.qualiProvisional]].filter(k => k[2].length);
+    const seg = $('result-seg');
+    seg.hidden = kinds.length < 2;
+    const show = key => {
+      const [, label, rows, prov] = kinds.find(k => k[0] === key);
+      seg.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.kind === key); b.setAttribute('aria-pressed', b.dataset.kind === key); });
+      $('result-note').hidden = !prov;
+      $('result-note').textContent = prov ? label + ' result from live timing, the official one follows.' : '';
+      if (key === 'quali') qualiTable(rows); else resultTable(rows);
+    };
+    seg.replaceChildren(...kinds.map(([key, label]) => {
+      const b = el('button', { type: 'button', class: 'seg-btn', 'data-kind': key, 'aria-pressed': 'false' }, label);
+      b.addEventListener('click', () => show(key));
+      return b;
+    }));
+    if (kinds.length) show(kinds[0][0]);
+  }
+
+  function head(cols) {
+    $('results-head').replaceChildren(...cols.map(([text, cls]) => el('th', { scope: 'col', class: cls || null }, text)));
+  }
+
+  function qualiTable(rows) {
+    head([['Pos'], ['Driver'], ['Team', 'opt'], ['Q1'], ['Q2', 'opt'], ['Q3']]);
+    $('results-body').replaceChildren(...rows.map((r, i) => el('tr', { class: i < 3 ? 'top3' : null },
+      el('td', { class: 'pos mono' }, r.pos ? PF.pad2(r.pos) : '–'),
+      el('td', { class: 'driver' }, PF.driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.name))),
+      el('td', { class: 'team opt' }, r.team),
+      el('td', { class: 'mono dim' }, r.q1 || '–'),
+      el('td', { class: 'mono dim opt' }, r.q2 || '–'),
+      el('td', { class: 'mono' }, r.q3 || '–'))));
+  }
+
+  function resultTable(res) {
+    head([['Pos'], ['Driver'], ['Team', 'opt'], ['Grid'], ['Laps', 'opt'], ['Time or status'], ['Pts', 'num']]);
     $('results-body').replaceChildren(...res.map((r, i) => {
       const moved = /^\d+$/.test(r.pos) && r.grid > 0 ? r.grid - +r.pos : null;
       const delta = moved ? el('span', { class: 'delta ' + (moved > 0 ? 'up' : 'down') }, (moved > 0 ? '+' : '') + moved) : null;

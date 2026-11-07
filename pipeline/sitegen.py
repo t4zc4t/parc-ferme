@@ -103,6 +103,15 @@ def home(season, names):
         "teams": team_standings_out(season, names),
         "lastRace": None,
     }
+    sprint = next((r for r in reversed(rounds) if r.get("sprint")), None)
+    if sprint and (not last or sprint["round"] > last["round"]):
+        start = when(sprint["sessions"]["SR"])
+        out["lastSprint"] = {
+            "round": sprint["round"], "name": sprint["name"],
+            "provisional": "SR" in (sprint.get("provisional") or []),
+            "dateLabel": f"{start.day} {start.strftime('%b %Y')}",
+            "results": [row_out(r, names) for r in sprint["sprint"][:10]],
+        }
     if last:
         start = when(last["sessions"]["R"])
         out["lastRace"] = {

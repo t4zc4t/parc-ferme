@@ -51,7 +51,10 @@ def fill(template, url, title, desc, h1_id, h1, extra_head="", swap=None, static
 def race_page(template, race, info):
     year, rnd = race["year"], race["round"]
     name, c = race["name"], race["circuit"]
-    res = race["results"]
+    res = race["results"] or race.get("sprint") or []
+    if not res and race.get("quali"):
+        res = [dict(q, pos=str(q["pos"]), time=q.get("q3") or q.get("q2") or q.get("q1")) for q in race["quali"]]
+    session = "race" if race["results"] else "sprint" if race.get("sprint") else "qualifying"
     win = res[0] if res else None
     podium = [r for r in res if r["pos"] in ("2", "3")]
     has = ["Full results"]
@@ -61,7 +64,8 @@ def race_page(template, race, info):
         has.append("tyre strategies")
     title = f"{year} {name}: results" + (", lap chart and tyres" if info.get("tyres") else
                                          " and lap chart" if info.get("laps") else "") + " · Parc Fermé"
-    desc = (f"{win['name']} won the {year} {name} for {win['team']}"
+    lead = {"race": "won the", "sprint": "won the sprint at the", "qualifying": "took pole for the"}[session]
+    desc = (f"{win['name']} {lead} {year} {name} for {win['team']}"
             + (f", ahead of {' and '.join(r['name'] for r in podium)}" if podium else "")
             + ". " + (", ".join(has[:-1]) + " and " + has[-1] if len(has) > 1 else has[0]) + ".")
     where = f"{c['name']}, {c['locality']}, {c['country']} · {long_date(race.get('date'))}"
@@ -104,7 +108,7 @@ def build():
         season = read(DATA / "races" / f"{y['year']}.json")
         for info in season["rounds"]:
             src = DATA / "races" / str(y["year"]) / f"{info['round']}.json"
-            if not info.get("winner") or not src.exists():
+            if not (info.get("winner") or info.get("page")) or not src.exists():
                 continue
             out = ROOT / "races" / str(y["year"]) / f"{info['round']}.html"
             out.parent.mkdir(parents=True, exist_ok=True)
