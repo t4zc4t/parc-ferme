@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import api  # noqa: E402
 import early  # noqa: E402
+import feed  # noqa: E402
 import laps  # noqa: E402
 import openf1  # noqa: E402
 import practice  # noqa: E402
@@ -164,10 +165,25 @@ def race_extras(now):
               if timedelta(hours=3) < age < timedelta(days=7) and not replay.have(year, r["round"])}
     if recent and year >= replay.FIRST:
         try:
-            if replay.fill(year, data, limit=1, only=recent):
+            done = replay.fill(year, data, limit=1, only=recent)
+            if done:
                 labels.append("race replay")
+                for r in data["rounds"]:
+                    if r["round"] in recent and replay.have(year, r["round"]):
+                        feed.add([feed.note(f"{year}-{r['round']}-replay", f"Replay of the {r['name']} is up",
+                                            "Every car on track, the pit stops and what the data says.",
+                                            f"/races/{year}/{r['round']}", year, r["round"], now)])
         except RuntimeError as err:
             print(f"replay failed: {err}")
+    # once a week, give older races without a replay another go, openf1 sometimes fills gaps late
+    if now.weekday() == 0 and now.hour == 4 and year >= replay.FIRST:
+        older = {r["round"] for r, age in finished if age >= timedelta(days=7) and not replay.have(year, r["round"])}
+        if older:
+            try:
+                if replay.fill(year, data, limit=1, only=older):
+                    labels.append("missing replay")
+            except RuntimeError as err:
+                print(f"replay retry failed: {err}")
     # practice and sprint qualifying times, a few minutes after each session
     if year >= openf1.FIRST:
         try:
@@ -209,6 +225,7 @@ def trigger_build():
 
 def main():
     now = datetime.now(timezone.utc)
+    before = store.load(current_year(now))
     reason = reason_to_refresh(now)
     labels = []
     if reason:
@@ -217,6 +234,12 @@ def main():
         store.write_json(CHECKED, {"full": sitegen.iso(now.replace(second=0, microsecond=0))})
     labels += provisional(now)
     labels += race_extras(now)
+    # new and corrected results into the feed
+    try:
+        after = store.load(current_year(now))
+        feed.add(feed.seed(after) if not feed.load() else feed.diff(before, after, now))
+    except Exception as err:  # the feed must never stop an update
+        print(f"feed failed: {err}")
     if not reason and not labels:
         print("nothing to do")
         return
