@@ -25,7 +25,12 @@ def long_date(iso):
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-def fill(template, url, title, desc, h1_id, h1, extra_head="", swap=None, static=""):
+def image(rel):
+    """a share image drawn for this page, else the site's own"""
+    return f"{SITE}/data/og/{rel}" if (DATA / "og" / rel).exists() else f"{SITE}/assets/share.png"
+
+
+def fill(template, url, title, desc, h1_id, h1, extra_head="", swap=None, static="", img=None):
     """drop page specific bits into a page shell"""
     t = template.replace('<meta name="robots" content="noindex">\n', "")
     t = t.replace(t[t.index("<title>"):t.index("</title>") + 8], f"<title>{escape(title)}</title>")
@@ -37,7 +42,8 @@ def fill(template, url, title, desc, h1_id, h1, extra_head="", swap=None, static
             f'<meta property="og:title" content="{escape(title)}">\n'
             f'<meta property="og:description" content="{escape(desc)}">\n'
             f'<meta property="og:url" content="{SITE}{url}">\n'
-            f'<meta property="og:image" content="{SITE}/assets/share.png">\n'
+            f'<meta property="og:image" content="{img or SITE + '/assets/share.png'}">\n'
+            f'<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
             f'<meta name="twitter:card" content="summary_large_image">\n' + extra_head)
     t = t.replace("</head>", head + "</head>", 1)
     t = t.replace(f'id="{h1_id}">Loading<', f'id="{h1_id}">{escape(h1)}<', 1)
@@ -82,7 +88,8 @@ def race_page(template, race, info):
               f'</tr></thead><tbody>{rows}</tbody></table>\n</section>')
     return fill(template, f"/races/{year}/{rnd}", title, desc, "race-name", name,
                 extra_head=f'<script type="application/ld+json">{json.dumps(event)}</script>\n',
-                swap={'id="race-where"></p>': f'id="race-where">{escape(where)}</p>'}, static=static)
+                swap={'id="race-where"></p>': f'id="race-where">{escape(where)}</p>'}, static=static,
+                img=image(f"races/{year}/{rnd}.png"))
 
 
 def driver_page(template, d):
@@ -97,7 +104,8 @@ def driver_page(template, d):
     static = (f'<section class="wrap block" id="static-summary"><p class="lede">{escape(desc)}</p></section>')
     return fill(template, f"/drivers/{d['id']}", title, desc, "d-last", d["last"],
                 extra_head=f'<script type="application/ld+json">{json.dumps(person)}</script>\n',
-                swap={'id="d-first"></span>': f'id="d-first">{escape(d["first"])}</span>'}, static=static)
+                swap={'id="d-first"></span>': f'id="d-first">{escape(d["first"])}</span>'}, static=static,
+                img=image(f"drivers/{d['id']}.png"))
 
 
 def plural(n, word):

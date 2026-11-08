@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css">
+<script src="/assets/theme.js"></script>
 <link rel="canonical" href="https://parc-ferme.pages.dev/trivia">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Parc Fermé">
@@ -21,6 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <header class="top">
   <div class="wrap top-row">
@@ -46,7 +48,7 @@
   </div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
   <section class="wrap page-head">
     <h1 class="page-title">Trivia</h1>
     <p class="lede">Facts and quiz questions worked out from every championship race since 1950. Nothing is typed in by hand, so the numbers move on by themselves after each Grand Prix.</p>
@@ -105,9 +107,10 @@
       <p class="panel-note">Everything on this page is plain JSON you can fetch from a Discord bot or anything else. No key needed, it refreshes after each race, and please cache it rather than fetching on every message.</p>
       <ul class="tv-endpoints">
         <li><code>/data/trivia/facts.json</code><span><span id="n-facts"></span> facts, each with an <code>id</code>, <code>category</code>, <code>text</code> and a <code>link</code> back to the data</span></li>
-        <li><code>/data/trivia/quiz.json</code><span><span id="n-quiz"></span> questions, each with <code>q</code>, two or four <code>options</code>, the <code>answer</code> index, an <code>explain</code> line, a <code>table</code> of the numbers behind it, a <code>link</code>, <code>category</code> and <code>difficulty</code>, plus a <code>track</code> svg path for "which circuit is this" questions</span></li>
+        <li><code>/data/trivia/quiz.json</code><span><span id="n-quiz"></span> questions, each with <code>q</code>, two or four <code>options</code>, the <code>answer</code> index, an <code>explain</code> line, a <code>table</code> of the numbers behind it, a <code>link</code>, <code>category</code> and <code>difficulty</code>, plus a <code>track</code> svg path and an <code>image</code> link to a PNG of the outline for "which circuit is this" questions</span></li>
         <li><code>/data/trivia/onthisday.json</code><span>races by date, keyed <code>"MM-DD"</code>, newest first</span></li>
         <li><code>/data/trivia/daily.json</code><span>a question of the day, keyed <code>"YYYY-MM-DD"</code> (UTC), set two weeks ahead, the same for everyone</span></li>
+        <li><code>/data/og/races/2026/&lt;round&gt;.png</code><span>a 1200 by 630 result card for each race this season, and <code>/data/og/drivers/&lt;id&gt;.png</code> for each driver, ready to post as an embed image</span></li>
         <li><code>/data/feed.json</code><span>what just happened: new qualifying, sprint and race results, provisional or official, with what changed when the official result lands</span></li>
       </ul>
       <pre class="tv-code"><code>const base = 'https://parc-ferme.pages.dev';

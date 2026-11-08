@@ -8,6 +8,7 @@ import questions
 import studies
 import races
 import history
+import og
 import standings
 import trivia
 from compare import is_pole
@@ -295,6 +296,10 @@ def build(now=None):
     changed |= store.write_json(out / "studies.json", studies.build(seasons, names))
     grid = {d["d"] for d in current["standings"]["drivers"]} | {x["d"] for r in current["rounds"] for x in r["results"]}
     changed |= history.build(seasons, names, out, grid)
+    try:
+        changed |= og.build(out)
+    except Exception as err:     # a picture never stops the data going out
+        print(f"share images failed: {err}")
     for name, data in trivia.build(seasons, names, now.date()).items():
         changed |= store.write_json(out / "trivia" / f"{name}.json", data)
     # only bumps when something changed

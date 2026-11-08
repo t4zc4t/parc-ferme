@@ -13,6 +13,7 @@ importlib.reload(store)
 import early  # noqa: E402
 import feed  # noqa: E402
 import history  # noqa: E402
+import og  # noqa: E402
 import openf1  # noqa: E402
 import replay  # noqa: E402
 import sitegen  # noqa: E402
@@ -149,6 +150,22 @@ class SprintReplay(unittest.TestCase):
         finally:
             replay.openf1.get = old
         self.assertTrue(any(e.startswith("laps?session_key=1") for e in asked))
+
+
+class ShareImages(unittest.TestCase):
+    def test_cards_draw(self):
+        if og.Image is None:
+            self.skipTest("Pillow is not installed")
+        import json
+        site = store.ROOT / "site"
+        drivers = sorted((site / "drivers").glob("*.json"))
+        races = sorted((site / "races" / str(YEAR)).glob("*.json"))
+        if not drivers or not races:
+            self.skipTest("no site files in the test store")
+        img = og.driver_card(json.loads(drivers[0].read_text()))
+        self.assertEqual(img.size, (1200, 630))
+        race = next(json.loads(r.read_text()) for r in races if json.loads(r.read_text()).get("results"))
+        self.assertEqual(og.race_card(race, og.track_points("M10 10 L90 10 L90 90 Z")).size, (1200, 630))
 
 
 class History(unittest.TestCase):
