@@ -1125,13 +1125,15 @@ code { font: 13px var(--mono); }
 :root[data-theme="light"] .wr-hero { background: linear-gradient(135deg, rgba(214,28,104,.10), rgba(11,127,140,.06)), var(--panel); }
 :root[data-theme="light"] .btn-solid, :root[data-theme="light"] .btn-play { color: #fff; }
 :root[data-theme="light"] .dhero-num { -webkit-text-stroke-color: var(--pink); }
-.theme-btn { width: 36px; height: 36px; display: inline-grid; place-items: center; padding: 0; color: var(--soft); background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); cursor: pointer; }
+.theme-btn { width: 36px; height: 36px; display: inline-grid; place-items: center; padding: 0; margin-right: -16px; color: var(--soft); background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); cursor: pointer; }
+.theme-btn + .search-open { margin-left: 0; height: 36px; }
 .theme-btn:hover { color: var(--text); border-color: var(--dim); }
 .theme-btn::before { content: ""; width: 16px; height: 16px; border-radius: 50%; background: currentColor; -webkit-mask: radial-gradient(circle at 70% 30%, transparent 6px, #000 6.5px); mask: radial-gradient(circle at 70% 30%, transparent 6px, #000 6.5px); }
 :root[data-theme="light"] .theme-btn::before { -webkit-mask: none; mask: none; box-shadow: 0 0 0 3px var(--panel), 0 0 0 4.5px currentColor; width: 10px; height: 10px; }
 .theme-btn:focus-visible, .search-open:focus-visible, .seg-btn:focus-visible, .chip:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 @media (max-width: 640px) {
-  .theme-btn { position: absolute; right: 62px; top: 12px; width: 34px; height: 34px; }
+  .theme-btn { position: absolute; right: 64px; top: 12px; width: 40px; height: 36px; margin-right: 0; }
+  .theme-btn + .search-open { width: 40px; height: 36px; justify-content: center; padding: 0; }
 }
 
 /* text sitting on a coloured fill stays white in the light theme */
