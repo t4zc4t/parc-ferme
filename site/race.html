@@ -56,11 +56,19 @@
 
     <div class="panel replay-panel" id="replay-panel" hidden>
       <div class="lap-top">
-        <h2 class="panel-title">Race replay</h2>
+        <h2 class="panel-title" id="replay-title">Race replay</h2>
         <span class="replay-flag mono" id="replay-flag" hidden></span>
+        <div class="seg replay-which" role="group" aria-label="Which replay" id="replay-which" hidden>
+          <a class="seg-btn" href="?" data-which="race">Grand Prix</a>
+          <a class="seg-btn" href="?replay=sprint" data-which="sprint">Sprint</a>
+        </div>
       </div>
       <p class="panel-note">Every car where it really was, from the timing data. Hover a car to see who it is, click it or a row in the tower to compare up to two drivers, or click the lap chart below to jump.</p>
-      <div class="replay-grid">
+      <div class="seg replay-view" role="group" aria-label="Show" id="replay-view">
+        <button type="button" class="seg-btn on" aria-pressed="true" data-view="map">Track</button>
+        <button type="button" class="seg-btn" aria-pressed="false" data-view="tower">Timing</button>
+      </div>
+      <div class="replay-grid" id="replay-grid" data-view="map">
         <div class="replay-map">
           <canvas id="replay-canvas" aria-label="Track map with every car's position"></canvas>
           <div class="replay-tip" id="replay-tip" hidden></div>
@@ -98,6 +106,7 @@
         <span class="mono dim">vs</span>
         <select class="pick-sel" id="cmp-b" aria-label="Second driver"></select>
         <button type="button" class="seg-btn cmp-clear" id="cmp-clear" hidden>Clear</button>
+        <button type="button" class="seg-btn follow-btn" id="follow-btn" aria-pressed="false" title="Zoom in and stay with your first pick, or the leader">Follow</button>
         <button type="button" class="seg-btn cars-btn" id="cars-btn" aria-expanded="false" aria-controls="cars-panel">Cars on map</button>
         <div class="seg name-mode" role="group" aria-label="Names on the map" id="name-mode">
           <button type="button" class="seg-btn on" aria-pressed="true" data-names="all">All names</button>
@@ -117,6 +126,11 @@
         <div class="cars-list" id="cars-list"></div>
       </div>
       <div class="compare" id="compare" hidden></div>
+      <div class="battles" id="battles" hidden>
+        <h3 class="find-head">Battles</h3>
+        <p class="panel-note">Cars within a second of each other for several laps in a row. Pick one to jump there and follow both.</p>
+        <ul class="battle-list" id="battle-list"></ul>
+      </div>
       <div class="findings" id="findings" hidden></div>
     </div>
 

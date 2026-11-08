@@ -21,7 +21,7 @@ File layout, times are seconds after the start, distances in metres:
 import json
 import math
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import openf1
 import store
@@ -32,14 +32,14 @@ VERSION = 2         # 2: distance along the track instead of x and y
 SCALE = 10          # openf1 units are a tenth of a metre, a metre is plenty
 
 
-def path(year, rnd):
-    return store.ROOT / "site" / "replay" / str(year) / f"{rnd}.json"
+def path(year, rnd, sprint=False):
+    return store.ROOT / "site" / "replay" / str(year) / f"{rnd}{'-sprint' if sprint else ''}.json"
 
 
-def have(year, rnd):
+def have(year, rnd, sprint=False):
     """a replay in the current format"""
     try:
-        return store.read_json(path(year, rnd)).get("v") == VERSION
+        return store.read_json(path(year, rnd, sprint)).get("v") == VERSION
     except (FileNotFoundError, ValueError):
         return False
 
@@ -175,8 +175,9 @@ def outline(rows, start, end, angle=0.0):
     return [list(p) for p in out]
 
 
-def race(year, rnd, key):
-    numbers = {int(r["no"]): r["d"] for r in rnd["results"] if str(r.get("no") or "").isdigit()}
+def race(year, rnd, key, sprint=False):
+    rows = rnd.get("sprint") or [] if sprint else rnd["results"]
+    numbers = {int(r["no"]): r["d"] for r in rows if str(r.get("no") or "").isdigit()}
     info = {d["driver_number"]: d for d in openf1.get(f"drivers?session_key={key}")}
 
     lap_rows = openf1.get(f"laps?session_key={key}")
@@ -197,7 +198,7 @@ def race(year, rnd, key):
     angle = rotation(key)
     raw, track = {}, None
     # the track comes from the winner's fastest lap, else anyone's, a fast lap is a clean one
-    finish = [r["d"] for r in rnd["results"]]
+    finish = [r["d"] for r in rows]
     for no, d in sorted(numbers.items(), key=lambda kv: finish.index(kv[1]) if kv[1] in finish else 99):
         rows = openf1.get(f"location?session_key={key}&driver_number={no}")
         if not rows:
@@ -257,7 +258,7 @@ def race(year, rnd, key):
         "gaps": gaps,
         "pits": sorted(pits, key=lambda p: p[1]),
     }
-    return store.write_json(path(year, rnd["round"]), out)
+    return store.write_json(path(year, rnd["round"], sprint), out)
 
 
 def fill(year, season, limit=None, only=None):
@@ -276,4 +277,25 @@ def fill(year, season, limit=None, only=None):
             print(f"{year} round {r['round']}: no openf1 session for a replay")
             continue
         done += bool(race(year, r, key))
+    return done
+
+
+def fill_sprints(year, season, limit=None, only=None):
+    """finished sprints of a season without a replay yet"""
+    if year < FIRST:
+        return 0
+    todo = [r for r in season["rounds"] if r.get("sprint") and not have(year, r["round"], True)
+            and (only is None or r["round"] in only)]
+    if not todo:
+        return 0
+    by_day = {openf1.day(s["date_start"]): s["session_key"] for s in openf1.get(f"sessions?year={year}&session_name=Sprint")}
+    done = 0
+    for r in todo[:limit]:
+        start = r["sessions"].get("SR")
+        key = next((by_day[openf1.day(start) + timedelta(days=off)] for off in (0, -1, 1)
+                    if start and openf1.day(start) + timedelta(days=off) in by_day), None)
+        if key is None:
+            print(f"{year} round {r['round']}: no openf1 session for a sprint replay")
+            continue
+        done += bool(race(year, r, key, sprint=True))
     return done

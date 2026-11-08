@@ -5,6 +5,10 @@
   if (!m) { $('race-name').textContent = 'Race not found'; return; }
   const year = +m[1], round = +m[2];
 
+  // the replay is the biggest file, so it starts loading alongside the race itself
+  const wantSprint = new URLSearchParams(location.search).get('replay') === 'sprint';
+  const early = year >= 2026 ? PF.json('/data/replay/' + year + '/' + round + (wantSprint ? '-sprint' : '') + '.json') : null;
+  if (early) early.catch(() => null);
   let race, season;
   try {
     [race, season] = await Promise.all([
@@ -62,7 +66,30 @@
   }
   // the replay shows tyres live in its timing tower
   if (race.stints && Object.keys(race.stints).length && !race.replay) tyres();
-  if (race.replay && PF.replay) PF.replay(race, { year, round, byId, chart });
+  // the grand prix replay, or the sprint's when asked for or when the race is still to come
+  const sprintOnly = race.sprintReplay && !race.replay;
+  const useSprint = race.sprintReplay && (wantSprint || sprintOnly);
+  if ((race.replay || race.sprintReplay) && PF.replay) {
+    $('replay-panel').hidden = false;
+    $('replay-panel').classList.add('is-loading');
+    if (race.replay && race.sprintReplay) {
+      $('replay-which').hidden = false;
+      $('replay-which').querySelectorAll('a').forEach(a => {
+        const on = (a.dataset.which === 'sprint') === useSprint;
+        a.classList.toggle('on', on);
+        if (on) a.setAttribute('aria-current', 'true');
+      });
+    }
+    if (useSprint) {
+      $('replay-title').textContent = 'Sprint replay';
+      const rows = race.sprint || [];
+      const sprintRace = { ...race, results: rows, periods: [], stints: {}, drivers: null, findings: [], name: race.name };
+      PF.replay(sprintRace, { year, round, byId: new Map(rows.map(r => [r.id, r])), chart: null, sprint: true,
+        early: wantSprint ? early : null });
+    } else {
+      PF.replay(race, { year, round, byId, chart, early: wantSprint ? null : early });
+    }
+  }
   if (race.pits && race.pits.length) pits();
   if (race.practice && Object.keys(race.practice).length) practice();
 
