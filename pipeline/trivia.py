@@ -150,7 +150,7 @@ def build(seasons, names, today=None):
                       "linkText": link_text or ("The race" if link and link.startswith("/races/") else "Career record" if link else None)})
 
     def question(qid, category, difficulty, q, right, wrong, explain, link=None, link_text=None, table=None,
-                 options=4, track=None):
+                 options=4, track=None, image=None):
         """table: the numbers behind the answer, [label, value, link] rows shown after answering"""
         wrong = [w for w in dict.fromkeys(wrong) if w != right][:options - 1]
         if len(wrong) < options - 1:
@@ -158,7 +158,7 @@ def build(seasons, names, today=None):
         options = mix(qid, [right] + wrong)
         quiz.append({"id": qid, "category": category, "difficulty": difficulty, "q": q,
                      "options": options, "answer": options.index(right), "explain": explain,
-                     "table": table or [], "link": link, **({"track": track} if track else {}),
+                     "table": table or [], "link": link, **({"track": track} if track else {}), **({"image": image} if image else {}),
                      "linkText": link_text or ("The race" if link and link.startswith("/races/") else
                                                "The standings" if link and link.startswith("/standings") else
                                                "Career record" if link else None)})
@@ -472,7 +472,8 @@ def build(seasons, names, today=None):
     for cid, (cname, path, y) in sorted(shapes.items()):
         others = [n for c, (n, _, _) in mix(cid, list(shapes.items())) if c != cid][:3]
         question(f"track-{cid}", "circuits", "medium", "Which circuit is this?", cname, others,
-                 f"That's {cname}, traced from the cars' positions in the {y} race.", None, track=path)
+                 f"That's {cname}, traced from the cars' positions in the {y} race.", f"/circuits/{cid}", "The circuit",
+                 track=path, image=f"https://parc-ferme.pages.dev/data/og/tracks/{cid}.png")
 
     # recent race winners
     for year, r in races:

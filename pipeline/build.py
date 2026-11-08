@@ -29,7 +29,7 @@ ALLOWED = {".json"}
 
 
 def safe_target(name):
-    """None unless it's a json file under site/"""
+    """None unless it's a json file, or a share image, under site/"""
     parts = Path(name).parts
     # skip the <repo>-data/ top folder
     if len(parts) < 3 or parts[1] != "site":
@@ -38,7 +38,10 @@ def safe_target(name):
     if any(p in ("", ".", "..") or "\\" in p or ":" in p for p in rel):
         return None
     target = OUT.joinpath(*rel).resolve()
-    if OUT.resolve() not in target.parents or target.suffix not in ALLOWED:
+    if OUT.resolve() not in target.parents:
+        return None
+    # json everywhere, png only for the share images
+    if target.suffix not in ALLOWED and not (target.suffix == ".png" and rel[0] == "og"):
         return None
     return target
 
