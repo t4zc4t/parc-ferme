@@ -11,6 +11,7 @@ from pathlib import Path
 SITE = "https://parc-ferme.pages.dev"
 ROOT = Path(__file__).resolve().parent.parent / "site"
 DATA = ROOT / "data"
+DEFAULT_IMAGE = f"{SITE}/assets/share.png"
 STATIC = ["", "standings", "schedule", "trivia", "drivers", "teams", "circuits", "wrapped", "compare", "races", "questions", "studies"]
 
 
@@ -42,7 +43,7 @@ def fill(template, url, title, desc, h1_id, h1, extra_head="", swap=None, static
             f'<meta property="og:title" content="{escape(title)}">\n'
             f'<meta property="og:description" content="{escape(desc)}">\n'
             f'<meta property="og:url" content="{SITE}{url}">\n'
-            f'<meta property="og:image" content="{img or SITE + '/assets/share.png'}">\n'
+            f'<meta property="og:image" content="{img or DEFAULT_IMAGE}">\n'
             f'<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
             f'<meta name="twitter:card" content="summary_large_image">\n' + extra_head)
     t = t.replace("</head>", head + "</head>", 1)

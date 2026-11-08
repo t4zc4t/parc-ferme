@@ -26,6 +26,8 @@
       window.dispatchEvent(new Event('themechange'));
     });
     sync();
-    (document.querySelector('.search-open') || nav).after(btn);
+    // sits just before search, the two read as one small group
+    const search = document.querySelector('.search-open');
+    if (search) search.before(btn); else nav.after(btn);
   });
 })();
