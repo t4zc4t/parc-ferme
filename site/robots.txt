@@ -4,5 +4,11 @@ Disallow: /race$
 Disallow: /race.html$
 Disallow: /driver$
 Disallow: /driver.html$
+Disallow: /career$
+Disallow: /career.html$
+Disallow: /circuit$
+Disallow: /circuit.html$
+Disallow: /team$
+Disallow: /team.html$
 
 Sitemap: https://parc-ferme.pages.dev/sitemap.xml
