@@ -11,6 +11,7 @@
   }
 
   showNext();
+  weekendNews();
   showLast(home.lastRace);
   showStandings('drivers');
   let which = 'drivers', stake = 'title';
@@ -40,6 +41,23 @@
       showStandings(btn.dataset.table);
     });
   });
+
+  // what has happened so far this weekend, from the updates feed
+  async function weekendNews() {
+    const race = schedule.rounds.find(r => !PF.weekendOver(r, Date.now()));
+    if (!race) return;
+    let feed;
+    try { feed = await PF.json('/data/feed.json'); } catch (e) { return; }
+    const mine = feed.items.filter(x => (x.year ? x.year === schedule.season : x.id.startsWith(schedule.season + '-')) && x.round === race.round).slice(0, 4);
+    if (!mine.length) return;
+    const ago = iso => {
+      const m = Math.round((Date.now() - Date.parse(iso)) / 60000);
+      return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago';
+    };
+    $('wk-news').replaceChildren(...mine.map(x => el('li', null,
+      el('a', { href: x.link }, x.title), el('span', { class: 'wk-when' }, (x.type === 'provisional' ? 'live timing, ' : '') + ago(x.time)))));
+    $('wk-news').hidden = false;
+  }
 
   function showNext() {
     clearInterval(clockTimer);

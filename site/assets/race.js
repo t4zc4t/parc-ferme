@@ -49,6 +49,7 @@
   if (res.length) facts(); else $('race-facts').hidden = true;
   results();
   const chart = laps && res.length ? lapChart() : null;
+  if (laps && res.length) story();
   if (!res.length) {
     // a sprint or qualifying weekend in progress, the race itself still to come
     $('no-laps').hidden = false;
@@ -94,16 +95,24 @@
 
   // race, sprint and qualifying, whichever have run
   function results() {
+    // the grid: from the race result once it's run, from qualifying before that
+    const ran = res.filter(r => r.grid > 0).sort((a, b) => a.grid - b.grid).map(r => ({ ...r, slot: r.grid }))
+      .concat(res.filter(r => r.grid === 0).map(r => ({ ...r, slot: 'PIT' })));
+    const fromQuali = !ran.length && (race.quali || []).length;
+    const grid = ran.length ? ran : (race.quali || []).filter(q => q.pos).map(q => ({ ...q, slot: q.pos }));
     const kinds = [['race', 'Race', res, race.provisional], ['sprint', 'Sprint', race.sprint || [], race.sprintProvisional],
-      ['quali', 'Qualifying', race.quali || [], race.qualiProvisional]].filter(k => k[2].length);
+      ['quali', 'Qualifying', race.quali || [], race.qualiProvisional], ['grid', 'Grid', grid, fromQuali]].filter(k => k[2].length);
     const seg = $('result-seg');
     seg.hidden = kinds.length < 2;
     const show = key => {
       const [, label, rows, prov] = kinds.find(k => k[0] === key);
       seg.querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.kind === key); b.setAttribute('aria-pressed', b.dataset.kind === key); });
       $('result-note').hidden = !prov;
-      $('result-note').textContent = prov ? label + ' result from live timing, the official one follows.' : '';
-      if (key === 'quali') qualiTable(rows); else resultTable(rows);
+      $('result-note').textContent = key === 'grid' ? 'Lined up in qualifying order. Grid penalties and pit lane starts are only applied in the official grid, so places can still change.'
+        : prov ? label + ' result from live timing, the official one follows.' : '';
+      $('grid-view').hidden = key !== 'grid';
+      $('results-body').closest('.table-box').hidden = key === 'grid';
+      if (key === 'grid') gridView(rows); else if (key === 'quali') qualiTable(rows); else resultTable(rows);
     };
     seg.replaceChildren(...kinds.map(([key, label]) => {
       const b = el('button', { type: 'button', class: 'seg-btn', 'data-kind': key, 'aria-pressed': 'false' }, label);
@@ -111,6 +120,53 @@
       return b;
     }));
     if (kinds.length) show(kinds[0][0]);
+  }
+
+  // two by two, pole on the left, every other slot set back half a row
+  function gridView(rows) {
+    $('grid-view').replaceChildren(...rows.map(r => el('li', { class: 'sgrid-slot' + (typeof r.slot === 'number' && r.slot % 2 === 0 ? ' even' : '') + (r.slot === 'PIT' ? ' pit' : '') },
+      el('span', { class: 'sgrid-pos mono' }, r.slot === 'PIT' ? 'PIT' : 'P' + r.slot),
+      el('span', { class: 'sgrid-who' }, PF.driverLink(r.id, el('span', { class: 'code mono' }, r.code), ...PF.name(r.name))),
+      el('span', { class: 'sgrid-team' }, r.team))));
+  }
+
+  // lead changes, neutralisations, retirements and the flag, in lap order
+  function story() {
+    const ids = Object.keys(laps).filter(id => byId.has(id));
+    const total = Math.max(...ids.map(id => laps[id].length));
+    const who = id => byId.get(id) ? byId.get(id).name : id;
+    const pitted = new Set((race.pits || []).map(p => p[0] + ':' + p[1]));
+    const items = [];
+    const at = (id, n) => laps[id][n - 1] ? laps[id][n - 1][0] : null;
+    const leaderOn = n => ids.find(id => at(id, n) === 1);
+    // lap one: who leads and who made up the most places from the grid
+    const first = leaderOn(1);
+    if (first) {
+      const pole = res.find(r => r.grid === 1);
+      let gain = null;
+      ids.forEach(id => { const r = byId.get(id); if (r.grid > 0 && at(id, 1)) { const g = r.grid - at(id, 1); if (g > 0 && (!gain || g > gain[1])) gain = [id, g]; } });
+      items.push([1, 'start', who(first) + (pole && pole.id === first ? ' keeps the lead from pole.' : ' leads after lap one' + (pole ? ', from P' + byId.get(first).grid + ' on the grid.' : '.')) +
+        (gain && gain[1] >= 3 ? ' ' + who(gain[0]) + ' gains ' + gain[1] + ' places on the opening lap.' : '')]);
+    }
+    let holder = first;
+    for (let n = 2; n <= total; n++) {
+      const now = leaderOn(n);
+      if (!now || now === holder) continue;
+      const why = holder && pitted.has(holder + ':' + n) ? ' as ' + who(holder) + ' pits' : holder ? ', passing ' + who(holder) : '';
+      items.push([n, 'lead', who(now) + ' takes the lead' + why + '.']);
+      holder = now;
+    }
+    const names = { SC: 'Safety car', VSC: 'Virtual safety car', RED: 'Red flag' };
+    (race.periods || []).forEach(([k, a, b]) => items.push([a, 'flag-' + k.toLowerCase(), (names[k] || k) + (b > a ? ', laps ' + a + ' to ' + b + '.' : ' on lap ' + a + '.')]));
+    res.filter(r => !/^\d+$/.test(r.pos) || (r.status && !/^(Finished|Lapped|\+\d+ Laps?)$/.test(r.status) && r.laps < res[0].laps - 3))
+      .filter(r => r.laps < res[0].laps)
+      .forEach(r => items.push([Math.max(1, r.laps), 'out', who(r.id) + (r.laps === 0 ? (r.pos === 'W' || /start/i.test(r.status || '') ? ' does not start' : ' is out on the first lap')
+        : ' is out after ' + r.laps + (r.laps === 1 ? ' lap' : ' laps')) + (r.status && !/^(Retired|Did not start)$/i.test(r.status) ? ' (' + r.status.toLowerCase() + ').' : '.')]));
+    items.push([res[0].laps, 'win', who(res[0].id) + ' wins' + (res[1] && /^\+\d+\.\d+$/.test(res[1].time || '') ? ' by ' + res[1].time.slice(1) + 's.' : '.')]);
+    items.sort((a, b) => a[0] - b[0] || (a[1] === 'win') - (b[1] === 'win'));
+    $('story').replaceChildren(...items.map(([n, kind, text]) => el('li', { class: 'story-' + kind.split('-')[0] + (kind.startsWith('flag-') ? ' ' + kind : '') },
+      el('span', { class: 'story-lap mono' }, 'Lap ' + n), el('span', null, text))));
+    $('story-panel').hidden = false;
   }
 
   function head(cols) {
