@@ -54,3 +54,36 @@ jobs:
           if [ "$(date -u +%H)" -lt 6 ]; then
             gh api -X PUT "repos/$REPO/actions/workflows/update.yml/enable" && echo "schedule kept alive"
           fi
+
+  # three failed runs in a row open an issue, the next good run closes it
+  alert:
+    needs: update
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      issues: write
+    steps:
+      - name: Open or close the alert
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RESULT: ${{ needs.update.result }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Data updates are failing"
+          open=$(gh issue list -R "$REPO" --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ "$RESULT" = "success" ]; then
+            if [ -n "$open" ]; then
+              gh issue close "$open" -R "$REPO" --comment "Back to normal with $RUN"
+            fi
+            exit 0
+          fi
+          [ "$RESULT" = "failure" ] || exit 0
+          failed=$(gh run list -R "$REPO" --workflow update.yml --status completed --limit 2 --json conclusion --jq '[.[] | select(.conclusion == "failure")] | length')
+          if [ "$failed" -ge 2 ] && [ -z "$open" ]; then
+            gh issue create -R "$REPO" --title "$title" \
+              --body "The last three runs of Update data failed, the latest is $RUN. The site keeps showing the last good data. This closes by itself once a run goes through."
+          fi
+
