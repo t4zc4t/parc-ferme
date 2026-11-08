@@ -1,9 +1,9 @@
 // trivia: a quiz, a fact at a time and what happened on this day
 (async function () {
   const { $, el } = PF;
-  let facts, quiz, days;
+  let facts, quiz, days, daily;
   try {
-    [facts, quiz, days] = await Promise.all(['facts', 'quiz', 'onthisday'].map(n => PF.json('/data/trivia/' + n + '.json')));
+    [facts, quiz, days, daily] = await Promise.all(['facts', 'quiz', 'onthisday', 'daily'].map(n => PF.json('/data/trivia/' + n + '.json')));
   } catch (e) {
     $('quiz-q').textContent = 'The trivia could not be loaded right now.';
     $('fact-text').textContent = '';
@@ -14,7 +14,7 @@
   $('n-quiz').textContent = quiz.count;
 
   const pick = list => list[Math.floor(Math.random() * list.length)];
-  const TOPICS = { records: 'Records', seasons: 'Seasons', teams: 'Teams', circuits: 'Circuits', drivers: 'Drivers', races: 'Races', 'this season': 'This season' };
+  const TOPICS = { 'head to head': 'Head to head', records: 'Records', seasons: 'Seasons', teams: 'Teams', circuits: 'Circuits', drivers: 'Drivers', races: 'Races', 'this season': 'This season' };
   const label = c => TOPICS[c] || c[0].toUpperCase() + c.slice(1);
 
   // ---- quiz ----
@@ -43,6 +43,21 @@
     $('quiz-meta').textContent = label(q.category) + ', ' + q.difficulty;
     $('quiz-q').textContent = q.q;
     $('quiz-explain').hidden = true;
+    // a circuit drawn from the replay data
+    const shape = $('quiz-track');
+    shape.hidden = !q.track;
+    if (q.track) {
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', 'Outline of a circuit');
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', q.track);
+      svg.append(path);
+      shape.replaceChildren(svg);
+    }
+    $('quiz-options').classList.toggle('two', q.options.length === 2);
     $('quiz-options').replaceChildren(...q.options.map((o, i) => {
       const b = el('button', { type: 'button', class: 'tv-opt' }, el('span', { class: 'tv-key' }, 'ABCD'[i]), o);
       b.addEventListener('click', () => answer(i));
@@ -84,6 +99,10 @@
     next();
   }));
   $('quiz-share').replaceWith(PF.shareButton(() => ({ title: 'F1 quiz', text: current ? current.q : 'F1 quiz', url: '/trivia' + (current ? '?q=' + encodeURIComponent(current.id) : '') }), 'Share this question'));
+  // today's question, the same for everyone
+  const todays = daily.days[new Date().toISOString().slice(0, 10)];
+  $('quiz-daily').hidden = !todays;
+  $('quiz-daily').addEventListener('click', () => { if (todays) { show(todays); $('quiz-meta').textContent = 'Question of the day, ' + label(todays.category).toLowerCase(); } });
   const first = wanted && quiz.questions.find(q => q.id === wanted);
   first ? show(first) : next();
 
