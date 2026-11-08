@@ -178,6 +178,8 @@ def build():
     for kind, tpl, fn, url in (("circuits", "circuit.html", circuit_page, "circuits"),
                                ("teams", "team.html", team_page, "teams")):
         template = (ROOT / tpl).read_text()
+        if not (DATA / kind / "index.json").exists():
+            continue
         for x in read(DATA / kind / "index.json")[kind]:
             out = ROOT / url / f"{x['id']}.html"
             out.parent.mkdir(parents=True, exist_ok=True)
