@@ -12,8 +12,8 @@ const PF = {
       else if (k === 'style') node.style.cssText = v;
       else node.setAttribute(k, v);
     }
-    for (const kid of kids) {
-      if (kid === null || kid === undefined) continue;
+    for (const kid of kids.flat(Infinity)) {
+      if (kid === null || kid === undefined || kid === '') continue;
       node.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
     }
     return node;
@@ -57,7 +57,7 @@ const PF = {
     return PF.el('a', { href: PF.driverHref(id), class: 'dlink' }, ...kids);
   },
 
-  // only this season's drivers have a page, everyone else gets their career in compare
+  // every driver since 1950 has a page now
   grid: null,
   async loadGrid() {
     try {
@@ -65,7 +65,7 @@ const PF = {
     } catch (e) { /* keep plain driver links */ }
   },
   driverHref(id) {
-    return !PF.grid || PF.grid.has(id) ? '/drivers/' + id : '/compare?a=' + encodeURIComponent(id);
+    return '/drivers/' + encodeURIComponent(id);
   },
 
   // footer: last data change
@@ -124,6 +124,19 @@ const PF = {
       }
     }
     return null;
+  },
+
+  // a track outline as an svg, from the path the trivia and circuit files carry
+  trackSvg(d, cls) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('class', 'track-svg ' + (cls || ''));
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+    return svg;
   },
 
   // share sheet on phones, copy the link elsewhere

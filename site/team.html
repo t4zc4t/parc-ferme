@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team · Parc Fermé</title>
+<meta name="description" content="A Formula 1 team: its seasons, wins and drivers.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07070D">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="canonical" href="https://parc-ferme.pages.dev/teams">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Parc Fermé">
+<meta property="og:title" content="Team · Parc Fermé">
+<meta property="og:description" content="A Formula 1 team: its seasons, wins and drivers.">
+<meta property="og:url" content="https://parc-ferme.pages.dev/teams">
+<meta property="og:image" content="https://parc-ferme.pages.dev/assets/share.png">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <span class="brand-name">PARC FERMÉ</span>
+      <span class="brand-jp" lang="ja">パルク・フェルメ</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="/standings">Standings</a>
+      <a href="/schedule">Schedule</a>
+      <a href="/races">Races</a>
+      <a href="/drivers">Drivers</a>
+      <a href="/teams" aria-current="page">Teams</a>
+      <a href="/circuits">Circuits</a>
+      <a href="/compare">Compare</a>
+      <a href="/trivia">Trivia</a>
+      <details class="nav-more"><summary>More</summary><div class="nav-menu">
+        <a href="/wrapped">Season wrapped</a>
+        <a href="/studies">Studies</a>
+        <a href="/questions">Questions</a>
+      </div></details>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap page-head">
+    <p class="label"><a class="text-link" href="/teams">All teams</a></p>
+    <h1 class="page-title" id="t-name">Loading</h1>
+    <p class="lede" id="t-meta"></p>
+    <div class="go-row" id="t-actions"></div>
+  </section>
+  <section class="wrap block"><div class="ct-tiles" id="t-tiles"></div></section>
+  <section class="wrap block">
+    <div class="panel">
+      <h2 class="panel-title">Season by season</h2>
+      <p class="panel-note">Constructors' position each year, taller is better. Title years in blue, a pink cap for a season with a win. The constructors' title began in 1958.</p>
+      <div class="tm-chart" id="t-chart"></div>
+    </div>
+  </section>
+  <section class="wrap block ct-cols two">
+    <div class="panel"><h2 class="panel-title">Titles</h2><div id="t-titles"></div></div>
+    <div class="panel"><h2 class="panel-title">Firsts and lasts</h2><div id="t-firsts"></div></div>
+  </section>
+  <section class="wrap block">
+    <div class="panel">
+      <h2 class="panel-title">Drivers</h2>
+      <div class="table-box"><table><thead><tr><th scope="col">Driver</th><th scope="col">Years</th><th scope="col" class="num">Races</th><th scope="col" class="num">Wins</th><th scope="col" class="num opt">Podiums</th></tr></thead>
+      <tbody id="t-drivers"></tbody></table></div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap foot-row">
+    <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
+  </div>
+</footer>
+
+<script src="/assets/common.js"></script>
+<script src="/assets/team.js"></script>
+<script src="/assets/search.js"></script>
+</body>
+</html>

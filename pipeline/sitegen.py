@@ -7,6 +7,7 @@ import practice
 import questions
 import studies
 import races
+import history
 import standings
 import trivia
 from compare import is_pole
@@ -292,6 +293,8 @@ def build(now=None):
     changed |= standings.build(seasons, names, out)
     changed |= store.write_json(out / "questions.json", questions.build(seasons, names, h["title"]))
     changed |= store.write_json(out / "studies.json", studies.build(seasons, names))
+    grid = {d["d"] for d in current["standings"]["drivers"]} | {x["d"] for r in current["rounds"] for x in r["results"]}
+    changed |= history.build(seasons, names, out, grid)
     for name, data in trivia.build(seasons, names, now.date()).items():
         changed |= store.write_json(out / "trivia" / f"{name}.json", data)
     # only bumps when something changed

@@ -12,6 +12,7 @@ import store  # noqa: E402  (reads PF_STORE when imported)
 importlib.reload(store)
 import early  # noqa: E402
 import feed  # noqa: E402
+import history  # noqa: E402
 import openf1  # noqa: E402
 import replay  # noqa: E402
 import sitegen  # noqa: E402
@@ -124,6 +125,29 @@ class Trivia(unittest.TestCase):
             self.assertTrue(0 <= q["answer"] < len(q["options"]), q["id"])
             self.assertTrue(q["explain"].strip(), q["id"])
         self.assertGreater(out["facts"]["count"], 20)
+
+
+class History(unittest.TestCase):
+    def test_pages_add_up(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        seasons = list(store.all_seasons())
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            history.build(seasons, sitegen.Names(seasons), out, set())
+            read = lambda *p: json.loads(out.joinpath(*p).read_text())
+            monza = read("circuits", "monza.json")
+            self.assertEqual(monza["held"], len(monza["races"]))
+            ferrari = read("teams", "ferrari.json")
+            self.assertGreater(ferrari["wins"], 200)
+            self.assertEqual(ferrari["wins"], sum(s["wins"] for s in ferrari["seasons"]))
+            senna = read("careers", "senna.json")
+            self.assertEqual(senna["wins"], len(senna["winList"]))
+            self.assertEqual(senna["titles"], [1988, 1990, 1991])
+            years = read("wrapped", "index.json")["years"]
+            self.assertIn(2021, years)
+            self.assertEqual(read("wrapped", "2021.json")["champion"]["id"], "max_verstappen")
 
 
 if __name__ == "__main__":
