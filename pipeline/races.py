@@ -24,7 +24,7 @@ def build(seasons, names, out):
                 "country": r["circuit"]["country"], "done": bool(r["results"]),
                 "winner": {"id": win["d"], "name": names.driver(win["d"]), "code": names.code(win["d"]),
                            "team": names.team(win["c"])} if win else None,
-                "laps": has_laps, "tyres": has_tyres, "replay": replay.have(year, r["round"]),
+                "laps": has_laps, "tyres": has_tyres, "replay": replay.have(year, r["round"]), "sprintReplay": replay.have(year, r["round"], True),
                 "sprint": bool(r.get("sprint")), "page": bool(r["results"] or r.get("sprint") or r.get("quali")),
             })
             if not (r["results"] or r.get("sprint") or r.get("quali")):
@@ -65,6 +65,8 @@ def build(seasons, names, out):
             if replay.have(year, r["round"]):
                 page["replay"] = True
                 page["findings"] = findings.cards(page, names)
+            if replay.have(year, r["round"], True):
+                page["sprintReplay"] = True
             times = practice.for_site(year, r["round"], names)
             if times:
                 page["practice"] = times

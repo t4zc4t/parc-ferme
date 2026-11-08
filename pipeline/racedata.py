@@ -48,6 +48,9 @@ def main():
             done = replay.fill(year, season)
             print(f"replays {year}: {done} races")
             replays += done
+            done = replay.fill_sprints(year, season)
+            print(f"sprint replays {year}: {done} sprints")
+            replays += done
         except RuntimeError as err:
             print(f"openf1 {year} stopped: {err}")
     if got:

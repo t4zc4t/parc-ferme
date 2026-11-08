@@ -127,6 +127,30 @@ class Trivia(unittest.TestCase):
         self.assertGreater(out["facts"]["count"], 20)
 
 
+class SprintReplay(unittest.TestCase):
+    def test_own_file(self):
+        self.assertTrue(str(replay.path(2026, 4, True)).endswith("2026/4-sprint.json"))
+        self.assertTrue(str(replay.path(2026, 4)).endswith("2026/4.json"))
+
+    def test_uses_sprint_rows(self):
+        season = store.load(YEAR)
+        rnd = next((r for r in season["rounds"] if r.get("sprint")), None)
+        if rnd is None:
+            self.skipTest("no sprint this season")
+        asked = []
+
+        def get(ep, tries=4):
+            asked.append(ep)
+            return []
+        old = replay.openf1.get
+        replay.openf1.get = get
+        try:
+            self.assertFalse(replay.race(YEAR, rnd, 1, sprint=True))
+        finally:
+            replay.openf1.get = old
+        self.assertTrue(any(e.startswith("laps?session_key=1") for e in asked))
+
+
 class History(unittest.TestCase):
     def test_pages_add_up(self):
         import json

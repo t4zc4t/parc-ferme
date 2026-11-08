@@ -1,13 +1,15 @@
 // race replay: every car on the real track, a live timing tower, and the lap chart as the timeline
-PF.replay = async function (race, { year, round, byId, chart }) {
+PF.replay = async function (race, { year, round, byId, chart, sprint, early }) {
   const { $, el } = PF;
   let data;
   try {
-    data = await PF.json('/data/replay/' + year + '/' + round + '.json');
+    data = await (early || PF.json('/data/replay/' + year + '/' + round + (sprint ? '-sprint' : '') + '.json'));
   } catch (e) {
+    $('replay-panel').hidden = true;
     return;   // the race page still has everything else
   }
   $('replay-panel').hidden = false;
+  $('replay-panel').classList.remove('is-loading');
 
   const ids = Object.keys(data.cars).filter(id => byId.has(id));
   const step = data.step;
@@ -362,13 +364,28 @@ PF.replay = async function (race, { year, round, byId, chart }) {
     ctx.fillStyle = '#B9B6CF'; ctx.fillText(label, lx + 4, ly + 9);
   }
 
+  // follow mode: the camera sits on one car, zoomed in, and eases after it
+  let follow = false, cam = null;
+  const ZOOM = 3.2;
   function drawMap() {
+    const base = [scale, ox, oy];
+    const fid = follow ? (picks[0] || (standing(t)[0] || {}).id) : null;
+    const fp = fid && !hidden.has(fid) ? at(fid, t) : null;
+    if (fp) {
+      cam = cam && Math.hypot(cam[0] - fp[0], cam[1] - fp[1]) < 400 ? [cam[0] + (fp[0] - cam[0]) * 0.3, cam[1] + (fp[1] - cam[1]) * 0.3] : fp;
+      scale = base[0] * ZOOM;
+      ox = W / 2 - (cam[0] - box.x0) * scale;
+      oy = H / 2 - (cam[1] - box.y0) * scale;
+    } else cam = null;
+    try { paintMap(!!fp); } finally { [scale, ox, oy] = base; }
+  }
+  function paintMap(zoomed) {
     ctx.clearRect(0, 0, W, H);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.beginPath();
     data.track.forEach(([x, y], i) => (i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y))));
     ctx.closePath();
-    ctx.strokeStyle = '#1d1c30'; ctx.lineWidth = 14; ctx.stroke();
+    ctx.strokeStyle = '#1d1c30'; ctx.lineWidth = zoomed ? 30 : 14; ctx.stroke();
     ctx.strokeStyle = '#34324f'; ctx.lineWidth = 2; ctx.stroke();
     drawLine();
 
@@ -732,6 +749,92 @@ PF.replay = async function (race, { year, round, byId, chart }) {
 
   function render() { drawMap(); drawTower(); drawStatus(); drawCompare(); drawFeed(); drawOut(); }
 
+  // ---- phones: track or timing, one at a time ----
+  $('replay-view').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    $('replay-grid').dataset.view = b.dataset.view;
+    $('replay-view').querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    if (b.dataset.view === 'map') { size(); render(); }
+  }));
+
+  // ---- follow a car ----
+  const followBtn = $('follow-btn');
+  const setFollow = v => {
+    follow = v;
+    followBtn.classList.toggle('on', v);
+    followBtn.setAttribute('aria-pressed', v);
+    followBtn.textContent = v ? 'Following ' + (picks[0] ? byId.get(picks[0]).code : 'the leader') : 'Follow';
+    drawMap();
+  };
+  followBtn.addEventListener('click', () => setFollow(!follow));
+  [selA, selB, $('cmp-clear')].forEach(x => x.addEventListener(x.tagName === 'SELECT' ? 'change' : 'click', () => { if (follow) setFollow(true); }));
+  canvas.addEventListener('click', () => { if (follow) setFollow(true); });
+
+  // ---- battles: two cars within a second for a few laps running ----
+  function battles() {
+    const lapsOf = race.drivers;
+    if (!lapsOf || sprint) return [];
+    const cum = {};
+    ids.forEach(id => {
+      let sum = 0;
+      cum[id] = (lapsOf[id] || []).map(([, ms]) => (sum = ms && sum !== null ? sum + ms : null));
+    });
+    const most = Math.max(0, ...ids.map(id => cum[id].length));
+    const runs = [], open = new Map();
+    // a queue behind the safety car is not a fight
+    const slow = n => (race.periods || []).some(([, a, b]) => n + 1 >= a && n + 1 <= b + 1);
+    for (let n = 0; n < most; n++) {
+      if (slow(n)) { runs.push(...open.values()); open.clear(); continue; }
+      const onLap = ids.filter(id => lapsOf[id] && lapsOf[id][n] && cum[id][n] !== null)
+        .sort((a, b) => lapsOf[a][n][0] - lapsOf[b][n][0]);
+      const seen = new Set();
+      for (let i = 1; i < onLap.length; i++) {
+        const a = onLap[i - 1], b = onLap[i];
+        if (lapsOf[b][n][0] !== lapsOf[a][n][0] + 1) continue;
+        const gap = cum[b][n] - cum[a][n];
+        if (gap <= 0 || gap > 1000) continue;
+        const key = [a, b].sort().join('|');
+        seen.add(key);
+        const r = open.get(key);
+        if (r) { r.to = n + 1; r.ahead = a; r.close = Math.min(r.close, gap); }
+        else open.set(key, { a, b, ahead: a, from: n + 1, to: n + 1, pos: lapsOf[a][n][0], close: gap });
+      }
+      for (const [key, r] of open) if (!seen.has(key)) { runs.push(r); open.delete(key); }
+    }
+    runs.push(...open.values());
+    return runs.filter(r => r.to - r.from >= 3)
+      .map(r => ({ ...r, len: r.to - r.from + 1, swapped: r.ahead !== r.a }))
+      .sort((x, y) => (y.len - y.pos / 4) - (x.len - x.pos / 4)).slice(0, 8)
+      .sort((x, y) => x.from - y.from);
+  }
+  const fights = battles();
+  if (fights.length) {
+    const code = id => byId.get(id).code;
+    $('battle-list').replaceChildren(...fights.map(f => {
+      const chaser = f.ahead === f.a ? f.b : f.a;
+      const btn = el('button', { type: 'button', class: 'battle' },
+        el('span', { class: 'battle-laps mono' }, 'Laps ' + f.from + '–' + f.to),
+        f.swapped
+          ? el('span', { class: 'battle-who' }, el('span', { class: 'feed-dot', style: 'background:' + cars[f.ahead].color }), code(f.ahead),
+            ' gets by ', el('span', { class: 'feed-dot', style: 'background:' + cars[chaser].color }), code(chaser))
+          : el('span', { class: 'battle-who' }, el('span', { class: 'feed-dot', style: 'background:' + cars[chaser].color }), code(chaser),
+            ' on the tail of ', el('span', { class: 'feed-dot', style: 'background:' + cars[f.ahead].color }), code(f.ahead)),
+        el('span', { class: 'battle-note' }, 'For P' + f.pos + ', closest ' + (f.close / 1000).toFixed(1) + 's'));
+      btn.addEventListener('click', () => {
+        const s = data.laps[chaser] || data.laps[winner] || [];
+        t = Math.max(0, (s[f.from - 1] ?? 0) - 5);
+        picks = [chaser, f.ahead];
+        if (chart) picks.forEach(p => chart.follow(p));
+        syncPickers();
+        setFollow(true);
+        render();
+        $('replay-panel').scrollIntoView({ block: 'start', behavior: 'smooth' });
+        if (!playing) setPlaying(true);
+      });
+      return el('li', null, btn);
+    }));
+    $('battles').hidden = false;
+  }
+
   // ---- the end: what the data says ----
   let shown = false;
   function showFindings() {
@@ -778,9 +881,10 @@ PF.replay = async function (race, { year, round, byId, chart }) {
 
   $('replay-share-slot').replaceWith(PF.shareButton(() => {
     const q = new URLSearchParams({ t: Math.round(t) });
+    if (sprint) q.set('replay', 'sprint');
     if (picks.length) q.set('d', picks.join(','));
     if (hidden.size) q.set('h', [...hidden].join(','));
-    return { title: year + ' ' + race.name + ' replay', text: 'Lap ' + lapsDone(t) + ' of the ' + year + ' ' + race.name, url: '/races/' + year + '/' + round + '?' + q };
+    return { title: year + ' ' + race.name + (sprint ? ' sprint' : '') + ' replay', text: 'Lap ' + lapsDone(t) + ' of the ' + year + ' ' + race.name, url: '/races/' + year + '/' + round + '?' + q };
   }, 'Share this moment'));
   syncPickers();
   if (chart) picks.forEach(p => chart.follow(p));

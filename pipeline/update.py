@@ -175,6 +175,16 @@ def race_extras(now):
                                             f"/races/{year}/{r['round']}", year, r["round"], now)])
         except RuntimeError as err:
             print(f"replay failed: {err}")
+    # sprint replays, a few hours after the sprint
+    sprints = {r["round"] for r in data["rounds"] if r.get("sprint") and r["sessions"].get("SR")
+               and timedelta(hours=3) < now - sitegen.when(r["sessions"]["SR"]) < timedelta(days=7)
+               and not replay.have(year, r["round"], True)}
+    if sprints and year >= replay.FIRST:
+        try:
+            if replay.fill_sprints(year, data, limit=1, only=sprints):
+                labels.append("sprint replay")
+        except RuntimeError as err:
+            print(f"sprint replay failed: {err}")
     # once a week, give older races without a replay another go, openf1 sometimes fills gaps late
     if now.weekday() == 0 and now.hour == 4 and year >= replay.FIRST:
         older = {r["round"] for r, age in finished if age >= timedelta(days=7) and not replay.have(year, r["round"])}

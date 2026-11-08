@@ -1078,3 +1078,26 @@ code { font: 13px var(--mono); }
 .story-win span:last-child { font-weight: 700; }
 .sgrid-who .dlink { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
 .sgrid-who .code { margin-right: 2px; }
+
+/* replay: loading, which replay, phone view switch, follow, battles */
+.replay-panel.is-loading .replay-grid, .replay-panel.is-loading .replay-controls, .replay-panel.is-loading .replay-pickers, .replay-panel.is-loading .replay-view { opacity: .35; pointer-events: none; }
+.replay-panel.is-loading .replay-map::after { content: "Loading the replay"; position: absolute; inset: 0; display: grid; place-items: center; font: 600 14px var(--mono); color: var(--soft); }
+.replay-which { margin-left: auto; }
+.replay-which a { text-decoration: none; }
+.replay-which a.on { color: var(--text); background: var(--panel-2); border-color: var(--text); font-weight: 700; }
+.replay-view { display: none; }
+.follow-btn.on { color: var(--ink); background: var(--cyan); border-color: var(--cyan); }
+.battles { margin-top: 20px; }
+.battle-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.battle { width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 14px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: var(--radius); color: var(--text); font: inherit; cursor: pointer; transition: border-color .15s; }
+.battle:hover, .battle:focus-visible { border-color: var(--pink); }
+.battle-laps { font-size: 12px; color: var(--dim); }
+.battle-who { font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.battle-note { font-size: 13px; color: var(--soft); }
+@media (max-width: 640px) {
+  .replay-view { display: inline-flex; margin-bottom: 10px; }
+  .replay-grid[data-view="map"] .tower-col { display: none; }
+  .replay-grid[data-view="tower"] .replay-map { display: none; }
+  .replay-which { margin-left: 0; }
+}
+.replay-which[hidden], .replay-view[hidden] { display: none; }
