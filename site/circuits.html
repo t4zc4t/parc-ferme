@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Every F1 circuit since 1950: winners and records · Parc Fermé</title>
+<meta name="description" content="Every circuit to host a Formula 1 world championship race, with its track map, most successful drivers and teams, and every winner.">
+<meta name="theme-color" content="#07070D">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="canonical" href="https://parc-ferme.pages.dev/circuits">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Parc Fermé">
+<meta property="og:title" content="Every F1 circuit since 1950: winners and records · Parc Fermé">
+<meta property="og:description" content="Every circuit to host a Formula 1 world championship race, with its track map, most successful drivers and teams, and every winner.">
+<meta property="og:url" content="https://parc-ferme.pages.dev/circuits">
+<meta property="og:image" content="https://parc-ferme.pages.dev/assets/share.png">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="/">
+      <span class="brand-name">PARC FERMÉ</span>
+      <span class="brand-jp" lang="ja">パルク・フェルメ</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="/standings">Standings</a>
+      <a href="/schedule">Schedule</a>
+      <a href="/races">Races</a>
+      <a href="/drivers">Drivers</a>
+      <a href="/teams">Teams</a>
+      <a href="/circuits" aria-current="page">Circuits</a>
+      <a href="/compare">Compare</a>
+      <a href="/trivia">Trivia</a>
+      <details class="nav-more"><summary>More</summary><div class="nav-menu">
+        <a href="/wrapped">Season wrapped</a>
+        <a href="/studies">Studies</a>
+        <a href="/questions">Questions</a>
+      </div></details>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap page-head">
+    <h1 class="page-title">Circuits</h1>
+    <p class="lede">Every track that has held a championship race since 1950, with who won there and how often pole turned into a win.</p>
+    <div class="filters">
+      <input class="field" type="search" id="c-q" placeholder="Filter by circuit, town or country" aria-label="Filter circuits" autocomplete="off">
+      <div class="seg" role="group" aria-label="Show">
+        <button type="button" class="chip on" data-show="all" aria-pressed="true">All</button>
+        <button type="button" class="chip" data-show="now" aria-pressed="false">On the calendar</button>
+      </div>
+    </div>
+  </section>
+  <section class="wrap block">
+    <div class="ct-grid" id="c-list"><p class="dim">Loading circuits.</p></div>
+    <p class="label empty-note" id="c-empty" hidden>No circuits match.</p>
+  </section>
+</main>
+<footer>
+  <div class="wrap foot-row">
+    <span>An independent, non-commercial fan project. Not associated with Formula 1 companies or any team.</span>
+    <span id="updated">Data from Jolpica and OpenF1</span>
+  </div>
+</footer>
+
+<script src="/assets/common.js"></script>
+<script src="/assets/circuits.js"></script>
+<script src="/assets/search.js"></script>
+</body>
+</html>

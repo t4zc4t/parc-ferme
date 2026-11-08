@@ -11,7 +11,7 @@ from pathlib import Path
 SITE = "https://parc-ferme.pages.dev"
 ROOT = Path(__file__).resolve().parent.parent / "site"
 DATA = ROOT / "data"
-STATIC = ["", "standings", "schedule", "trivia", "drivers", "compare", "races", "questions", "studies"]
+STATIC = ["", "standings", "schedule", "trivia", "drivers", "teams", "circuits", "wrapped", "compare", "races", "questions", "studies"]
 
 
 def read(p):
@@ -100,6 +100,55 @@ def driver_page(template, d):
                 swap={'id="d-first"></span>': f'id="d-first">{escape(d["first"])}</span>'}, static=static)
 
 
+def plural(n, word):
+    return f"{n} {word}" + ("" if n == 1 else "s")
+
+
+def circuit_page(template, c):
+    where = ", ".join(x for x in (c.get("locality"), c.get("country")) if x)
+    span = str(c["first"]) if c["first"] == c["last"] else f"{c['first']} to {c['last']}"
+    title = f"{c['name']}: every F1 winner and record · Parc Fermé"
+    desc = f"{c['name']} in {where} has held {plural(c['held'], 'championship race')}, {span}."
+    if c["topDrivers"]:
+        t = c["topDrivers"][0]
+        desc += f" {t['name']} has won there the most, {plural(t['wins'], 'time')}."
+    if c["races"] and c["races"][0]["winner"]:
+        desc += f" Last winner: {c['races'][0]['winner']['name']} in {c['races'][0]['year']}."
+    rows = "".join(f"<tr><td>{r['year']}</td><td>{escape(r['winner']['name']) if r['winner'] else ''}</td>"
+                   f"<td>{escape(r['winner']['team']) if r['winner'] else ''}</td></tr>" for r in c["races"])
+    static = (f'<section class="wrap block" id="static-summary">\n<h2>Winners</h2>\n<table><thead><tr><th>YEAR</th>'
+              f'<th>WINNER</th><th>TEAM</th></tr></thead><tbody>{rows}</tbody></table>\n</section>')
+    return fill(template, f"/circuits/{c['id']}", title, desc, "c-name", c["name"], static=static)
+
+
+def team_page(template, t):
+    span = str(t["first"]) if t["first"] == t["last"] else f"{t['first']} to {t['last']}"
+    title = f"{t['name']}: F1 wins, titles and drivers · Parc Fermé"
+    desc = (f"{t['name']} raced in Formula 1 from {span}: {plural(t['entries'], 'race')}, {plural(t['wins'], 'win')}, "
+            f"{plural(t['poles'], 'pole')}")
+    if t["titles"]:
+        n = len(t["titles"])
+        desc += f" and {n} constructors' title" + ("" if n == 1 else "s")
+    desc += "."
+    static = f'<section class="wrap block" id="static-summary"><p class="lede">{escape(desc)}</p></section>'
+    return fill(template, f"/teams/{t['id']}", title, desc, "t-name", t["name"], static=static)
+
+
+def career_page(template, p):
+    yrs = [s["year"] for s in p["seasons"]]
+    span = str(yrs[0]) if yrs[0] == yrs[-1] else f"{yrs[0]} to {yrs[-1]}"
+    title = f"{p['name']}: F1 career, wins and seasons · Parc Fermé"
+    desc = (f"{p['name']} raced in Formula 1 from {span} for {', '.join(t['name'] for t in p['teams'][:4])}. "
+            f"{plural(p['starts'], 'start')}, {plural(p['wins'], 'win')}, {plural(p['podiums'], 'podium')}")
+    if p["titles"]:
+        desc += f" and {plural(len(p['titles']), 'world title')}"
+    desc += "."
+    person = {"@context": "https://schema.org", "@type": "Person", "name": p["name"], "jobTitle": "Racing driver"}
+    static = f'<section class="wrap block" id="static-summary"><p class="lede">{escape(desc)}</p></section>'
+    return fill(template, f"/drivers/{p['id']}", title, desc, "p-name", p["name"],
+                extra_head=f'<script type="application/ld+json">{json.dumps(person)}</script>\n', static=static)
+
+
 def build():
     urls = [f"{SITE}/{p}" for p in STATIC]
     race_tpl = (ROOT / "race.html").read_text()
@@ -124,6 +173,27 @@ def build():
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(driver_page(driver_tpl, read(src)))
         urls.append(f"{SITE}/drivers/{d['id']}")
+        count += 1
+    grid = {d["id"] for d in read(DATA / "drivers.json")["drivers"]}
+    for kind, tpl, fn, url in (("circuits", "circuit.html", circuit_page, "circuits"),
+                               ("teams", "team.html", team_page, "teams")):
+        template = (ROOT / tpl).read_text()
+        if not (DATA / kind / "index.json").exists():
+            continue
+        for x in read(DATA / kind / "index.json")[kind]:
+            out = ROOT / url / f"{x['id']}.html"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(fn(template, read(DATA / kind / f"{x['id']}.json")))
+            urls.append(f"{SITE}/{url}/{x['id']}")
+            count += 1
+    career_tpl = (ROOT / "career.html").read_text()
+    for src in sorted((DATA / "careers").glob("*.json")):
+        if src.stem in grid:
+            continue
+        out = ROOT / "drivers" / f"{src.stem}.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(career_page(career_tpl, read(src)))
+        urls.append(f"{SITE}/drivers/{src.stem}")
         count += 1
     (ROOT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

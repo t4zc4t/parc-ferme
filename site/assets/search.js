@@ -1,4 +1,4 @@
-// site search: drivers, teams, this season's races, questions, studies and pages
+// site search: drivers, teams, circuits, this season's races, questions, studies and pages
 (function () {
   const { el } = PF;
   const nav = document.querySelector('header nav');
@@ -22,18 +22,22 @@
     items = [
       ['Standings', '/standings', 'Page'], ['Schedule', '/schedule', 'Page'], ['Drivers', '/drivers', 'Page'],
       ['Compare drivers', '/compare', 'Page'], ['Races', '/races', 'Page'], ['Studies', '/studies', 'Page'], ['Questions', '/questions', 'Page'], ['Trivia and quiz', '/trivia', 'Page'],
+      ['Teams', '/teams', 'Page'], ['Circuits', '/circuits', 'Page'], ['Season wrapped', '/wrapped', 'Page'],
     ].map(([name, href, kind]) => ({ name, href, kind, rank: 1 }));
     const get = p => PF.json(p).catch(() => null);
-    const [people, grid, schedule, qs, studies, index] = await Promise.all([
+    const [people, grid, schedule, qs, studies, index, teams, circuits] = await Promise.all([
       get('/data/people.json'), get('/data/drivers.json'), get('/data/schedule.json'),
-      get('/data/questions.json'), get('/data/studies.json'), get('/data/races/index.json')]);
+      get('/data/questions.json'), get('/data/studies.json'), get('/data/races/index.json'),
+      get('/data/teams/index.json'), get('/data/circuits/index.json')]);
     const now = new Set(grid ? grid.drivers.map(d => d.id) : []);
     if (people) {
       people.drivers.forEach(([id, name, code, from, to, starts, wins]) => items.push({
         name, extra: code || '', kind: from === to ? String(from) : from + '–' + to,
-        href: now.has(id) ? '/drivers/' + id : '/compare?a=' + encodeURIComponent(id),
+        href: '/drivers/' + encodeURIComponent(id),
         rank: (now.has(id) ? 3 : 0) + Math.min(starts / 100, 2) + wins / 50 }));
     }
+    if (teams) teams.teams.forEach(t => items.push({ name: t.name, kind: 'Team', href: '/teams/' + t.id, rank: 1 + Math.min(t.wins / 40, 2) + (t.titles ? 1 : 0) }));
+    if (circuits) circuits.circuits.forEach(c => items.push({ name: c.name, extra: (c.locality || '') + ' ' + (c.country || ''), kind: 'Circuit', href: '/circuits/' + c.id, rank: 1 + Math.min(c.held / 30, 2) }));
     if (schedule) schedule.rounds.forEach(r => items.push({
       name: schedule.season + ' ' + r.name, extra: r.circuit.name + ' ' + r.circuit.locality + ' ' + r.circuit.country,
       kind: 'Round ' + r.round, href: '/races/' + schedule.season + '/' + r.round, rank: 2 }));

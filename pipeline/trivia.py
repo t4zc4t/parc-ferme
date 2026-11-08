@@ -141,7 +141,7 @@ def build(seasons, names, today=None):
                                              "first": first, "team": row["c"]})
 
     link_race = lambda y, rnd: f"/races/{y}/{rnd}"
-    link_driver = lambda d: f"/compare?a={d}"
+    link_driver = lambda d: f"/drivers/{d}"
     nm = names.driver
     facts, quiz = [], []
 

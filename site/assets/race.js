@@ -24,7 +24,8 @@
   $('race-name').textContent = race.name;
   const c = race.circuit;
   const when = race.date ? new Date(race.date + 'T12:00:00Z').toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-  $('race-where').textContent = c.name + ', ' + c.locality + ', ' + c.country + (when ? ', ' + when : '');
+  $('race-where').replaceChildren(c.id ? el('a', { class: 'text-link', href: '/circuits/' + c.id }, c.name) : c.name,
+    ', ' + c.locality + ', ' + c.country + (when ? ', ' + when : ''));
   $('race-season').href = '/races?y=' + year;
   if (season) {
     const done = season.rounds.filter(r => r.winner);
