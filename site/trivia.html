@@ -54,6 +54,7 @@
         <span class="label tv-score" id="quiz-score"></span>
       </div>
       <div class="tv-filters">
+        <button type="button" class="btn btn-quiet" id="quiz-daily" hidden>Question of the day</button>
         <select class="field" id="quiz-cat" aria-label="Category"><option value="">Any topic</option></select>
         <div class="seg" role="group" aria-label="Difficulty" id="quiz-level">
           <button type="button" class="chip on" data-level="" aria-pressed="true">Any</button>
@@ -64,6 +65,7 @@
       </div>
       <p class="tv-meta label" id="quiz-meta"></p>
       <p class="tv-q" id="quiz-q">Loading a question.</p>
+      <div class="tv-track" id="quiz-track" hidden></div>
       <div class="tv-options" id="quiz-options"></div>
       <div class="tv-explain" id="quiz-explain" hidden></div>
       <div class="go-row">
@@ -98,8 +100,10 @@
       <p class="panel-note">Everything on this page is plain JSON you can fetch from a Discord bot or anything else. No key needed, it refreshes after each race, and please cache it rather than fetching on every message.</p>
       <ul class="tv-endpoints">
         <li><code>/data/trivia/facts.json</code><span><span id="n-facts"></span> facts, each with an <code>id</code>, <code>category</code>, <code>text</code> and a <code>link</code> back to the data</span></li>
-        <li><code>/data/trivia/quiz.json</code><span><span id="n-quiz"></span> questions, each with <code>q</code>, four <code>options</code>, the <code>answer</code> index, an <code>explain</code> line, a <code>table</code> of the numbers behind it, a <code>link</code>, <code>category</code> and <code>difficulty</code></span></li>
+        <li><code>/data/trivia/quiz.json</code><span><span id="n-quiz"></span> questions, each with <code>q</code>, two or four <code>options</code>, the <code>answer</code> index, an <code>explain</code> line, a <code>table</code> of the numbers behind it, a <code>link</code>, <code>category</code> and <code>difficulty</code>, plus a <code>track</code> svg path for "which circuit is this" questions</span></li>
         <li><code>/data/trivia/onthisday.json</code><span>races by date, keyed <code>"MM-DD"</code>, newest first</span></li>
+        <li><code>/data/trivia/daily.json</code><span>a question of the day, keyed <code>"YYYY-MM-DD"</code> (UTC), set two weeks ahead, the same for everyone</span></li>
+        <li><code>/data/feed.json</code><span>what just happened: new qualifying, sprint and race results, provisional or official, with what changed when the official result lands</span></li>
       </ul>
       <pre class="tv-code"><code>const base = 'https://parc-ferme.pages.dev';
 const { questions } = await (await fetch(base + '/data/trivia/quiz.json')).json();

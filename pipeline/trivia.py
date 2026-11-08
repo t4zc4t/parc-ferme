@@ -7,8 +7,11 @@ Written for the site's trivia page and for anyone's bot to read as plain JSON:
 Every number comes from the data, so they move on by themselves after each race.
 """
 import hashlib
+import json
 from collections import Counter, defaultdict
-from datetime import date
+from datetime import date, timedelta
+
+import store
 
 from compare import classified, is_pole
 
@@ -40,7 +43,38 @@ def short(name):
     return name.replace(" Grand Prix", " GP")
 
 
-def build(seasons, names):
+def outline(points, size=100, keep=120):
+    """a track as an svg path in a size x size box, y pointing down"""
+    xs, ys = [p[0] for p in points], [p[1] for p in points]
+    span = max(max(xs) - min(xs), max(ys) - min(ys)) or 1
+    pad = size * 0.06
+    k = (size - 2 * pad) / span
+    ox = pad + (size - 2 * pad - (max(xs) - min(xs)) * k) / 2
+    oy = pad + (size - 2 * pad - (max(ys) - min(ys)) * k) / 2
+    step = max(1, len(points) // keep)
+    pts = points[::step]
+    return "M" + "L".join(f"{ox + (x - min(xs)) * k:.1f},{oy + (max(ys) - y) * k:.1f}" for x, y in pts) + "Z"
+
+
+def tracks(seasons):
+    """circuit id -> (name, svg path, year) from the race replays we have, newest first"""
+    out = {}
+    for s in sorted(seasons, key=lambda s: -s["year"]):
+        for r in s["rounds"]:
+            cid = r["circuit"]["id"]
+            f = store.ROOT / "site" / "replay" / str(s["year"]) / f"{r['round']}.json"
+            if cid in out or not f.exists():
+                continue
+            try:
+                pts = json.loads(f.read_text(encoding="utf-8")).get("track") or []
+            except ValueError:
+                continue
+            if len(pts) > 50:
+                out[cid] = (r["circuit"]["name"], outline(pts), s["year"])
+    return out
+
+
+def build(seasons, names, today=None):
     current = seasons[-1]
     now_year = current["year"]
     dob = {}
@@ -115,15 +149,16 @@ def build(seasons, names):
         facts.append({"id": fid, "category": category, "text": text, "link": link,
                       "linkText": link_text or ("The race" if link and link.startswith("/races/") else "Career record" if link else None)})
 
-    def question(qid, category, difficulty, q, right, wrong, explain, link=None, link_text=None, table=None):
+    def question(qid, category, difficulty, q, right, wrong, explain, link=None, link_text=None, table=None,
+                 options=4, track=None):
         """table: the numbers behind the answer, [label, value, link] rows shown after answering"""
-        wrong = [w for w in dict.fromkeys(wrong) if w != right][:3]
-        if len(wrong) < 3:
+        wrong = [w for w in dict.fromkeys(wrong) if w != right][:options - 1]
+        if len(wrong) < options - 1:
             return
         options = mix(qid, [right] + wrong)
         quiz.append({"id": qid, "category": category, "difficulty": difficulty, "q": q,
                      "options": options, "answer": options.index(right), "explain": explain,
-                     "table": table or [], "link": link,
+                     "table": table or [], "link": link, **({"track": track} if track else {}),
                      "linkText": link_text or ("The race" if link and link.startswith("/races/") else
                                                "The standings" if link and link.startswith("/standings") else
                                                "Career record" if link else None)})
@@ -399,6 +434,46 @@ def build(seasons, names):
                  names.team(first["team"]), mix(d + "t", others)[:3],
                  f"{nm(d)} first won with {names.team(first['team'])}, at the {first['year']} {first['name']}.", link_race(first["year"], first["round"]))
 
+    # higher or lower: two well known drivers, who has more of something
+    known = sorted((d for d, c in career.items() if len(c["wins"]) >= 5), key=lambda d: (-len(career[d]["wins"]), d))
+    stats = [("wins", "Grand Prix wins", lambda c: len(c["wins"])), ("podiums", "podiums", lambda c: c["podiums"]),
+             ("poles", "pole positions", lambda c: c["poles"]), ("starts", "race starts", lambda c: c["starts"])]
+    pairs = [(a, b) for i, a in enumerate(known[:40]) for b in known[i + 1:40]]
+    for a, b in mix("pairs", pairs)[:60]:
+        key, label, get = stats[int(hashlib.md5(f"{a}{b}".encode()).hexdigest(), 16) % len(stats)]
+        va, vb = get(career[a]), get(career[b])
+        if va == vb:
+            continue
+        hi, lo = (a, b) if va > vb else (b, a)
+        question(f"more-{key}-{a}-{b}", "head to head", "medium", f"Who has more {label}, {nm(a)} or {nm(b)}?",
+                 nm(hi), [nm(lo)], f"{nm(hi)} has {max(va, vb)} {label}, {nm(lo)} has {min(va, vb)}.", link_driver(hi),
+                 f"{nm(hi).split()[-1]}'s record", table=[[nm(x), str(get(career[x])), link_driver(x)] for x in (hi, lo)], options=2)
+
+    # guess the year from a podium of famous names
+    held_years = defaultdict(list)
+    for year, r in races:
+        held_years[r["name"]].append(year)
+    podiums = []
+    for year, r in races:
+        top = sorted([x for x in r["results"] if x["text"] in ("1", "2", "3")], key=lambda x: x["pos"])
+        if len(top) == 3 and all(len(career[x["d"]]["wins"]) >= 3 for x in top) and year >= 1970:
+            podiums.append((year, r, top))
+    for year, r, top in mix("podiums", podiums)[:50]:
+        others = [y for y in held_years[r["name"]] if y != year and abs(y - year) <= 8]
+        if len(others) < 3:
+            continue
+        question(f"podium-year-{year}-{r['round']}", "races", "hard",
+                 f"At the {r['name']}, the podium was {nm(top[0]['d'])}, {nm(top[1]['d'])} and {nm(top[2]['d'])}. Which year?",
+                 str(year), [str(y) for y in mix(f"{year}{r['round']}", others)[:3]],
+                 f"{year}, {nm(top[0]['d'])} won from {nm(top[1]['d'])} and {nm(top[2]['d'])}.", link_race(year, r["round"]))
+
+    # name the circuit from its shape, from the tracks traced for the replays
+    shapes = tracks([x for x in seasons if x["year"] >= 2026])
+    for cid, (cname, path, y) in sorted(shapes.items()):
+        others = [n for c, (n, _, _) in mix(cid, list(shapes.items())) if c != cid][:3]
+        question(f"track-{cid}", "circuits", "medium", "Which circuit is this?", cname, others,
+                 f"That's {cname}, traced from the cars' positions in the {y} race.", None, track=path)
+
     # recent race winners
     for year, r in races:
         if year < now_year - 8:
@@ -456,7 +531,18 @@ def build(seasons, names):
 
     facts.sort(key=lambda f: f["id"])
     quiz.sort(key=lambda q: q["id"])
+    # a question of the day, the same for everyone, set two weeks ahead so a quiet spell can't leave a gap
+    today = today or date.today()
+    good = [q for q in quiz if q["difficulty"] != "easy" and not q["id"].startswith("winner-")]
+    daily = {}
+    used = set()
+    for k in range(-2, 15):
+        day = (today + timedelta(days=k)).isoformat()
+        pick = min((q for q in good if q["id"] not in used), key=lambda q: hashlib.md5(f"{day}|{q['id']}".encode()).hexdigest())
+        used.add(pick["id"])
+        daily[day] = pick
     return {
+        "daily": {"days": daily},
         "facts": {"count": len(facts), "facts": facts},
         "quiz": {"count": len(quiz), "questions": quiz},
         "onthisday": {"days": dict(sorted(days.items()))},

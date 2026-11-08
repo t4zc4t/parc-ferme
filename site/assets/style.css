@@ -950,3 +950,8 @@ code { font: 13px var(--mono); }
 .tv-table tr.is-answer td { color: var(--text); font-weight: 700; }
 .tv-table a:hover { color: var(--cyan); }
 .tv-source { min-height: 36px; font-size: 14px; }
+
+.tv-track { width: min(260px, 70%); margin: -6px auto 18px; }
+.tv-track svg { width: 100%; height: auto; display: block; }
+.tv-track path { fill: none; stroke: var(--text); stroke-width: 1.6; stroke-linejoin: round; }
+.tv-options.two { grid-template-columns: 1fr 1fr; }
