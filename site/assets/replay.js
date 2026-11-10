@@ -314,8 +314,9 @@ PF.replay = async function (race, { year, round, byId, chart, sprint, early }) {
   const px = x => ox + (x - box.x0) * scale;
   const py = y => H - (oy + (y - box.y0) * scale);
 
-  const css = getComputedStyle(document.documentElement);
-  const INK = css.getPropertyValue('--ink').trim() || '#07070D';
+  // the map keeps its own night colours whatever the page theme
+  const css = getComputedStyle(document.querySelector('.replay-map') || document.documentElement);
+  const INK = css.getPropertyValue('--ink').trim() || '#0F0D0F';
 
   // ---- state ----
   let t = 0, playing = false, speed = 10, lastFrame = 0;
@@ -346,7 +347,7 @@ PF.replay = async function (race, { year, round, byId, chart, sprint, early }) {
     ctx.translate(X, Y);
     ctx.rotate(Math.atan2(ny, nx));
     for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) {
-      ctx.fillStyle = (i + j) % 2 ? '#F2F0FA' : '#07070D';
+      ctx.fillStyle = (i + j) % 2 ? '#E4DDDE' : '#0F0D0F';
       ctx.fillRect(-half + i * cw, (j - 1) * ch, cw, ch);
     }
     ctx.strokeStyle = '#F2F0FA'; ctx.lineWidth = 0.75;
@@ -385,7 +386,7 @@ PF.replay = async function (race, { year, round, byId, chart, sprint, early }) {
     ctx.beginPath();
     data.track.forEach(([x, y], i) => (i ? ctx.lineTo(px(x), py(y)) : ctx.moveTo(px(x), py(y))));
     ctx.closePath();
-    ctx.strokeStyle = '#1d1c30'; ctx.lineWidth = zoomed ? 30 : 14; ctx.stroke();
+    ctx.strokeStyle = '#2A2428'; ctx.lineWidth = zoomed ? 30 : 14; ctx.stroke();
     ctx.strokeStyle = '#34324f'; ctx.lineWidth = 2; ctx.stroke();
     drawLine();
 
