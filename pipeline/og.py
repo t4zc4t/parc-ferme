@@ -21,15 +21,15 @@ except ImportError:      # the site still builds, links fall back to the default
 
 FONTS = Path(__file__).resolve().parent / "fonts"
 W, H = 1200, 630
-INK = (7, 7, 13)
-PANEL = (17, 16, 31)
-LINE = (44, 42, 70)
-TEXT = (242, 240, 250)
-SOFT = (185, 182, 207)
-DIM = (128, 124, 156)
-PINK = (255, 61, 139)
-CYAN = (54, 227, 240)
-AMBER = (255, 181, 71)
+INK = (15, 13, 15)
+PANEL = (22, 19, 21)
+LINE = (53, 46, 51)
+TEXT = (228, 221, 222)
+SOFT = (184, 173, 176)
+DIM = (148, 138, 142)
+PINK = (220, 91, 102)
+CYAN = (142, 178, 176)
+AMBER = (220, 175, 102)
 PODIUM = [PINK, CYAN, AMBER]
 
 
@@ -41,6 +41,8 @@ def font(kind, size):
         except (OSError, AttributeError):
             pass
         return f
+    if kind == "serif":
+        return ImageFont.truetype(str(FONTS / "ShipporiMinchoB1-ExtraBold.ttf"), size)
     name = "ZenKakuGothicNew-Bold.ttf" if kind == "bold" else "ZenKakuGothicNew-Regular.ttf"
     return ImageFont.truetype(str(FONTS / name), size)
 
@@ -49,12 +51,12 @@ def canvas():
     img = Image.new("RGB", (W, H), INK)
     glow = Image.new("RGB", (W, H), INK)
     g = ImageDraw.Draw(glow)
-    g.ellipse((-260, -320, 640, 420), fill=(70, 14, 44))
-    g.ellipse((780, 330, 1500, 900), fill=(10, 44, 54))
+    g.ellipse((-260, -320, 640, 420), fill=(64, 18, 24))
+    g.ellipse((780, 330, 1500, 900), fill=(30, 40, 40))
     img = Image.blend(img, glow.filter(ImageFilter.GaussianBlur(160)), 0.9)
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 6), fill=PINK)
-    d.text((64, 52), "PARC FERMÉ", font=font("bold", 26), fill=TEXT)
+    d.text((64, 52), "PARC FERMÉ", font=font("serif", 28), fill=TEXT)
     d.text((W - 64, 78), "parc-ferme.pages.dev", font=font("mono", 22), fill=DIM, anchor="rs")
     return img, d
 
@@ -104,7 +106,7 @@ def race_card(race, track):
            font=font("mono", 22), fill=PINK if provisional else SOFT)
     right = 760 if track else W - 64
     title = race["name"].replace(" Grand Prix", "")
-    d.text((64, 150), title, font=fit(d, title, "bold", 84, right - 64), fill=TEXT)
+    d.text((64, 150), title, font=fit(d, title, "serif", 84, right - 64), fill=TEXT)
     d.text((64, 252), "Grand Prix · " + race["circuit"]["name"], font=fit(d, "Grand Prix · " + race["circuit"]["name"], "reg", 28, right - 64, 20), fill=SOFT)
     top = rows[:3]
     y = 330
@@ -129,9 +131,9 @@ def driver_card(drv):
     d.text((64, 118), f"{drv.get('nationality') or ''}  ·  #{drv.get('number') or ''}  ·  {drv['team']}".upper().strip(" ·"),
            font=font("mono", 22), fill=SOFT)
     d.text((64, 150), drv["first"], font=font("reg", 44), fill=SOFT)
-    d.text((64, 200), drv["last"], font=fit(d, drv["last"], "bold", 110, W - 128 - 230), fill=TEXT)
+    d.text((64, 200), drv["last"], font=fit(d, drv["last"], "serif", 110, W - 128 - 230), fill=TEXT)
     if drv.get("number"):
-        d.text((W - 64, 340), str(drv["number"]), font=font("bold", 200), fill=(40, 16, 32), anchor="rs")
+        d.text((W - 64, 340), str(drv["number"]), font=font("serif", 200), fill=(44, 22, 26), anchor="rs")
     tiles = [("Season", f"P{s['pos']}" if s.get("pos") else "–", f"{s.get('points', 0)} pts in {s.get('year', '')}"),
              ("Wins", str(c["wins"]), "career"), ("Podiums", str(c["podiums"]), "career"),
              ("Poles", str(c["poles"]), "career"), ("Titles", str(c["titles"]), "world champion" if c["titles"] else "")]
@@ -139,7 +141,7 @@ def driver_card(drv):
     for label, value, note in tiles:
         d.rounded_rectangle((x, 380, x + tw, 520), radius=6, fill=PANEL, outline=LINE)
         d.text((x + 20, 400), label, font=font("reg", 22), fill=DIM)
-        d.text((x + 20, 430), value, font=font("bold", 52), fill=PINK if label == "Season" else TEXT)
+        d.text((x + 20, 430), value, font=font("serif", 52), fill=PINK if label == "Season" else TEXT)
         if note:
             d.text((x + 20, 496), note, font=fit(d, note, "reg", 18, tw - 30, 12), fill=SOFT)
         x += tw + 16
@@ -153,8 +155,12 @@ def track_png(points):
     return img
 
 
+# bump when the look of the cards changes, so every image is drawn again
+STYLE = "mafia-1"
+
+
 def digest(*parts):
-    return hashlib.sha1(json.dumps(parts, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
+    return hashlib.sha1(json.dumps([STYLE, parts], sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
 def build(out=None):

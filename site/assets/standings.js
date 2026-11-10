@@ -1,7 +1,12 @@
 // standings for any season after any round, with the points race and the season's leaders
 (async function () {
   const { $, el } = PF;
-  const COLORS = ['#FF3D8B', '#36E3F0', '#FFB547', '#A493FF', '#5BE38B', '#F2F0FA', '#FF8A5B', '#6FA8FF'];
+  // the first three lines take the theme's accents, the rest stay fixed
+  const theme = () => { const c = getComputedStyle(document.documentElement); return ['--pink', '--cyan', '--amber', '--text'].map(v => c.getPropertyValue(v).trim()); };
+  let COLORS = [];
+  const paint = () => { const [a, b, c, d] = theme(); COLORS = [a, b, c, '#A493FF', '#5BE38B', d, '#E07A4F', '#6F9BD6']; };
+  paint();
+  window.addEventListener('themechange', () => { paint(); draw(); });
   let index;
   try {
     [index] = await Promise.all([PF.json('/data/standings/index.json'), PF.loadGrid()]);

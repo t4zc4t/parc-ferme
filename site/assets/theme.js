@@ -1,9 +1,21 @@
-// light or dark, chosen by the viewer, set before the page paints
+// three looks: Port Mafia (default), Detective Agency and Paper, set before the page paints
 (function () {
   const KEY = 'pf-theme';
+  const THEMES = [
+    { id: 'mafia', name: 'Port Mafia', color: '#0F0D0F' },
+    { id: 'agency', name: 'Detective Agency', color: '#14110E' },
+    { id: 'paper', name: 'Paper', color: '#F4ECDC' },
+  ];
   let saved = null;
   try { saved = localStorage.getItem(KEY); } catch (e) { /* storage blocked */ }
-  if (saved === 'light') document.documentElement.dataset.theme = 'light';
+  if (saved === 'light') saved = 'paper';   // the old light theme
+  const apply = id => {
+    if (id && id !== 'mafia') document.documentElement.dataset.theme = id;
+    else delete document.documentElement.dataset.theme;
+  };
+  apply(THEMES.some(t => t.id === saved) ? saved : 'mafia');
+  const current = () => document.documentElement.dataset.theme || 'mafia';
+
   document.addEventListener('DOMContentLoaded', () => {
     const nav = document.querySelector('header nav');
     if (!nav) return;
@@ -11,22 +23,23 @@
     btn.type = 'button';
     btn.className = 'theme-btn';
     const sync = () => {
-      const light = document.documentElement.dataset.theme === 'light';
-      btn.setAttribute('aria-pressed', String(light));
-      btn.setAttribute('aria-label', light ? 'Switch to the dark theme' : 'Switch to the light theme');
+      const i = THEMES.findIndex(t => t.id === current());
+      const next = THEMES[(i + 1) % THEMES.length];
+      btn.dataset.look = THEMES[i].id;
+      btn.setAttribute('aria-label', 'Theme: ' + THEMES[i].name + '. Switch to ' + next.name);
       btn.title = btn.getAttribute('aria-label');
       const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.content = light ? '#F6F5FB' : '#07070D';
+      if (meta) meta.content = THEMES[i].color;
     };
     btn.addEventListener('click', () => {
-      const light = document.documentElement.dataset.theme !== 'light';
-      if (light) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
-      try { localStorage.setItem(KEY, light ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
+      const i = THEMES.findIndex(t => t.id === current());
+      const next = THEMES[(i + 1) % THEMES.length].id;
+      apply(next);
+      try { localStorage.setItem(KEY, next); } catch (e) { /* storage blocked */ }
       sync();
       window.dispatchEvent(new Event('themechange'));
     });
     sync();
-    // sits just before search, the two read as one small group
     const search = document.querySelector('.search-open');
     if (search) search.before(btn); else nav.after(btn);
   });

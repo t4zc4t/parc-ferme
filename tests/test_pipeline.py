@@ -23,13 +23,15 @@ import trivia  # noqa: E402
 YEAR = max(int(p.stem) for p in (store.ROOT / "current").glob("*.json"))
 
 
-def fake_openf1(results, sessions):
+def fake_openf1(results, sessions, drivers=()):
     def get(ep, tries=4):
         if ep.startswith("sessions"):
             return sessions
         if ep.startswith("session_result"):
             return results
-        if ep.startswith("laps") or ep.startswith("drivers"):
+        if ep.startswith("drivers"):
+            return list(drivers)
+        if ep.startswith("laps"):
             return []
         raise AssertionError(ep)
     return get
@@ -51,7 +53,11 @@ class Provisional(unittest.TestCase):
                 "dns": False, "dsq": False, "duration": 5000.0 if x["pos"] == 1 else None,
                 "gap_to_leader": 0 if x["pos"] == 1 else 10.5} for n, x in numbers.items()]
         start = r["sessions"]["R"]
-        openf1.get = fake_openf1(res, [{"date_start": start, "session_key": 1}])
+        # a stand-in who only drove this race is only known from openf1's driver list
+        drivers = [{"driver_number": n, "first_name": s["drivers"][x["d"]]["first"], "last_name": s["drivers"][x["d"]]["last"],
+                    "name_acronym": s["drivers"][x["d"]].get("code"), "full_name": x["d"], "team_name": s["teams"][x["c"]]["name"]}
+                   for n, x in numbers.items()]
+        openf1.get = fake_openf1(res, [{"date_start": start, "session_key": 1}], drivers)
         before_pts = {x["d"]: x["pts"] for x in s["standings"]["drivers"]}
         r["results"] = []
         s.pop("official_standings", None)
