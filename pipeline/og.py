@@ -21,15 +21,15 @@ except ImportError:      # the site still builds, links fall back to the default
 
 FONTS = Path(__file__).resolve().parent / "fonts"
 W, H = 1200, 630
-INK = (15, 13, 15)
-PANEL = (22, 19, 21)
-LINE = (53, 46, 51)
-TEXT = (228, 221, 222)
-SOFT = (184, 173, 176)
-DIM = (148, 138, 142)
-PINK = (220, 91, 102)
-CYAN = (142, 178, 176)
-AMBER = (220, 175, 102)
+INK = (11, 9, 9)
+PANEL = (20, 16, 16)
+LINE = (52, 43, 41)
+TEXT = (237, 230, 218)
+SOFT = (185, 173, 152)
+DIM = (143, 133, 116)
+PINK = (232, 71, 91)
+CYAN = (200, 169, 126)
+AMBER = (224, 179, 90)
 PODIUM = [PINK, CYAN, AMBER]
 
 
@@ -47,17 +47,39 @@ def font(kind, size):
     return ImageFont.truetype(str(FONTS / name), size)
 
 
-def canvas():
+BLOOD = (200, 40, 60)
+
+
+def moon(img, cx, cy, r):
+    """the blood moon from the profile banner: a halo, then a dark red disc lit from the top left"""
+    halo = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(halo).ellipse((cx - r * 1.45, cy - r * 1.45, cx + r * 1.45, cy + r * 1.45), fill=BLOOD + (70,))
+    img.paste(halo.filter(ImageFilter.GaussianBlur(r * .35)), (0, 0), halo.filter(ImageFilter.GaussianBlur(r * .35)))
+    disc = Image.new("RGB", (r * 2, r * 2))
+    px = disc.load()
+    lx, ly = r * .84, r * .76
+    for y in range(r * 2):
+        for x in range(r * 2):
+            t = min(1, ((x - lx) ** 2 + (y - ly) ** 2) ** .5 / (r * 1.4))
+            px[x, y] = tuple(round(a + (b - a) * t) for a, b in zip((179, 18, 31), (78, 9, 16)))
+    mask = Image.new("L", (r * 2, r * 2), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, r * 2 - 1, r * 2 - 1), fill=255)
+    img.paste(disc, (cx - r, cy - r), mask)
+
+
+def canvas(with_moon=True):
     img = Image.new("RGB", (W, H), INK)
-    glow = Image.new("RGB", (W, H), INK)
-    g = ImageDraw.Draw(glow)
-    g.ellipse((-260, -320, 640, 420), fill=(64, 18, 24))
-    g.ellipse((780, 330, 1500, 900), fill=(30, 40, 40))
-    img = Image.blend(img, glow.filter(ImageFilter.GaussianBlur(160)), 0.9)
     d = ImageDraw.Draw(img)
-    d.rectangle((0, 0, W, 6), fill=PINK)
+    # paper grain
+    for x in range(-H, W, 7):
+        d.line((x, H, x + H * .7, 0), fill=(22, 17, 17), width=1)
+    if with_moon:
+        moon(img, 1095, 70, 125)
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, W, 6), fill=BLOOD)
     d.text((64, 52), "PARC FERMÉ", font=font("serif", 28), fill=TEXT)
-    d.text((W - 64, 78), "parc-ferme.pages.dev", font=font("mono", 22), fill=DIM, anchor="rs")
+    x = 64 + d.textlength("PARC FERMÉ", font=font("serif", 28)) + 20
+    d.text((x, 78), "parc-ferme.pages.dev", font=font("mono", 20), fill=DIM, anchor="ls")
     return img, d
 
 
@@ -93,7 +115,7 @@ def save(img, path):
 
 
 def race_card(race, track):
-    img, d = canvas()
+    img, d = canvas(with_moon=not track)
     year, rnd = race["year"], race["round"]
     rows, label = race["results"], "Race result"
     if not rows and race.get("sprint"):
@@ -133,7 +155,7 @@ def driver_card(drv):
     d.text((64, 150), drv["first"], font=font("reg", 44), fill=SOFT)
     d.text((64, 200), drv["last"], font=fit(d, drv["last"], "serif", 110, W - 128 - 230), fill=TEXT)
     if drv.get("number"):
-        d.text((W - 64, 340), str(drv["number"]), font=font("serif", 200), fill=(44, 22, 26), anchor="rs")
+        d.text((W - 64, 340), str(drv["number"]), font=font("serif", 200), fill=(84, 18, 26), anchor="rs")
     tiles = [("Season", f"P{s['pos']}" if s.get("pos") else "–", f"{s.get('points', 0)} pts in {s.get('year', '')}"),
              ("Wins", str(c["wins"]), "career"), ("Podiums", str(c["podiums"]), "career"),
              ("Poles", str(c["poles"]), "career"), ("Titles", str(c["titles"]), "world champion" if c["titles"] else "")]
@@ -156,7 +178,7 @@ def track_png(points):
 
 
 # bump when the look of the cards changes, so every image is drawn again
-STYLE = "mafia-1"
+STYLE = "mafia-2"
 
 
 def digest(*parts):

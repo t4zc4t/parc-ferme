@@ -1,58 +1,51 @@
 :root {
-  /* Port Mafia: the default */
-  --ink: #0F0D0F;
-  --panel: #161315;
-  --panel-2: #1F1A1D;
-  --line: #272226;
-  --line-2: #352E33;
-  --text: #E4DDDE;
-  --soft: #B8ADB0;
-  --dim: #948A8E;
+  /* Port Mafia, from the profile banner: ink black, blood red, bone */
+  --ink: #0B0909;
+  --panel: #141010;
+  --panel-2: #1C1716;
+  --line: #241D1C;
+  --line-2: #342B29;
+  --text: #EDE6DA;
+  --soft: #B9AD98;
+  --dim: #8F8574;
   --radius: 6px;
-  --pink: #DC5B66;
-  --cyan: #8EB2B0;
-  --amber: #DCAF66;
-  --on-accent: #0F0D0F;
-  --top-bg: rgba(15,13,15,.86);
+  --pink: #E8475B;
+  --blood: #C8283C;
+  --cyan: #C8A97E;
+  --amber: #E0B35A;
+  --on-accent: #0B0909;
+  --hatch: #171111;
+  --moon-1: #B3121F;
+  --moon-2: #4E0910;
+  --moon-glow: rgba(200,40,60,.32);
+  --top-bg: rgba(11,9,9,.86);
   --display: 'Shippori Mincho B1', 'Shippori Mincho', serif;
   --body: 'Zen Kaku Gothic New', sans-serif;
   --mono: 'JetBrains Mono', monospace;
   color-scheme: dark;
 }
-/* Detective Agency: warm, still dark */
+/* Detective Agency, the light one: parchment, sepia ink, the same red */
 :root[data-theme="agency"] {
-  --ink: #14110E;
-  --panel: #1E1915;
-  --panel-2: #27201A;
-  --line: #332A22;
-  --line-2: #42372D;
-  --text: #EDE3CF;
-  --soft: #C9B99F;
-  --dim: #A8987F;
-  --pink: #C9A273;
-  --cyan: #8FB5B1;
-  --amber: #ECBF6A;
-  --on-accent: #14110E;
-  --top-bg: rgba(20,17,14,.86);
-}
-/* Paper: the light one */
-:root[data-theme="paper"] {
-  --ink: #F4ECDC;
-  --panel: #FBF6EC;
-  --panel-2: #ECE2CF;
-  --line: #E3D7C0;
-  --line-2: #D3C4A8;
-  --text: #2B2620;
-  --soft: #554C41;
-  --dim: #6A6053;
-  --pink: #8A1D24;
-  --cyan: #2D5F69;
-  --amber: #7A5306;
-  --on-accent: #FBF6EC;
-  --top-bg: rgba(244,236,220,.9);
+  --ink: #FBF7EF;
+  --panel: #FFFDF8;
+  --panel-2: #F1E9DA;
+  --line: #E6DCC8;
+  --line-2: #D8C8AC;
+  --text: #2A211B;
+  --soft: #4F4338;
+  --dim: #6B5A48;
+  --pink: #A51C2A;
+  --blood: #A51C2A;
+  --cyan: #7A5A2E;
+  --amber: #8B5E12;
+  --on-accent: #FBF7EF;
+  --hatch: #F3EBDD;
+  --moon-1: #B3121F;
+  --moon-2: #6E0E17;
+  --moon-glow: rgba(165,28,42,.16);
+  --top-bg: rgba(251,247,239,.9);
   color-scheme: light;
 }
-
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -1142,17 +1135,16 @@ code { font: 13px var(--mono); }
 /* themes */
 .top { background: var(--top-bg); }
 /* the replay map stays a night screen in either theme */
-.replay-map, .replay-flag { --ink: #0F0D0F; --text: #E4DDDE; --soft: #B8ADB0; --dim: #948A8E; --line-2: #352E33; --panel: #161315; --panel-2: #1F1A1D; --pink: #DC5B66; --cyan: #8EB2B0; }
-:root[data-theme="paper"] .wr-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--pink) 10%, transparent), color-mix(in srgb, var(--cyan) 6%, transparent)), var(--panel); }
-:root[data-theme="paper"] .btn-solid, :root[data-theme="paper"] .btn-play { color: #fff; }
-:root[data-theme="paper"] .dhero-num { -webkit-text-stroke-color: var(--pink); }
+.replay-map, .replay-flag { --ink: #0B0909; --text: #EDE6DA; --soft: #B9AD98; --dim: #8F8574; --line-2: #342B29; --panel: #141010; --panel-2: #1C1716; --pink: #E8475B; --cyan: #C8A97E; }
+:root[data-theme="agency"] .wr-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--pink) 10%, transparent), color-mix(in srgb, var(--cyan) 6%, transparent)), var(--panel); }
+:root[data-theme="agency"] .btn-solid, :root[data-theme="agency"] .btn-play { color: #fff; }
+:root[data-theme="agency"] .dhero-num { -webkit-text-stroke-color: var(--pink); }
 .theme-btn { width: 36px; height: 36px; display: inline-grid; place-items: center; padding: 0; margin-right: -16px; color: var(--soft); background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); cursor: pointer; }
 .theme-btn + .search-open { margin-left: 0; height: 36px; }
 .theme-btn:hover { color: var(--text); border-color: var(--dim); }
-/* the icon shows the current look: a crescent for Mafia, half a coin for the Agency, an open ring for Paper */
+/* the icon shows the current look: a crescent for the Mafia, an open ring for the Agency */
 .theme-btn::before { content: ""; width: 16px; height: 16px; border-radius: 50%; background: currentColor; -webkit-mask: radial-gradient(circle at 70% 30%, transparent 6px, #000 6.5px); mask: radial-gradient(circle at 70% 30%, transparent 6px, #000 6.5px); }
-.theme-btn[data-look="agency"]::before { -webkit-mask: none; mask: none; background: linear-gradient(90deg, currentColor 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px currentColor; width: 14px; height: 14px; }
-.theme-btn[data-look="paper"]::before { -webkit-mask: none; mask: none; background: transparent; box-shadow: inset 0 0 0 2px currentColor; width: 14px; height: 14px; }
+.theme-btn[data-look="agency"]::before { -webkit-mask: none; mask: none; background: transparent; box-shadow: inset 0 0 0 2px currentColor; width: 14px; height: 14px; }
 .theme-btn:focus-visible, .search-open:focus-visible, .seg-btn:focus-visible, .chip:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 @media (max-width: 640px) {
   .theme-btn { position: absolute; right: 64px; top: 12px; width: 40px; height: 36px; margin-right: 0; }
@@ -1160,13 +1152,13 @@ code { font: 13px var(--mono); }
 }
 
 /* text sitting on a coloured fill stays white in the light theme */
-:root[data-theme="paper"] .sq-win, :root[data-theme="paper"] .sq-pod, :root[data-theme="paper"] .pill-live, :root[data-theme="paper"] .pill-next, :root[data-theme="paper"] .flag-next, :root[data-theme="paper"] .flag-live, :root[data-theme="paper"] .tp-lead, :root[data-theme="paper"] .tp-champ, :root[data-theme="paper"] .tp-alive, :root[data-theme="paper"] .stint, :root[data-theme="paper"] .stint-key, :root[data-theme="paper"] .btn-play, :root[data-theme="paper"] .toast, :root[data-theme="paper"] .out-dns, :root[data-theme="paper"] .out-dsq, :root[data-theme="paper"] .lap-tag, :root[data-theme="paper"] .follow-btn.on { color: #fff; }
-:root[data-theme="paper"] .stint-key { color: #07070D; }
-:root[data-theme="paper"] .fl-tag { color: #6A2FD0; border-color: rgba(106,47,208,.45); }
+:root[data-theme="agency"] .sq-win, :root[data-theme="agency"] .sq-pod, :root[data-theme="agency"] .pill-live, :root[data-theme="agency"] .pill-next, :root[data-theme="agency"] .flag-next, :root[data-theme="agency"] .flag-live, :root[data-theme="agency"] .tp-lead, :root[data-theme="agency"] .tp-champ, :root[data-theme="agency"] .tp-alive, :root[data-theme="agency"] .stint, :root[data-theme="agency"] .stint-key, :root[data-theme="agency"] .btn-play, :root[data-theme="agency"] .toast, :root[data-theme="agency"] .out-dns, :root[data-theme="agency"] .out-dsq, :root[data-theme="agency"] .lap-tag, :root[data-theme="agency"] .follow-btn.on { color: #fff; }
+:root[data-theme="agency"] .stint-key { color: #07070D; }
+:root[data-theme="agency"] .fl-tag { color: #6A2FD0; border-color: rgba(106,47,208,.45); }
 .btn-solid { color: var(--on-accent); }
-:root[data-theme="paper"] .btn-solid { color: #fff; }
+:root[data-theme="agency"] .btn-solid { color: #fff; }
 .ns-flag.flag-next, .ns-flag.flag-live { color: var(--on-accent); }
-:root[data-theme="paper"] .ns-flag.flag-next, :root[data-theme="paper"] .ns-flag.flag-live { color: #fff; }
+:root[data-theme="agency"] .ns-flag.flag-next, :root[data-theme="agency"] .ns-flag.flag-live { color: #fff; }
 .skip { position: absolute; left: 16px; top: -60px; z-index: 50; padding: 10px 16px; background: var(--pink); color: var(--on-accent); font-weight: 700; border-radius: var(--radius); }
 .skip:focus { top: 12px; }
 main:focus { outline: none; }
@@ -1179,4 +1171,66 @@ main:focus { outline: none; }
 .brand-name, .dcard-name, .dcard-num, .dhero-num, .dname-last, .duel-v, .pairs-v, .rc-name, .s-jump-title, .tally-n, .tile-value, .tp-pct, .vs-ghost, .vs-name, .vs-x, .weekend-name, .wr-big, .wr-champ { font-weight: 800; }
 /* retirements keep a true red of their own, apart from the theme accent */
 .tw-pos.tw-why { color: #FF6B6B; }
-:root[data-theme="paper"] .tw-pos.tw-why { color: #B3261E; }
+:root[data-theme="agency"] .tw-pos.tw-why { color: #B3261E; }
+
+/* ---- the profile look: paper grain, a blood moon, red rules and a seal ---- */
+body {
+  background-color: var(--ink);
+  background-image: repeating-linear-gradient(125deg, transparent 0 5px, var(--hatch) 5px 6px);
+}
+main { position: relative; isolation: isolate; }
+/* the moon sits behind the top of every page, half off the right edge */
+main::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  top: -70px; right: max(-140px, calc(50% - 780px));
+  width: 420px; height: 420px; border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, var(--moon-1), var(--moon-2) 72%);
+  box-shadow: 0 0 0 40px color-mix(in srgb, var(--moon-glow) 40%, transparent), 0 0 160px 70px var(--moon-glow);
+  opacity: .9;
+  animation: moon-breathe 7s ease-in-out infinite;
+}
+:root[data-theme="agency"] main::before { opacity: .78; }
+@keyframes moon-breathe { 50% { box-shadow: 0 0 0 56px color-mix(in srgb, var(--moon-glow) 30%, transparent), 0 0 190px 80px var(--moon-glow); } }
+/* the countdown card and other panels sit cleanly on top of it */
+.panel, .tile, .dcard, .table-box, .countdown, .ns-card { position: relative; }
+
+/* headings get the fading red rule from the profile */
+.page-head .page-title, .next-name { position: relative; padding-bottom: 14px; }
+.page-head .page-title::after, .next-name::after {
+  content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: min(420px, 70%);
+  background: linear-gradient(90deg, var(--blood), transparent);
+}
+.block-head h2 { position: relative; padding-left: 16px; }
+.block-head h2::before { content: ""; position: absolute; left: 0; top: .28em; bottom: .22em; width: 4px; background: var(--blood); border-radius: 1px; }
+
+/* cards carry the red edge like the profile's project cards */
+.dcard, .ct-card, .wr-card, .race-card, .battle, .tv-card { box-shadow: inset 4px 0 0 var(--blood); }
+.dcard:hover, .ct-card:hover, .race-card:hover { box-shadow: inset 4px 0 0 var(--pink), 0 10px 30px -18px var(--moon-glow); }
+
+/* the katakana under the name becomes a red seal */
+.brand-jp {
+  display: inline-block; padding: 2px 7px 3px; border-radius: 3px;
+  background: var(--blood); color: #F4EDE2; font-weight: 700; letter-spacing: .08em;
+  transform: rotate(-4deg); box-shadow: 0 2px 0 rgba(0,0,0,.25);
+}
+
+/* bone white numbers, red for the leader */
+.tile-value { color: var(--text); }
+.wr-hero { background: radial-gradient(circle at 88% 30%, color-mix(in srgb, var(--blood) 30%, transparent), transparent 55%), var(--panel); box-shadow: inset 4px 0 0 var(--blood); }
+
+@media (max-width: 640px) {
+  main::before { width: 220px; height: 220px; top: -30px; right: -90px; opacity: .55; }
+  .brand-jp { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { main::before { animation: none; } }
+.brand-jp { font-size: 10px; letter-spacing: .04em; padding: 2px 6px; }
+.brand { gap: 10px; }
+nav a { padding: 8px 10px; }
+:root[data-theme="agency"] main::before { opacity: .42; }
+@media (max-width: 1180px) and (min-width: 641px) { .brand { flex-basis: 100%; } }
+/* tablets: search shrinks to its icon so the row stays on one line */
+@media (max-width: 1000px) and (min-width: 641px) {
+  .search-word, .search-open::after { display: none; }
+  .theme-btn + .search-open { width: 40px; padding: 0; justify-content: center; }
+  nav a { padding: 8px 8px; }
+}

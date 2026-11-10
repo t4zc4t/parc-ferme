@@ -1,14 +1,13 @@
-// three looks: Port Mafia (default), Detective Agency and Paper, set before the page paints
+// two looks, Port Mafia (default) and Detective Agency, set before the page paints
 (function () {
   const KEY = 'pf-theme';
   const THEMES = [
-    { id: 'mafia', name: 'Port Mafia', color: '#0F0D0F' },
-    { id: 'agency', name: 'Detective Agency', color: '#14110E' },
-    { id: 'paper', name: 'Paper', color: '#F4ECDC' },
+    { id: 'mafia', name: 'Port Mafia', color: '#0B0909' },
+    { id: 'agency', name: 'Detective Agency', color: '#FBF7EF' },
   ];
   let saved = null;
   try { saved = localStorage.getItem(KEY); } catch (e) { /* storage blocked */ }
-  if (saved === 'light') saved = 'paper';   // the old light theme
+  if (saved === 'light' || saved === 'paper') saved = 'agency';   // older light looks
   const apply = id => {
     if (id && id !== 'mafia') document.documentElement.dataset.theme = id;
     else delete document.documentElement.dataset.theme;
