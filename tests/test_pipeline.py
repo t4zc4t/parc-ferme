@@ -14,6 +14,7 @@ import early  # noqa: E402
 import feed  # noqa: E402
 import history  # noqa: E402
 import og  # noqa: E402
+import ping  # noqa: E402
 import openf1  # noqa: E402
 import replay  # noqa: E402
 import sitegen  # noqa: E402
@@ -172,6 +173,28 @@ class ShareImages(unittest.TestCase):
         self.assertEqual(img.size, (1200, 630))
         race = next(json.loads(r.read_text()) for r in races if json.loads(r.read_text()).get("results"))
         self.assertEqual(og.race_card(race, og.track_points("M10 10 L90 10 L90 90 Z")).size, (1200, 630))
+
+
+class IndexNow(unittest.TestCase):
+    def test_sends_full_urls(self):
+        import json
+        sent = []
+
+        class Reply:
+            status = 200
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+
+        old = ping.urllib.request.urlopen
+        ping.urllib.request.urlopen = lambda req, timeout=0: sent.append(json.loads(req.data)) or Reply()
+        try:
+            self.assertTrue(ping.send({"/races/2026/20", "/", None}))
+        finally:
+            ping.urllib.request.urlopen = old
+        body = sent[0]
+        self.assertEqual(body["host"], "parc-ferme.pages.dev")
+        self.assertIn("https://parc-ferme.pages.dev/races/2026/20", body["urlList"])
+        self.assertTrue(body["keyLocation"].endswith(body["key"] + ".txt"))
 
 
 class History(unittest.TestCase):

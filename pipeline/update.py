@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import api  # noqa: E402
 import early  # noqa: E402
 import feed  # noqa: E402
+import ping  # noqa: E402
 import laps  # noqa: E402
 import openf1  # noqa: E402
 import practice  # noqa: E402
@@ -247,9 +248,13 @@ def main():
     # new and corrected results into the feed
     try:
         after = store.load(current_year(now))
-        feed.add(feed.seed(after) if not feed.load() else feed.diff(before, after, now))
+        fresh = feed.seed(after) if not feed.load() else feed.diff(before, after, now)
+        seen = {x["id"] for x in feed.load()}
+        changed_pages = {x.get("link") for x in fresh if x["id"] not in seen}
+        feed.add(fresh)
     except Exception as err:  # the feed must never stop an update
         print(f"feed failed: {err}")
+        changed_pages = set()
     if not reason and not labels:
         print("nothing to do")
         return
@@ -263,6 +268,8 @@ def main():
     if store.commit(message[0].upper() + message[1:]):
         print(f"committed: {message}")
         trigger_build()
+        if changed_pages:
+            ping.send(changed_pages | {"/", "/standings"})
 
 
 if __name__ == "__main__":

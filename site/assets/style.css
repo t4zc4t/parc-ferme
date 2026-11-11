@@ -1234,3 +1234,10 @@ nav a { padding: 8px 10px; }
   .theme-btn + .search-open { width: 40px; padding: 0; justify-content: center; }
   nav a { padding: 8px 8px; }
 }
+
+/* plain html directory for crawlers and no-script readers, hidden once scripts run */
+.static-dir h2 { font-size: 22px; margin: 24px 0 8px; }
+.static-links { margin: 0; padding: 0 0 0 18px; columns: 3 240px; }
+.static-links.inline { columns: 4 200px; }
+.static-links li { padding: 2px 0; break-inside: avoid; color: var(--soft); }
+.js .static-dir { display: none; }

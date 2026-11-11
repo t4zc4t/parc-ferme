@@ -158,7 +158,97 @@ def career_page(template, p):
                 extra_head=f'<script type="application/ld+json">{json.dumps(person)}</script>\n', static=static)
 
 
+def link_list(items, cls="static-links"):
+    return f'<ul class="{cls}">' + "".join(f'<li><a href="{h}">{escape(t)}</a>{escape(x)}</li>' for h, t, x in items) + "</ul>"
+
+
+def directory(name):
+    """plain html for the list pages, so their links and numbers are there before any script runs"""
+    sched = read(DATA / "schedule.json")
+    year = sched["season"]
+    if name == "":
+        home = read(DATA / "home.json")
+        nxt = next((r for r in sched["rounds"] if not r.get("winner") and r["race"] > now_iso()), None)
+        parts = []
+        if nxt:
+            c = nxt["circuit"]
+            parts.append(f'<h2>Next race</h2><p>Round {nxt["round"]} of {len(sched["rounds"])}: the {escape(nxt["name"])} at '
+                         f'<a href="/circuits/{c["id"]}">{escape(c["name"])}</a>, {escape(c["locality"])}, {escape(c["country"])}, '
+                         f'on {nxt["race"][:10]}.</p>')
+        champ = next((d for d in home["title"]["drivers"] if d.get("clinched")), None)
+        if champ:
+            parts.append(f'<p><a href="/drivers/{champ["id"]}">{escape(champ["name"])}</a> is the {year} world champion.</p>')
+        parts.append(f'<h2>{year} standings, {escape(home["standingsNote"])}</h2>' + link_list(
+            (f'/drivers/{d["id"]}', d["driver"], f' {d["team"]}, {d["points"]} points, {plural(d["wins"], "win")}') for d in home["standings"][:10]))
+        last = home.get("lastRace")
+        if last and last.get("results"):
+            w = last["results"][0]
+            parts.append(f'<h2>Last race</h2><p>{escape(w["driver"])} won the {escape(last["name"])} on {escape(last["dateLabel"])}.</p>')
+        parts.append(f'<h2>{year} races</h2>' + link_list(
+            (f'/races/{year}/{r["round"]}', r["name"], f' round {r["round"]}') for r in sched["rounds"] if r.get("winner")))
+        return "\n".join(parts)
+    if name == "drivers":
+        grid = read(DATA / "drivers.json")["drivers"]
+        out = f'<h2>The {year} grid</h2>' + link_list((f'/drivers/{d["id"]}', d["name"], f' {d["team"]}') for d in grid)
+        careers = []
+        for src in sorted((DATA / "careers").glob("*.json")):
+            c = read(src)
+            careers.append((c["name"].split()[-1], c))
+        careers.sort(key=lambda x: (x[0], x[1]["name"]))
+        out += '<h2>Every driver since 1950</h2>' + link_list(
+            (f'/drivers/{c["id"]}', c["name"], f' {c["seasons"][0]["year"]}–{c["seasons"][-1]["year"]}') for _, c in careers)
+        return out
+    if name == "circuits" and (DATA / "circuits" / "index.json").exists():
+        cs = read(DATA / "circuits" / "index.json")["circuits"]
+        return '<h2>Every circuit</h2>' + link_list(
+            (f'/circuits/{c["id"]}', c["name"], f' {c["locality"]}, {c["country"]}, {plural(c["held"], "race")}') for c in cs)
+    if name == "teams" and (DATA / "teams" / "index.json").exists():
+        ts = read(DATA / "teams" / "index.json")["teams"]
+        return '<h2>Every constructor</h2>' + link_list(
+            (f'/teams/{t["id"]}', t["name"], f' {t["first"]}–{t["last"]}, {plural(t["wins"], "win")}') for t in ts)
+    if name == "races":
+        out = []
+        for y in read(DATA / "races" / "index.json")["years"]:
+            season = read(DATA / "races" / f"{y['year']}.json")
+            items = [(f'/races/{y["year"]}/{r["round"]}', r["name"], "") for r in season["rounds"] if r.get("winner") or r.get("page")]
+            if items:
+                out.append(f'<h2>{y["year"]}</h2>' + link_list(items, "static-links inline"))
+        return "".join(out)
+    if name == "schedule":
+        return f'<h2>{year} calendar</h2>' + link_list(
+            (f'/races/{year}/{r["round"]}' if r.get("winner") else f'/circuits/{r["circuit"]["id"]}', r["name"],
+             f' round {r["round"]}, {r["race"][:10]}') for r in sched["rounds"])
+    if name == "standings":
+        home = read(DATA / "home.json")
+        return (f'<h2>{year} drivers, {escape(home["standingsNote"])}</h2>' + link_list(
+            (f'/drivers/{d["id"]}', d["driver"], f' {d["points"]} points') for d in home["standings"])
+            + '<h2>Constructors</h2>' + link_list((f'/teams/{t["id"]}', t["team"], f' {t["points"]} points') for t in home["teams"]))
+    return ""
+
+
+def now_iso():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+START, END = "<!-- directory -->", "<!-- /directory -->"
+
+
+def write_directories():
+    """fill the marked block on the list pages, replaced on every build"""
+    for name in ("", "drivers", "circuits", "teams", "races", "schedule", "standings"):
+        path = ROOT / f"{name or 'index'}.html"
+        t = path.read_text()
+        if START not in t:
+            continue
+        body = directory(name)
+        block = f'{START}<section class="wrap block static-dir" id="static-dir" aria-label="Site directory">{body}</section>{END}' if body else f"{START}{END}"
+        t = t[:t.index(START)] + block + t[t.index(END) + len(END):]
+        path.write_text(t)
+
+
 def build():
+    write_directories()
     urls = [f"{SITE}/{p}" for p in STATIC]
     race_tpl = (ROOT / "race.html").read_text()
     count = 0
@@ -204,7 +294,8 @@ def build():
         out.write_text(career_page(career_tpl, read(src)))
         urls.append(f"{SITE}/drivers/{src.stem}")
         count += 1
+    today = now_iso()[:10]
     (ROOT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
+        + "".join(f"  <url><loc>{u}</loc><lastmod>{today}</lastmod></url>\n" for u in urls) + "</urlset>\n")
     print(f"wrote {count} pages and a sitemap of {len(urls)} links")

@@ -1,5 +1,6 @@
 // two looks, Port Mafia (default) and Detective Agency, set before the page paints
 (function () {
+  document.documentElement.classList.add('js');   // the plain html directory hides once scripts run
   const KEY = 'pf-theme';
   const THEMES = [
     { id: 'mafia', name: 'Port Mafia', color: '#0B0909' },
