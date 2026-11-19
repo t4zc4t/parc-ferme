@@ -10,7 +10,6 @@
     return;
   }
   PF.stamp();
-  $('grid-lede').textContent = 'All ' + data.drivers.length + ' drivers to start a race in ' + data.season + '. Pick one for their career, season by season, and how they stack up against their teammate.';
 
   const sorts = {
     pos: (a, b) => (+a.pos || 99) - (+b.pos || 99),

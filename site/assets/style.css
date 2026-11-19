@@ -80,6 +80,8 @@ nav a:hover { color: var(--text); background: var(--panel-2); }
 
 /* sections */
 .block { padding-top: 24px; padding-bottom: 56px; }
+.block + .block { padding-top: 0; }
+.block > .panel:last-child { margin-bottom: 0; }
 .block-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
 h1, h2 { margin: 0; font-family: var(--display); font-weight: 800; letter-spacing: -.005em; }
 h2 { font-size: 28px; line-height: 1.2; }
@@ -736,7 +738,7 @@ a.flip-race:hover { color: var(--text); text-decoration: underline; }
 .seg .chip.on { background: var(--panel-2); box-shadow: inset 0 0 0 1px var(--line-2); }
 
 /* home: next race band */
-.next-band { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr); gap: 32px 56px; align-items: start; padding-top: 44px; padding-bottom: 44px; }
+.next-band { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr); gap: 32px 56px; align-items: start; padding-top: 44px; padding-bottom: 8px; }
 .next-info { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .next-name { font-size: clamp(34px, 5vw, 54px); line-height: 1.05; }
 .next-meta { margin: 0 0 10px; color: var(--soft); font-size: 16px; }
@@ -785,7 +787,7 @@ a.flip-race:hover { color: var(--text); text-decoration: underline; }
   .wrap { padding-left: 16px; padding-right: 16px; }
   nav { margin: 0 -16px; padding: 0 16px; }
   nav a { padding: 12px 10px; }
-  .next-band { padding-top: 28px; padding-bottom: 28px; gap: 20px; }
+  .next-band { padding-top: 28px; padding-bottom: 4px; gap: 20px; }
   .clock-wrap { padding: 16px; }
   .rl-row { grid-template-columns: 26px minmax(0, 1fr) auto; }
   .rl-row .delta { display: none; }
@@ -1178,7 +1180,7 @@ body {
   background-color: var(--ink);
   background-image: repeating-linear-gradient(125deg, transparent 0 5px, var(--hatch) 5px 6px);
 }
-main { position: relative; isolation: isolate; }
+main { position: relative; isolation: isolate; overflow-x: clip; }
 /* the moon sits behind the top of every page, half off the right edge */
 main::before {
   content: ""; position: absolute; z-index: -1; pointer-events: none;
@@ -1241,3 +1243,6 @@ nav a { padding: 8px 10px; }
 .static-links.inline { columns: 4 200px; }
 .static-links li { padding: 2px 0; break-inside: avoid; color: var(--soft); }
 .js .static-dir { display: none; }
+
+/* the written summary is for crawlers, the page itself shows the real thing */
+.js #static-summary { display: none; }

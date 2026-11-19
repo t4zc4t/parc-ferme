@@ -99,8 +99,9 @@
     next();
   }));
   $('quiz-share').replaceWith(PF.shareButton(() => ({ title: 'F1 quiz', text: current ? current.q : 'F1 quiz', url: '/trivia' + (current ? '?q=' + encodeURIComponent(current.id) : '') }), 'Share this question'));
-  // today's question, the same for everyone
-  const todays = daily.days[new Date().toISOString().slice(0, 10)];
+  // today's question, by the visitor's own date
+  const d0 = new Date();
+  const todays = daily.days[d0.getFullYear() + '-' + String(d0.getMonth() + 1).padStart(2, '0') + '-' + String(d0.getDate()).padStart(2, '0')];
   $('quiz-daily').hidden = !todays;
   $('quiz-daily').addEventListener('click', () => { if (todays) { show(todays); $('quiz-meta').textContent = 'Question of the day, ' + label(todays.category).toLowerCase(); } });
   const first = wanted && quiz.questions.find(q => q.id === wanted);
