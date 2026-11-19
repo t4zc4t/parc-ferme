@@ -1249,7 +1249,7 @@ nav a { padding: 8px 10px; }
 
 /* the countdown and the track card share the right side of the next race */
 .next-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.at-track { background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 4px 0 0 var(--blood); }
+.at-track { background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
 .at-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .at-title { font-size: 20px; }
 .at-body { display: flex; gap: 16px; align-items: center; }
