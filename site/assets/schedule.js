@@ -11,8 +11,6 @@
   PF.stamp();
   PF.watch();
   const now = Date.now();
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  $('tz-note').textContent = 'Every session of the ' + sched.season + ' season, shown in your own time zone (' + zone + ').';
 
   const raceDone = r => PF.weekendOver(r, now);
   // same rule as the homepage, the next weekend that isn't over
