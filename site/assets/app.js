@@ -59,6 +59,25 @@
     $('wk-news').hidden = false;
   }
 
+  // past winners and the outline of the next circuit, under the countdown
+  async function atTrack(id) {
+    let c;
+    try { c = await PF.json('/data/circuits/' + id + '.json'); } catch (e) { return; }
+    if (!c.races || !c.races.length) return;
+    $('at-link').href = '/circuits/' + id;
+    $('at-list').replaceChildren(...c.races.slice(0, 4).map(r => el('li', null,
+      el('span', { class: 'at-year mono' }, r.year),
+      el('a', { href: PF.driverHref(r.winner.id) }, r.winner.name),
+      el('span', { class: 'at-team' }, r.winner.team))));
+    $('at-shape').replaceChildren(...(c.track ? [PF.trackSvg(c.track, 'at-svg')] : []));
+    $('at-shape').hidden = !c.track;
+    const top = c.topDrivers && c.topDrivers[0];
+    $('at-note').textContent = [c.held + (c.held === 1 ? ' race' : ' races') + ' since ' + c.first,
+      top && top.wins > 1 ? 'most wins ' + top.name + ' (' + top.wins + ')' : null,
+      c.poleWins == null ? null : 'pole won ' + c.poleWins + '% of them'].filter(Boolean).join(', ');
+    $('at-track').hidden = false;
+  }
+
   function showNext() {
     clearInterval(clockTimer);
     const now = Date.now();
@@ -75,6 +94,7 @@
     $('next-round').textContent = 'Round ' + race.round + ' of ' + schedule.rounds.length;
     $('next-name').textContent = race.name;
     $('next-meta').textContent = c.name + ', ' + c.locality + ', ' + c.country;
+    atTrack(c.id);
 
     const upcoming = race.sessions.find(s => PF.status(s, now) === 'upcoming');
     const live = race.sessions.find(s => PF.status(s, now) === 'live');

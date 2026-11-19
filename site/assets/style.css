@@ -1246,3 +1246,24 @@ nav a { padding: 8px 10px; }
 
 /* the written summary is for crawlers, the page itself shows the real thing */
 .js #static-summary { display: none; }
+
+/* the countdown and the track card share the right side of the next race */
+.next-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.at-track { background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 4px 0 0 var(--blood); }
+.at-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.at-title { font-size: 20px; }
+.at-body { display: flex; gap: 16px; align-items: center; }
+.at-list { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; }
+.at-list li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.at-list li:last-child { border-bottom: 0; }
+.at-list a { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.at-list a:hover { color: var(--pink); }
+.at-year { color: var(--dim); font-size: 14px; }
+.at-team { color: var(--dim); font-size: 13px; }
+.at-shape { width: 110px; height: 110px; flex: none; }
+.at-svg { width: 100%; height: 100%; }
+.at-note { margin: 0; color: var(--soft); font-size: 14px; }
+/* side columns stick on wide screens, the top offset comes from common.js */
+@media (min-width: 981px) {
+  .home-side, .st-side { position: sticky; align-self: start; }
+}
