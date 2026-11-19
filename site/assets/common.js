@@ -176,3 +176,25 @@ const PF = {
     target.append(PF.el('tr', { class: 'empty' }, PF.el('td', { colspan }, text)));
   }
 };
+
+// a side column shorter than the page next to it follows the scroll instead of leaving a blank strip
+(function () {
+  const wide = window.matchMedia('(min-width: 981px)');
+  function place() {
+    const head = document.querySelector('.top');
+    const gap = (head ? head.offsetHeight : 0) + 16;
+    document.querySelectorAll('[data-stick]').forEach(side => {
+      side.style.top = wide.matches ? Math.min(gap, window.innerHeight - side.offsetHeight - 16) + 'px' : '';
+    });
+  }
+  const watch = () => {
+    place();
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(place);
+      document.querySelectorAll('[data-stick]').forEach(side => ro.observe(side));
+    }
+  };
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', watch) : watch();
+  window.addEventListener('resize', place);
+  wide.addEventListener('change', place);
+})();

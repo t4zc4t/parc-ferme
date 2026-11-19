@@ -59,6 +59,7 @@
       <ul class="next-sessions" id="next-sessions" aria-label="Sessions this weekend, in your time zone"></ul>
       <ul class="wk-news" id="wk-news" aria-label="So far this weekend" hidden></ul>
     </div>
+    <div class="next-side">
     <div class="clock-wrap">
       <div class="clock" id="clock">
         <div><b data-unit="d">--</b><small>days</small></div>
@@ -68,6 +69,18 @@
       </div>
       <p class="clock-for" id="clock-for"></p>
       <a class="text-link" href="/schedule">Full weekend schedule</a>
+    </div>
+    <div class="at-track" id="at-track" hidden>
+      <div class="at-head">
+        <h2 class="at-title">At this track</h2>
+        <a class="text-link" id="at-link" href="/circuits">Circuit page</a>
+      </div>
+      <div class="at-body">
+        <ul class="at-list" id="at-list"></ul>
+        <div class="at-shape" id="at-shape"></div>
+      </div>
+      <p class="at-note" id="at-note"></p>
+    </div>
     </div>
   </section>
 
@@ -94,7 +107,7 @@
       <div class="go-row"><a class="btn btn-quiet" href="/standings">Full standings, points chart and past seasons</a></div>
     </section>
 
-    <div class="home-side">
+    <div class="home-side" data-stick>
       <section id="last" class="block" hidden>
         <div class="block-head">
           <h2 id="last-title">Last race</h2>
