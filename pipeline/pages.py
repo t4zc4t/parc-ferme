@@ -249,11 +249,17 @@ def write_directories():
 
 def build():
     write_directories()
-    urls = [f"{SITE}/{p}" for p in STATIC]
+    # the date each race was run, so every page in the sitemap carries the day it last really changed
+    seasons = {y["year"]: read(DATA / "races" / f"{y['year']}.json") for y in read(DATA / "races" / "index.json")["years"]}
+    when = {(year, r["round"]): r["date"] for year, season in seasons.items() for r in season["rounds"] if r.get("date")}
+    season_end = {year: max((r["date"] for r in season["rounds"] if r.get("date")), default=None) for year, season in seasons.items()}
+    latest = max((r["date"] for season in seasons.values() for r in season["rounds"] if r.get("done") and r.get("date")),
+                 default=now_iso()[:10])
+    urls = [(f"{SITE}/{p}", latest) for p in STATIC]
     race_tpl = (ROOT / "race.html").read_text()
     count = 0
-    for y in read(DATA / "races" / "index.json")["years"]:
-        season = read(DATA / "races" / f"{y['year']}.json")
+    for year, season in seasons.items():
+        y = {"year": year}
         for info in season["rounds"]:
             src = DATA / "races" / str(y["year"]) / f"{info['round']}.json"
             if not (info.get("winner") or info.get("page")) or not src.exists():
@@ -261,7 +267,7 @@ def build():
             out = ROOT / "races" / str(y["year"]) / f"{info['round']}.html"
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(race_page(race_tpl, read(src), info))
-            urls.append(f"{SITE}/races/{y['year']}/{info['round']}")
+            urls.append((f"{SITE}/races/{y['year']}/{info['round']}", min(info.get("date") or latest, latest)))
             count += 1
     driver_tpl = (ROOT / "driver.html").read_text()
     for d in read(DATA / "drivers.json")["drivers"]:
@@ -271,7 +277,7 @@ def build():
         out = ROOT / "drivers" / f"{d['id']}.html"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(driver_page(driver_tpl, read(src)))
-        urls.append(f"{SITE}/drivers/{d['id']}")
+        urls.append((f"{SITE}/drivers/{d['id']}", latest))
         count += 1
     grid = {d["id"] for d in read(DATA / "drivers.json")["drivers"]}
     for kind, tpl, fn, url in (("circuits", "circuit.html", circuit_page, "circuits"),
@@ -282,8 +288,14 @@ def build():
         for x in read(DATA / kind / "index.json")[kind]:
             out = ROOT / url / f"{x['id']}.html"
             out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_text(fn(template, read(DATA / kind / f"{x['id']}.json")))
-            urls.append(f"{SITE}/{url}/{x['id']}")
+            data = read(DATA / kind / f"{x['id']}.json")
+            out.write_text(fn(template, data))
+            if kind == "circuits":
+                held = [when.get((r["year"], r["round"])) for r in data.get("races", [])]
+                day = max(filter(None, held), default=latest)
+            else:
+                day = season_end.get(data.get("last")) or latest
+            urls.append((f"{SITE}/{url}/{x['id']}", min(day, latest)))
             count += 1
     career_tpl = (ROOT / "career.html").read_text()
     for src in sorted((DATA / "careers").glob("*.json")):
@@ -291,11 +303,12 @@ def build():
             continue
         out = ROOT / "drivers" / f"{src.stem}.html"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(career_page(career_tpl, read(src)))
-        urls.append(f"{SITE}/drivers/{src.stem}")
+        person = read(src)
+        out.write_text(career_page(career_tpl, person))
+        last = person.get("lastRace") or {}
+        urls.append((f"{SITE}/drivers/{src.stem}", min(when.get((last.get("year"), last.get("round"))) or latest, latest)))
         count += 1
-    today = now_iso()[:10]
     (ROOT / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "".join(f"  <url><loc>{u}</loc><lastmod>{today}</lastmod></url>\n" for u in urls) + "</urlset>\n")
+        + "".join(f"  <url><loc>{u}</loc><lastmod>{day}</lastmod></url>\n" for u, day in urls) + "</urlset>\n")
     print(f"wrote {count} pages and a sitemap of {len(urls)} links")
