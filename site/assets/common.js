@@ -53,6 +53,10 @@ const PF = {
     return Math.round(t.top3 * 100) + '%';
   },
 
+  // "A", "A and B", "A, B and C"
+  listJoin(names) {
+    return names.length < 3 ? names.join(' and ') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  },
   driverLink(id, ...kids) {
     return PF.el('a', { href: PF.driverHref(id), class: 'dlink' }, ...kids);
   },

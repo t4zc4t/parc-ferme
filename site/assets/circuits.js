@@ -13,7 +13,7 @@
   const names = new Set(cal.rounds.map(r => r.circuit.name));
   let show = 'all';
   const cards = data.circuits.map(c => {
-    const shape = c.track ? PF.trackSvg(c.track, 'ct-mini') : el('span', { class: 'ct-mini ct-none', 'aria-hidden': 'true' });
+    const shape = c.track ? PF.trackSvg(c.track, 'ct-mini') : el('span', { class: 'ct-mini ct-none', 'aria-hidden': 'true' }, c.name.replace(/^(Circuit|Circuito|Autódromo|Autodromo)( de| do| del)? /, '').charAt(0));
     const card = el('a', { class: 'ct-card', href: '/circuits/' + c.id }, shape,
       el('span', { class: 'ct-card-name' }, c.name),
       el('span', { class: 'ct-card-where' }, [c.locality, c.country].filter(Boolean).join(', ')),

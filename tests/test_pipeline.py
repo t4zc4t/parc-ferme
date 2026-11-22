@@ -2,6 +2,7 @@
 the feed, replay track maths and the trivia files."""
 import copy
 import importlib
+import re
 import unittest
 from datetime import datetime, timezone
 
@@ -251,3 +252,16 @@ class History(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Maps(unittest.TestCase):
+    def test_outlines_match_known_circuits(self):
+        import maps
+        drawn = maps.load()
+        known = {r["circuit"]["id"] for s in store.all_seasons() for r in s["rounds"]}
+        self.assertTrue(drawn)
+        for cid, path in drawn.items():
+            self.assertIn(cid, known)
+            self.assertTrue(path.startswith("M") and path.endswith("Z"), cid)
+            nums = [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", path)]
+            self.assertTrue(all(0 <= n <= 100 for n in nums), cid)

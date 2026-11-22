@@ -18,14 +18,16 @@
   if (c.track) {
     $('c-shape-panel').hidden = false;
     $('c-shape').append(PF.trackSvg(c.track, 'ct-big'));
-    $('c-shape-note').textContent = 'Traced from the cars\' positions in the most recent race with a replay.';
+    $('c-shape-note').textContent = c.trackFrom === 'map' ? 'Today\'s layout, from open circuit map data. Older races here may have used a different one.'
+      : 'Traced from the cars\' positions in the most recent race with a replay.';
   }
   const last = c.races[0];
   const tile = (label, value, note) => el('div', { class: 'tile' }, el('span', { class: 'tile-label' }, label), el('span', { class: String(value).length > 8 ? 'tile-value tile-text' : 'tile-value' }, value), note ? el('span', { class: 'tile-sub' }, note) : '');
   $('c-tiles').replaceChildren(
     tile('Races held', String(c.held)),
     tile('Pole to win', c.poleWins == null ? '–' : c.poleWins + '%', 'how often the pole sitter won'),
-    tile('Most wins', c.topDrivers[0] ? String(c.topDrivers[0].wins) : '–', c.topDrivers[0] ? c.topDrivers[0].name : ''),
+    tile('Most wins', c.topDrivers[0] ? String(c.topDrivers[0].wins) : '–',
+      c.topDrivers[0] ? PF.listJoin(c.topDrivers.filter(x => x.wins === c.topDrivers[0].wins).map(x => x.name)) : ''),
     tile('Last winner', last && last.winner ? last.winner.name : '–', last ? String(last.year) : ''));
   const rank = (list, key, href) => list.map(x => el('li', null, href(x) ? el('a', { href: href(x) }, x.name) : x.name, el('span', { class: 'num-font' }, x[key])));
   $('c-drivers').replaceChildren(...rank(c.topDrivers, 'wins', x => PF.driverHref(x.id)));

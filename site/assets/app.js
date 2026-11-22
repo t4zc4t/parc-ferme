@@ -59,21 +59,62 @@
     $('wk-news').hidden = false;
   }
 
+  // between the last race and the next calendar: the champion and the season in numbers
+  async function offSeason() {
+    const year = schedule.season, top = home.standings || [], teams = home.teams || [];
+    const champ = top[0];
+    $('next-title').textContent = year + ' season';
+    $('next-round').textContent = 'all ' + schedule.rounds.length + ' rounds run';
+    $('next-name').textContent = champ ? champ.driver : 'Season complete';
+    $('next-meta').textContent = champ ? year + ' world champion, ' + champ.points + ' points and ' + champ.wins + (champ.wins === 1 ? ' win' : ' wins') +
+      (top[1] ? ', ' + (champ.points - top[1].points) + ' clear of ' + top[1].driver : '') + '.' : '';
+    const row = (label, who, value) => el('li', { class: 'ns ns-fact' },
+      el('span', { class: 'ns-label' }, label), el('span', { class: 'ns-val' }, who), el('span', { class: 'ns-time mono' }, value));
+    $('next-sessions').setAttribute('aria-label', 'How the ' + year + ' season finished');
+    $('next-sessions').replaceChildren(
+      ...top.slice(1, 3).map((d, i) => row(i ? 'Third' : 'Runner-up', driverLink(d.id, d.driver), d.points + ' pts')),
+      ...(teams[0] ? [row('Constructors', el('a', { href: '/teams/' + teams[0].id }, teams[0].team), teams[0].points + ' pts')] : []),
+      row('Every race', el('a', { href: '/races' }, 'Results and replays'), schedule.rounds.length + ' races'));
+    $('clock').hidden = true;
+    $('clock-for').textContent = 'The ' + (year + 1) + ' calendar isn\'t out yet, the countdown starts here once it is.';
+    const foot = document.querySelector('.clock-foot .text-link');
+    foot.textContent = 'The ' + year + ' calendar';
+    foot.href = '/schedule';
+    let w;
+    try { w = await PF.json('/data/wrapped/' + year + '.json'); } catch (e) { return; }
+    $('at-track').querySelector('.at-title').textContent = year + ' in numbers';
+    $('at-link').textContent = 'Season wrapped';
+    $('at-link').href = '/wrapped';
+    const fact = (label, who, n) => el('li', null, el('span', { class: 'at-year' }, label), who ? el('a', { href: PF.driverHref(who.id) }, who.name) : el('span'), el('span', { class: 'at-team' }, n));
+    const lead = list => list && list[0];
+    $('at-list').replaceChildren(...[
+      lead(w.wins) && fact('Wins', lead(w.wins), lead(w.wins).n),
+      lead(w.poles) && fact('Poles', lead(w.poles), lead(w.poles).n),
+      lead(w.podiums) && fact('Podiums', lead(w.podiums), lead(w.podiums).n),
+    ].filter(Boolean));
+    $('at-shape').hidden = true;
+    $('at-note').textContent = [w.winners ? w.winners + ' different winners' : null,
+      w.leadChanges != null ? w.leadChanges + (w.leadChanges === 1 ? ' change' : ' changes') + ' of leader' : null,
+      w.closest ? 'closest finish ' + w.closest.gap + 's' : null].filter(Boolean).join(', ');
+    $('at-track').hidden = false;
+  }
+
   // past winners and the outline of the next circuit, under the countdown
   async function atTrack(id) {
     let c;
     try { c = await PF.json('/data/circuits/' + id + '.json'); } catch (e) { return; }
     if (!c.races || !c.races.length) return;
     $('at-link').href = '/circuits/' + id;
-    $('at-list').replaceChildren(...c.races.slice(0, 4).map(r => el('li', null,
+    $('at-list').replaceChildren(...c.races.slice(0, 3).map(r => el('li', null,
       el('span', { class: 'at-year mono' }, r.year),
       el('a', { href: PF.driverHref(r.winner.id) }, r.winner.name),
       el('span', { class: 'at-team' }, r.winner.team))));
     $('at-shape').replaceChildren(...(c.track ? [PF.trackSvg(c.track, 'at-svg')] : []));
     $('at-shape').hidden = !c.track;
     const top = c.topDrivers && c.topDrivers[0];
+    const kings = top ? c.topDrivers.filter(x => x.wins === top.wins).map(x => x.name) : [];
     $('at-note').textContent = [c.held + (c.held === 1 ? ' race' : ' races') + ' since ' + c.first,
-      top && top.wins > 1 ? 'most wins ' + top.name + ' (' + top.wins + ')' : null,
+      top && top.wins > 1 ? 'most wins ' + PF.listJoin(kings) + ' (' + top.wins + ')' : null,
       c.poleWins == null ? null : 'pole won ' + c.poleWins + '% of them'].filter(Boolean).join(', ');
     $('at-track').hidden = false;
   }
@@ -83,11 +124,7 @@
     const now = Date.now();
     const race = schedule.rounds.find(r => !PF.weekendOver(r, now));
     if (!race) {
-      $('next-name').textContent = 'Season complete';
-      $('next-meta').textContent = 'The ' + (schedule.season + 1) + ' calendar shows up here once it is published.';
-      $('next-sessions').replaceChildren();
-      $('clock').hidden = true;
-      $('clock-for').textContent = '';
+      offSeason();
       return;
     }
     const c = race.circuit;
