@@ -125,8 +125,10 @@
     // the grid: from the race result once it's run, from qualifying before that
     const ran = res.filter(r => r.grid > 0).sort((a, b) => a.grid - b.grid).map(r => ({ ...r, slot: r.grid }))
       .concat(res.filter(r => r.grid === 0).map(r => ({ ...r, slot: 'PIT' })));
-    const fromQuali = !ran.length && (race.quali || []).length;
-    const grid = ran.length ? ran : (race.quali || []).filter(q => q.pos).map(q => ({ ...q, slot: q.pos }));
+    const official = !ran.length && (race.startGrid || []).length;
+    const fromQuali = !ran.length && !official && (race.quali || []).length;
+    const grid = ran.length ? ran : official ? race.startGrid.map(g => ({ ...g, slot: g.pos }))
+      : (race.quali || []).filter(q => q.pos).map(q => ({ ...q, slot: q.pos }));
     const kinds = [['race', 'Race', res, race.provisional], ['sprint', 'Sprint', race.sprint || [], race.sprintProvisional],
       ['quali', 'Qualifying', race.quali || [], race.qualiProvisional], ['grid', 'Grid', grid, fromQuali]].filter(k => k[2].length);
     const seg = $('result-seg');

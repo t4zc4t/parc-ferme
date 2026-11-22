@@ -10,6 +10,10 @@ import openf1
 import sitegen
 
 KINDS = {"R": ("results", "Race"), "SR": ("sprint", "Sprint"), "Q": ("quali", "Qualifying")}
+# points for the top ten of a race and the top eight of a sprint
+POINTS = {"R": [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], "SR": [8, 7, 6, 5, 4, 3, 2, 1]}
+# the session whose order sets the grid, the official grid then adds the penalties
+GRID_FROM = {"R": "Qualifying", "SR": "Sprint Qualifying"}
 WAIT = timedelta(minutes=35)       # openf1 opens 30 minutes after a session
 
 
@@ -107,13 +111,29 @@ def quali_rows(season, key):
     return out
 
 
-def rows_for(season, rnd, key):
+def start_grid(season, rnd, kind):
+    """the official starting grid with penalties applied, driver id -> slot, empty until it's out"""
+    key = session_key(season["year"], rnd, GRID_FROM[kind])
+    if key is None:
+        return {}
+    numbers = who(season)
+    rows = openf1.get(f"starting_grid?session_key={key}") or []
+    return {numbers[r["driver_number"]][0]: r["position"] for r in rows
+            if r.get("position") and r.get("driver_number") in numbers}
+
+
+def rows_for(season, rnd, key, kind="R"):
     numbers = who(season)
     res = openf1.get(f"session_result?session_key={key}")
     if not res or not any(r.get("position") for r in res):
         return None
     stand_ins(season, key, numbers, [r["driver_number"] for r in res])
-    grid = {q["d"]: q["pos"] for q in rnd.get("quali") or []}
+    grid = start_grid(season, rnd, kind)
+    official = bool(grid)
+    if not official and kind == "R":
+        grid = {q["d"]: q["pos"] for q in rnd.get("quali") or []}
+    # openf1 sometimes leaves points at zero for a while, then they come from the finishing order
+    scored = any(r.get("points") for r in res)
     # fastest lap ranks from the lap times
     best = {}
     for lap in openf1.get(f"laps?session_key={key}"):
@@ -149,11 +169,21 @@ def rows_for(season, rnd, key):
             time = gap_text(gap)
         else:
             time = None
+        if scored:
+            pts = r.get("points") or 0
+        elif text.isdigit() and int(text) <= len(POINTS[kind]):
+            pts = POINTS[kind][int(text) - 1]
+        else:
+            pts = 0
+        # left out of a published grid means a pit lane start
+        slot = grid.get(did, 0 if official else None)
         out.append({
-            "d": did, "c": team, "no": str(no), "grid": grid.get(did),
-            "pos": i, "text": text, "pts": r.get("points") or 0, "laps": laps_done,
+            "d": did, "c": team, "no": str(no), "grid": slot,
+            "pos": i, "text": text, "pts": pts, "laps": laps_done,
             "status": status, "time": time, "fl": str(rank[no]) if no in rank else None,
         })
+    if official:
+        rnd["grids"] = sorted(set(rnd.get("grids") or []) | {kind})
     return out
 
 
@@ -197,9 +227,22 @@ def fill(season, now):
     year = season["year"]
     added = []
     for rnd in season["rounds"]:
+        # the official grid before the race starts, once the stewards have applied the penalties
+        start = rnd["sessions"].get("R")
+        if start and rnd.get("quali") and not rnd["results"] and sitegen.when(start) - timedelta(days=1) <= now <= sitegen.when(start):
+            try:
+                grid = start_grid(season, rnd, "R")
+            except Exception as e:      # the grid is a nice extra, the results matter more
+                print(f"round {rnd['round']} starting grid: {e}")
+                grid = {}
+            if grid and grid != rnd.get("grid"):
+                rnd["grid"] = grid
+                added.append(f"round {rnd['round']} starting grid")
         for kind, (field, name) in KINDS.items():
             start = rnd["sessions"].get(kind)
-            if not start or rnd[field]:
+            # a provisional result is redone until it has the official grid in it
+            redo = kind != "Q" and kind in (rnd.get("provisional") or []) and kind not in (rnd.get("grids") or [])
+            if not start or (rnd[field] and not redo):
                 continue
             end = sitegen.when(start) + timedelta(minutes=sitegen.MINUTES[kind])
             if not (end + WAIT <= now <= end + timedelta(days=3)):
@@ -208,13 +251,15 @@ def fill(season, now):
             if key is None:
                 print(f"round {rnd['round']} {name.lower()}: no openf1 session yet")
                 continue
-            rows = quali_rows(season, key) if kind == "Q" else rows_for(season, rnd, key)
+            rows = quali_rows(season, key) if kind == "Q" else rows_for(season, rnd, key, kind)
             if not rows:
                 print(f"round {rnd['round']} {name.lower()}: openf1 has no result yet")
+                continue
+            if rows == rnd[field]:
                 continue
             rnd[field] = rows
             rnd["provisional"] = sorted(set(rnd.get("provisional") or []) | {kind})
             added.append(f"round {rnd['round']} {name.lower()}")
-    if any(not a.endswith("qualifying") for a in added):
+    if any(a.endswith(("race", "sprint")) for a in added):
         restand(season)
     return added

@@ -53,6 +53,10 @@ def build(seasons, names, out):
                     "pos": q["pos"], "q1": q.get("q1"), "q2": q.get("q2"), "q3": q.get("q3"),
                 } for q in sorted(r["quali"], key=lambda q: q["pos"] or 99)]
                 page["qualiProvisional"] = "Q" in prov
+            if r.get("grid") and not r["results"]:
+                page["startGrid"] = [{"id": d, "name": names.driver(d), "code": names.code(d), "pos": pos,
+                                      "team": names.team(next((q["c"] for q in r.get("quali") or [] if q["d"] == d), None))}
+                                     for d, pos in sorted(r["grid"].items(), key=lambda x: x[1])]
             if has_laps:
                 page.update(store.read_json(lap_file))
             if has_tyres:
