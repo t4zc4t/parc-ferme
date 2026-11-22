@@ -24,8 +24,10 @@ import trivia  # noqa: E402
 YEAR = max(int(p.stem) for p in (store.ROOT / "current").glob("*.json"))
 
 
-def fake_openf1(results, sessions, drivers=()):
+def fake_openf1(results, sessions, drivers=(), grid=()):
     def get(ep, tries=4):
+        if ep.startswith("starting_grid"):
+            return list(grid)
         if ep.startswith("sessions"):
             return sessions
         if ep.startswith("session_result"):
@@ -41,7 +43,8 @@ def fake_openf1(results, sessions, drivers=()):
 class Provisional(unittest.TestCase):
     def setUp(self):
         self.season = store.load(YEAR)
-        self.done = [r for r in self.season["rounds"] if r["results"]]
+        # the latest race with its official result, a provisional one has no points to check against
+        self.done = [r for r in self.season["rounds"] if r["results"] and "R" not in (r.get("provisional") or [])]
         self.rnd = self.done[-1]
 
     def test_race_rows_and_standings(self):
@@ -76,6 +79,32 @@ class Provisional(unittest.TestCase):
         for d, pts in before_pts.items():
             self.assertAlmostEqual(after.get(d, 0), pts, msg=d)
 
+    def test_official_grid_and_points_from_order(self):
+        # openf1 still has zero points and the stewards moved the polesitter back
+        s = copy.deepcopy(self.season)
+        r = [x for x in s["rounds"] if x["round"] == self.rnd["round"]][0]
+        official = sorted(r["results"], key=lambda x: x["pos"])
+        numbers = [(int(x["no"]), x) for x in official if str(x.get("no") or "").isdigit()]
+        res = [{"position": i, "driver_number": n, "number_of_laps": 50, "points": 0, "dnf": False, "dns": False,
+                "dsq": False, "duration": 5000.0 if i == 1 else None, "gap_to_leader": 0 if i == 1 else float(i)}
+               for i, (n, x) in enumerate(numbers, 1)]
+        grid = [{"position": i, "driver_number": n} for i, (n, _) in enumerate(reversed(numbers[1:]), 1)]
+        start = r["sessions"]["R"]
+        openf1.get = fake_openf1(res, [{"date_start": start, "session_key": 1}], grid=grid)
+        r["results"] = []
+        from datetime import timedelta
+        early.fill(s, sitegen.when(start) + timedelta(hours=3))
+        rows = {x["d"]: x for x in r["results"]}
+        first, last = numbers[0][1]["d"], numbers[-1][1]["d"]
+        self.assertEqual(rows[first]["pts"], 25)
+        self.assertEqual(rows[numbers[1][1]["d"]]["pts"], 18)
+        self.assertEqual(rows[last]["grid"], 1)
+        # left out of the grid means a pit lane start
+        self.assertEqual(rows[first]["grid"], 0)
+        self.assertIn("R", r["grids"])
+        # nothing new the second time round
+        self.assertEqual(early.fill(s, sitegen.when(start) + timedelta(hours=3)), [])
+
 
 class Standings(unittest.TestCase):
     def test_running_totals_end_on_official_points(self):
@@ -92,7 +121,7 @@ class Standings(unittest.TestCase):
 class Feed(unittest.TestCase):
     def test_new_result_and_official_changes(self):
         s = store.load(YEAR)
-        rnd = [r for r in s["rounds"] if r["results"]][-1]
+        rnd = [r for r in s["rounds"] if r["results"] and "R" not in (r.get("provisional") or [])][-1]
         before = copy.deepcopy(s)
         b = [r for r in before["rounds"] if r["round"] == rnd["round"]][0]
         b["results"] = []
