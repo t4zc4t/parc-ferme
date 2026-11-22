@@ -8,10 +8,16 @@
 from collections import Counter, defaultdict
 
 from compare import classified, is_pole
+import maps
 import store
 import trivia
 
 NOT_STARTED = {"W", "F", "E"}
+
+
+def join(names):
+    """names in a sentence: A, A and B, A, B and C"""
+    return " and ".join(names) if len(names) < 3 else ", ".join(names[:-1]) + " and " + names[-1]
 
 
 def secs(text):
@@ -109,6 +115,8 @@ def build(seasons, names, out, grid):
                 team_titles[st["teams"][0]["c"]].append(s["year"])
 
     shapes = trivia.tracks([s for s in seasons if s["year"] >= 2026])
+    # open map outlines for the tracks we have no replay of
+    drawn = maps.load()
     person = lambda d: {"id": d, "name": nm(d)}
 
     # ---- circuits ----
@@ -122,7 +130,8 @@ def build(seasons, names, out, grid):
         page = {
             "id": cid, "name": info["name"], "locality": info.get("locality"), "country": info.get("country"),
             "held": len(rs), "first": rs[0]["year"], "last": rs[-1]["year"],
-            "track": shapes.get(cid, (None, None))[1],
+            "track": shapes.get(cid, (None, None))[1] or drawn.get(cid),
+            "trackFrom": "replay" if cid in shapes else "map" if cid in drawn else None,
             "poleWins": round(100 * sum(1 for x in both if x["winner"][0] == x["pole"]) / len(both)) if both else None,
             "topDrivers": [dict(person(d), wins=n) for d, n in wins.most_common(8)],
             "topPoles": [dict(person(d), poles=n) for d, n in poles.most_common(5)],
@@ -132,9 +141,11 @@ def build(seasons, names, out, grid):
         }
         changed |= store.write_json(out / "circuits" / f"{cid}.json", page)
         top = wins.most_common(1)
+        # everyone level on the most wins, not just the first of them
+        kings = [d for d, n in wins.most_common() if top and n == top[0][1]]
         index.append({"id": cid, "name": info["name"], "locality": info.get("locality"), "country": info.get("country"),
                       "held": len(rs), "first": rs[0]["year"], "last": rs[-1]["year"], "track": page["track"],
-                      "king": dict(person(top[0][0]), wins=top[0][1]) if top else None})
+                      "king": {"id": kings[0], "name": join([nm(d) for d in kings]), "wins": top[0][1]} if top else None})
     index.sort(key=lambda x: (-x["last"], -x["held"], x["name"]))
     changed |= store.write_json(out / "circuits" / "index.json", {"circuits": index})
 

@@ -26,9 +26,9 @@
   $('p-seasons').replaceChildren(...[...p.seasons].reverse().map(s => el('tr', { class: s.pos === '1' || s.pos === 1 ? 'top3' : null },
     el('td', { class: 'mono' }, el('a', { href: '/standings?y=' + s.year }, s.year)),
     el('td', { class: 'team' }, s.teams.join(', ')),
-    el('td', { class: 'num mono' }, s.races), el('td', { class: 'num mono' }, s.wins || ''),
-    el('td', { class: 'num mono opt' }, s.podiums || ''), el('td', { class: 'num mono opt' }, s.poles || ''),
-    el('td', { class: 'num mono' }, s.pos ? 'P' + s.pos : '–'))));
+    el('td', { class: 'num mono' }, s.races), el('td', { class: 'num mono' }, s.wins || 0),
+    el('td', { class: 'num mono opt' }, s.podiums || 0), el('td', { class: 'num mono opt' }, s.poles || 0),
+    el('td', { class: 'num mono' }, /^\d+$/.test(s.pos || '') ? 'P' + s.pos : '–'))));
   if (p.winList.length) {
     $('p-wins-block').hidden = false;
     $('p-wins-title').textContent = p.winList.length === 1 ? 'The win' : 'All ' + p.winList.length + ' wins';

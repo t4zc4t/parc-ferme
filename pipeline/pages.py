@@ -247,8 +247,42 @@ def write_directories():
         path.write_text(t)
 
 
+def write_home():
+    """the next race and its sessions written into the homepage, so it reads right before the scripts run"""
+    import re
+    from datetime import datetime, timedelta, timezone
+    path = ROOT / "index.html"
+    try:
+        sched = read(DATA / "schedule.json")
+    except FileNotFoundError:
+        return
+    now = datetime.now(timezone.utc)
+    when = lambda iso: datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    race = next((r for r in sched["rounds"] if not r.get("winner") and when(r["race"]) + timedelta(hours=4) > now), None)
+    t = path.read_text()
+    if race:
+        c = race["circuit"]
+        title, name = f"Round {race['round']} of {len(sched['rounds'])}", race["name"]
+        meta = f"{c['name']}, {c['locality']}, {c['country']}"
+        rows = "".join(f'<li class="ns"><span class="ns-label">{escape(x["label"])}</span>'
+                       f'<span class="ns-time mono">{when(x["start"]):%a %d %b, %H:%M} UTC</span><span class="ns-flag"></span></li>'
+                       for x in race["sessions"])
+    else:
+        title, name, meta, rows = "season complete", f"{sched['season']} season complete", "", ""
+    swaps = [
+        (r'(<span id="next-round">)[^<]*(</span>)', title),
+        (r'(<h1 class="next-name" id="next-name">)[^<]*(</h1>)', name),
+        (r'(<p class="next-meta" id="next-meta">)[^<]*(</p>)', meta),
+        (r'(<ul class="next-sessions" id="next-sessions"[^>]*>).*?(</ul>)', rows),
+    ]
+    for pattern, value in swaps:
+        t = re.sub(pattern, lambda m: m.group(1) + (value if pattern.startswith("(<ul") else escape(value)) + m.group(2), t, count=1, flags=re.S)
+    path.write_text(t)
+
+
 def build():
     write_directories()
+    write_home()
     # the date each race was run, so every page in the sitemap carries the day it last really changed
     seasons = {y["year"]: read(DATA / "races" / f"{y['year']}.json") for y in read(DATA / "races" / "index.json")["years"]}
     when = {(year, r["round"]): r["date"] for year, season in seasons.items() for r in season["rounds"] if r.get("date")}
